@@ -5,6 +5,9 @@ Conversation export formatter — supports DeepSeek and Claude (Anthropic) expor
 Usage:
   python format_conversations.py [options]
 
+  Run with no arguments for interactive mode: auto-discovers zip files and
+  conversations.json files in the current directory and prompts to process them.
+
 Options:
   --input FILE        Path to conversations.json (default: conversations.json)
   --output DIR        Output directory (default: output/<provider>/)
@@ -19,6 +22,7 @@ Options:
 import argparse
 import json
 import sys
+import zipfile
 from pathlib import Path
 
 from formatters import claude, deepseek
@@ -27,6 +31,10 @@ from formatters.shared import safe_write, slugify
 # Registry: ordered list of formatter modules; first match wins
 _FORMATTERS = [deepseek, claude]
 
+
+# ---------------------------------------------------------------------------
+# Provider detection
+# ---------------------------------------------------------------------------
 
 def detect_provider(data: list):
     """Return the matching formatter module, or None."""
@@ -41,7 +49,136 @@ def load_conversations(path: str) -> list:
         return json.load(f)
 
 
+# ---------------------------------------------------------------------------
+# Interactive (zero-args) mode
+# ---------------------------------------------------------------------------
+
+def _prompt(question: str) -> bool:
+    """Ask a yes/no question; return True for yes."""
+    ans = input(f"{question} [y/N] ").strip().lower()
+    return ans in ("y", "yes")
+
+
+def _extract_zip(zip_path: Path, cwd: Path) -> list[Path]:
+    """
+    Extract a zip, looking for conversations.json inside.
+    Returns list of extracted conversations.json paths.
+    """
+    found = []
+    with zipfile.ZipFile(zip_path) as zf:
+        names = zf.namelist()
+        json_names = [n for n in names if Path(n).name == "conversations.json"]
+        if not json_names:
+            print(f"  No conversations.json found inside {zip_path.name}")
+            return []
+        for name in json_names:
+            # Extract to a sibling path named after the zip (without extension)
+            dest_dir = cwd / zip_path.stem
+            dest_dir.mkdir(exist_ok=True)
+            dest_path = dest_dir / "conversations.json"
+            dest_path.write_bytes(zf.read(name))
+            print(f"  Extracted → {dest_path}")
+            found.append(dest_path)
+    return found
+
+
+def _process_json(json_path: Path, fmt: str, yes: bool):
+    """Load, detect, and export a single conversations.json."""
+    print(f"\nProcessing {json_path} …")
+    data = load_conversations(str(json_path))
+    fmt_mod = detect_provider(data)
+    if not fmt_mod:
+        print(f"  Could not auto-detect provider.")
+        ans = input("  Enter provider [deepseek/claude]: ").strip().lower()
+        fmt_mod = {"deepseek": deepseek, "claude": claude}.get(ans)
+        if not fmt_mod:
+            print("  Unknown provider — skipping.")
+            return
+
+    print(f"  Provider: {fmt_mod.PROVIDER}  ({len(data)} conversations)")
+    out_dir = Path("output") / fmt_mod.PROVIDER
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    ext = fmt
+    for conv in data:
+        title = conv.get(fmt_mod.TITLE_FIELD, conv.get(fmt_mod.ID_FIELD, "untitled"))
+        slug = slugify(title)
+        out_path = out_dir / f"{slug}.{ext}"
+        if fmt == "html":
+            content = fmt_mod.build_html_single(conv)
+        elif fmt == "md":
+            content = fmt_mod.conv_to_md(conv)
+        else:
+            content = fmt_mod.build_json_single(conv)
+        safe_write(out_path, content, yes)
+
+
+def interactive_mode():
+    """Zero-args interactive mode: discover zips and json files, prompt to process."""
+    cwd = Path(".")
+    print("No arguments given — scanning current directory…\n")
+
+    # 1. Discover zip files (exclude already-gitignored data zips we know about)
+    zips = sorted(cwd.glob("*.zip"))
+    json_candidates: list[Path] = []
+
+    if zips:
+        print(f"Found {len(zips)} zip file(s):")
+        for z in zips:
+            print(f"  {z.name}")
+        print()
+        for z in zips:
+            if _prompt(f"Extract and process {z.name}?"):
+                extracted = _extract_zip(z, cwd)
+                json_candidates.extend(extracted)
+        print()
+
+    # 2. Discover conversations.json files in cwd and immediate subdirs
+    direct = list(cwd.glob("conversations.json"))
+    subdirs = [p for p in cwd.glob("*/conversations.json") if p.parent != cwd]
+    all_json = direct + subdirs
+
+    # Add any we just extracted (avoid duplicates)
+    for p in json_candidates:
+        if p not in all_json:
+            all_json.append(p)
+
+    if not all_json:
+        print("No conversations.json files found. Nothing to do.")
+        return
+
+    # Ask format once
+    fmt_ans = input("Output format [html/md/json] (default: html): ").strip().lower()
+    fmt = fmt_ans if fmt_ans in ("html", "md", "json") else "html"
+    yes_ans = _prompt("Overwrite existing files without prompting?")
+
+    print()
+    for json_path in all_json:
+        if _prompt(f"Process {json_path}?"):
+            _process_json(json_path, fmt, yes_ans)
+
+    # Offer to regenerate SPA
+    print()
+    if _prompt("Regenerate SPA viewer (output/index.html)?"):
+        from formatters.spa import build_spa
+        out_dir = Path("output")
+        try:
+            html = build_spa(out_dir)
+            safe_write(out_dir / "index.html", html, yes=True)
+        except ValueError as e:
+            print(f"  SPA generation skipped: {e}")
+
+
+# ---------------------------------------------------------------------------
+# Main
+# ---------------------------------------------------------------------------
+
 def main():
+    # Zero-args → interactive mode
+    if len(sys.argv) == 1:
+        interactive_mode()
+        return
+
     parser = argparse.ArgumentParser(
         description="Format DeepSeek / Claude conversation exports.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
