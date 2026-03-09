@@ -498,10 +498,9 @@ function renderList(searchHits) {
   });
 }
 
-function quickRemove(idx) {
-  const conv = filteredConvs[idx];
-  if (!conv) return;
-  const key = fileKey(conv);
+// ─── Shared remove helper ────────────────────────────────────────────────────
+function removeConversation(key, { rerenderMenu = false } = {}) {
+  const idx = filteredConvs.findIndex(c => fileKey(c) === key);
   if (idx === activeIndex) {
     activeIndex = -1;
     convContent.style.display = 'none';
@@ -514,6 +513,13 @@ function quickRemove(idx) {
   filteredConvs = applyFilter(currentSearchQuery);
   if (activeIndex > idx) activeIndex--;
   renderList(currentSearchHits);
+  if (rerenderMenu) renderMenuFileList();
+}
+
+function quickRemove(idx) {
+  const conv = filteredConvs[idx];
+  if (!conv) return;
+  removeConversation(fileKey(conv));
 }
 
 // ─── Menu file list ─────────────────────────────────────────────────────────
@@ -550,21 +556,7 @@ function renderMenuFileList() {
 
   menuFileList.querySelectorAll('.file-action.remove').forEach(btn => {
     btn.addEventListener('click', () => {
-      const key = btn.dataset.key;
-      const idx = filteredConvs.findIndex(c => fileKey(c) === key);
-      if (idx === activeIndex) {
-        activeIndex = -1;
-        convContent.style.display = 'none';
-        emptyState.style.display = '';
-        jumpNavContainer.style.display = 'none';
-        LS.saveActiveFile(null);
-      }
-      hiddenFiles.add(key);
-      LS.saveHidden(hiddenFiles);
-      filteredConvs = applyFilter(currentSearchQuery);
-      if (activeIndex > idx) activeIndex--;
-      renderList(currentSearchHits);
-      renderMenuFileList();
+      removeConversation(btn.dataset.key, { rerenderMenu: true });
     });
   });
 }

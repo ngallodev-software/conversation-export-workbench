@@ -1,4 +1,4 @@
-# DeepSeek Export Formatter — Quick Start
+# Chat Export Viewer — Quick Start
 
 Convert DeepSeek or Claude conversation exports into HTML, Markdown, or cleaned JSON — no external dependencies, pure Python 3.10+.
 
@@ -16,8 +16,8 @@ Convert DeepSeek or Claude conversation exports into HTML, Markdown, or cleaned 
 ## Installation
 
 ```bash
-git clone <repo-url>
-cd deepseek_export_formatter
+git clone https://github.com/ngallodev-software/conversation-export-workbench.git
+cd conversation-export-workbench
 ```
 
 ## Zero-argument interactive mode
