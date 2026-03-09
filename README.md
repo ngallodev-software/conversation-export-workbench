@@ -1,4 +1,4 @@
-# Conversation Export Formatter
+# Chat Export Viewer
 
 A zero-dependency Python CLI that converts **DeepSeek** and **Claude (Anthropic)** conversation exports into styled HTML, Markdown, or cleaned JSON — with a built-in interactive single-page viewer.
 
@@ -36,7 +36,7 @@ A zero-dependency Python CLI that converts **DeepSeek** and **Claude (Anthropic)
 ## Installation
 
 ```bash
-git clone https://github.com/ngallodev-software/conversation-export-workbench.git
+git clone <repo-url>
 cd conversation-export-workbench
 ```
 
@@ -161,14 +161,14 @@ python3 generate_spa.py --output output/ --yes
 Then serve it locally (the SPA uses `fetch()` so it requires a real HTTP server):
 
 ```bash
-cd output && python3 -m http.server 8080
-# Open: http://localhost:8080
+python3 serve_spa.py
+# Open the printed URL (first free port from 8080 up to 80890, clamped at 65535)
 ```
 
-For LAN access from other devices on your network:
+Or with explicit settings:
 
 ```bash
-cd output && python3 -m http.server 8080 --bind 0.0.0.0
+python3 serve_spa.py --host 0.0.0.0 --start-port 8080 --end-port 80890
 ```
 
 ### SPA config and CSS templates
@@ -182,13 +182,9 @@ thread_template = "config/spa_output_templates/thread.css"
 
 [providers.deepseek]
 thread_template = "config/spa_output_templates/deepseek_thread.css"
-accent_color    = "#4a90e2"
-label           = "DeepSeek"
 
 [providers.claude]
 thread_template = "config/spa_output_templates/claude_thread.css"
-accent_color    = "#a78bfa"
-label           = "Claude"
 ```
 
 To use a custom config:

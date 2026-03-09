@@ -6,7 +6,9 @@
       "Bash(node:*)",
       "Bash(ls:*)",
       "Bash(curl:*)",
-      "Bash(head:*)"
+      "Bash(head:*)",
+      "Bash(git:*)",
+      "Bash(GIT_EDITOR=true git rebase:*)"
     ]
   },
   "enableAllProjectMcpServers": true,

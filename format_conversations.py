@@ -153,11 +153,37 @@ def _process_json(json_path: Path, fmt: str, yes: bool):
     out_dir = Path("output") / fmt_mod.PROVIDER
     out_dir.mkdir(parents=True, exist_ok=True)
 
+    def output_stem(conv: dict, idx: int, used: set[str]) -> str:
+        raw_title = conv.get(fmt_mod.TITLE_FIELD)
+        raw_id = conv.get(fmt_mod.ID_FIELD)
+
+        title_slug = slugify(str(raw_title or ""))
+        id_slug = slugify(str(raw_id or ""))
+        stem = title_slug or id_slug or f"untitled-{idx:04d}"
+
+        if stem not in used:
+            used.add(stem)
+            return stem
+
+        if id_slug:
+            candidate = f"{stem}-{id_slug[:12]}"
+            if candidate not in used:
+                used.add(candidate)
+                return candidate
+
+        n = 2
+        while True:
+            candidate = f"{stem}-{n}"
+            if candidate not in used:
+                used.add(candidate)
+                return candidate
+            n += 1
+
     ext = fmt
-    for conv in data:
-        title = conv.get(fmt_mod.TITLE_FIELD, conv.get(fmt_mod.ID_FIELD, "untitled"))
-        slug = slugify(title)
-        out_path = out_dir / f"{slug}.{ext}"
+    used_stems: set[str] = set()
+    for idx, conv in enumerate(data, start=1):
+        stem = output_stem(conv, idx, used_stems)
+        out_path = out_dir / f"{stem}.{ext}"
         if fmt == "html":
             content = fmt_mod.build_html_single(conv)
         elif fmt == "md":
@@ -314,11 +340,37 @@ def main():
         safe_write(out_dir / fname, content, args.yes)
         return
 
+    def output_stem(conv: dict, idx: int, used: set[str]) -> str:
+        raw_title = conv.get(fmt_mod.TITLE_FIELD)
+        raw_id = conv.get(fmt_mod.ID_FIELD)
+
+        title_slug = slugify(str(raw_title or ""))
+        id_slug = slugify(str(raw_id or ""))
+        stem = title_slug or id_slug or f"untitled-{idx:04d}"
+
+        if stem not in used:
+            used.add(stem)
+            return stem
+
+        if id_slug:
+            candidate = f"{stem}-{id_slug[:12]}"
+            if candidate not in used:
+                used.add(candidate)
+                return candidate
+
+        n = 2
+        while True:
+            candidate = f"{stem}-{n}"
+            if candidate not in used:
+                used.add(candidate)
+                return candidate
+            n += 1
+
     # --- One file per conversation ---
-    for conv in targets:
-        title = conv.get(fmt_mod.TITLE_FIELD, conv.get(fmt_mod.ID_FIELD, "untitled"))
-        slug = slugify(title)
-        out_path = out_dir / f"{slug}.{ext}"
+    used_stems: set[str] = set()
+    for idx, conv in enumerate(targets, start=1):
+        stem = output_stem(conv, idx, used_stems)
+        out_path = out_dir / f"{stem}.{ext}"
 
         if fmt == "html":
             content = fmt_mod.build_html_single(conv)
