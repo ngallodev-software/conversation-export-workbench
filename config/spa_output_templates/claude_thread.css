@@ -1,0 +1,7 @@
+/* Claude provider — thread accent colour overrides */
+/* User: violet (#a78bfa) / Assistant: teal (#2dd4bf) — distinct hues, colourblind-safe */
+
+#conv-content.provider-claude .message.user      { background: #110f1a; border-left: 3px solid #a78bfa; }
+#conv-content.provider-claude .message.assistant { background: #0a1614; border-left: 3px solid #2dd4bf; }
+#conv-content.provider-claude .message.user .role-label      { color: #a78bfa; }
+#conv-content.provider-claude .message.assistant .role-label { color: #2dd4bf; }

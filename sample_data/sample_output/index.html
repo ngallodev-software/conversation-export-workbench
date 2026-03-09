@@ -1,162 +1,3 @@
-"""
-SPA (index.html) generator for the conversation viewer.
-
-Scans output/<provider>/ directories, extracts title/timestamp metadata
-from the generated HTML files, and writes output/index.html.
-
-CSS is loaded from template files referenced in config/spa.toml.
-"""
-
-import re
-import sys
-from pathlib import Path
-
-try:
-    import tomllib
-except ImportError:
-    try:
-        import tomli as tomllib  # type: ignore
-    except ImportError:
-        tomllib = None  # type: ignore
-
-
-# ---------------------------------------------------------------------------
-# Config
-# ---------------------------------------------------------------------------
-
-PROVIDERS = ["deepseek", "claude"]
-
-PROVIDER_LABELS = {
-    "deepseek": "DeepSeek",
-    "claude":   "Claude",
-    "all":      "All",
-}
-
-_DEFAULT_CONFIG = {
-    "spa": {
-        "main_template":   "config/spa_output_templates/main_spa.css",
-        "thread_template": "config/spa_output_templates/thread.css",
-    },
-    "providers": {
-        "deepseek": {
-            "thread_template": "config/spa_output_templates/deepseek_thread.css",
-            "accent_color": "#4a90e2",
-            "label": "DeepSeek",
-        },
-        "claude": {
-            "thread_template": "config/spa_output_templates/claude_thread.css",
-            "accent_color": "#c57d3d",
-            "label": "Claude",
-        },
-    },
-}
-
-
-def load_config(config_path: Path | None = None) -> dict:
-    """Load spa.toml or return defaults."""
-    if config_path is None or not config_path.exists():
-        return _DEFAULT_CONFIG
-
-    if tomllib is None:
-        print(
-            "Warning: tomllib/tomli not available — using default config. "
-            "Install tomli (`pip install tomli`) for Python < 3.11.",
-            file=sys.stderr,
-        )
-        return _DEFAULT_CONFIG
-
-    try:
-        with open(config_path, "rb") as f:
-            data = tomllib.load(f)
-        # Merge with defaults so missing keys fall back gracefully
-        merged = {
-            "spa": {**_DEFAULT_CONFIG["spa"], **data.get("spa", {})},
-            "providers": {},
-        }
-        for p, defaults in _DEFAULT_CONFIG["providers"].items():
-            merged["providers"][p] = {**defaults, **data.get("providers", {}).get(p, {})}
-        # Include any extra providers defined only in the toml
-        for p, cfg in data.get("providers", {}).items():
-            if p not in merged["providers"]:
-                merged["providers"][p] = cfg
-        return merged
-    except Exception as e:
-        print(f"Warning: failed to load {config_path}: {e} — using defaults.", file=sys.stderr)
-        return _DEFAULT_CONFIG
-
-
-def load_css_templates(config: dict, base_dir: Path) -> str:
-    """Read and concatenate CSS template files in order."""
-    paths = [config["spa"]["main_template"], config["spa"]["thread_template"]]
-    for p_cfg in config["providers"].values():
-        t = p_cfg.get("thread_template")
-        if t:
-            paths.append(t)
-
-    parts = []
-    for rel in paths:
-        p = base_dir / rel
-        if not p.exists():
-            print(f"Warning: CSS template not found: {p}", file=sys.stderr)
-            continue
-        try:
-            parts.append(p.read_text(encoding="utf-8"))
-        except Exception as e:
-            print(f"Warning: could not read {p}: {e}", file=sys.stderr)
-
-    return "\n\n".join(parts)
-
-
-# ---------------------------------------------------------------------------
-# Metadata extraction
-# ---------------------------------------------------------------------------
-
-def _extract_meta(html_path: Path) -> dict:
-    """Return {file, title, ts} from a generated conversation HTML file."""
-    text = html_path.read_text(encoding="utf-8")
-    m_title = re.search(r"<h1>(.*?)</h1>", text)
-    title = m_title.group(1) if m_title else html_path.stem.replace("-", " ").title()
-    m_ts = re.search(r'data-started-ts="(\d+)"', text)
-    ts = int(m_ts.group(1)) if m_ts else 0
-    return {"file": html_path.name, "title": title, "ts": ts}
-
-
-def scan_provider(output_dir: Path, provider: str) -> list[dict]:
-    """Return sorted list of conversation metadata dicts for one provider."""
-    provider_dir = output_dir / provider
-    if not provider_dir.is_dir():
-        return []
-    metas = []
-    for html_file in sorted(provider_dir.glob("*.html")):
-        if html_file.name == "index.html":
-            continue
-        meta = _extract_meta(html_file)
-        meta["provider"] = provider
-        metas.append(meta)
-    metas.sort(key=lambda m: m["ts"], reverse=True)
-    return metas
-
-
-# ---------------------------------------------------------------------------
-# JS data builder
-# ---------------------------------------------------------------------------
-
-def _js_conv_list(convs: list[dict]) -> str:
-    """Render a JS array literal from a list of conv dicts."""
-    items = []
-    for c in convs:
-        title_esc = c["title"].replace("\\", "\\\\").replace('"', '\\"').replace("\n", " ")
-        items.append(
-            f'  {{ file:"{c["file"]}", title:"{title_esc}", ts:{c["ts"]}, provider:"{c["provider"]}" }}'
-        )
-    return "[\n" + ",\n".join(items) + "\n]"
-
-
-# ---------------------------------------------------------------------------
-# HTML template
-# ---------------------------------------------------------------------------
-
-_HTML_TEMPLATE = """\
 <!DOCTYPE html>
 <html lang="en" class="dark">
 <head>
@@ -182,7 +23,198 @@ _HTML_TEMPLATE = """\
   }
 </script>
 <style>
-%%CSS%%
+/* SPA chrome — header, sidebar, menus, search, jump nav */
+
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #2a2d3a; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #3a3d4a; }
+
+.conv-item { border-left: 2px solid transparent; transition: all .15s; }
+.conv-item.active { background: #1c2035; border-left-color: #4a90e2; }
+.conv-item:hover { background: #161922; border-left-color: #2a3a5a; }
+.conv-item .remove-btn { opacity: 0; transition: opacity .15s; }
+.conv-item:hover .remove-btn { opacity: 1; }
+
+.jump-link { color: #4a5568; font-size: .72rem; transition: color .15s; }
+.jump-link:hover { color: #a0aec0; }
+.jump-link.active-heading { color: #4a90e2; }
+.jump-link.search-hit { color: #f59e0b !important; }
+.jump-link.search-hit::before { content: '◆ '; font-size: .55rem; vertical-align: middle; }
+
+/* User menu */
+#user-menu {
+  position: absolute; top: calc(100% + 6px); left: 0; width: 340px;
+  background: #111318; border: 1px solid #1f2937; border-radius: .6rem;
+  box-shadow: 0 8px 32px rgba(0,0,0,.65); z-index: 100; overflow: hidden;
+}
+#user-menu.hidden { display: none; }
+.menu-section { padding: .75rem 1rem; border-bottom: 1px solid #1a1f2e; }
+.menu-section:last-child { border-bottom: none; }
+.menu-section-title { font-size:.6rem; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:#4b5563; margin-bottom:.55rem; }
+.file-row { display:flex; align-items:center; gap:.5rem; padding:.28rem .4rem; border-radius:.3rem; transition:background .12s; }
+.file-row:hover { background:#161922; }
+.file-row .file-name { flex:1; font-size:.72rem; color:#9ca3af; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.file-row .file-status { font-size:.62rem; color:#4ade80; flex-none; }
+.file-action { font-size:.62rem; cursor:pointer; flex-none; padding:.15rem .4rem; border-radius:.25rem; border:1px solid transparent; transition:all .12s; }
+.file-action.add { color:#4a90e2; border-color:#1a3a5a; }
+.file-action.add:hover { background:#1a2a40; color:#6aace2; }
+.file-action.remove { color:#ef4444; border-color:#3a1a1a; }
+.file-action.remove:hover { background:#2a1010; color:#f87171; }
+
+/* Toggle row */
+.toggle-row { display:flex; align-items:center; justify-content:space-between; padding:.3rem 0; }
+.toggle-row label { font-size:.72rem; color:#9ca3af; cursor:pointer; }
+.toggle-switch { position:relative; width:28px; height:15px; flex-none; }
+.toggle-switch input { opacity:0; width:0; height:0; }
+.toggle-track {
+  position:absolute; inset:0; background:#1f2937; border-radius:99px;
+  cursor:pointer; transition:background .2s;
+}
+.toggle-switch input:checked + .toggle-track { background:#4a90e2; }
+.toggle-track::after {
+  content:''; position:absolute; left:2px; top:2px;
+  width:11px; height:11px; background:#fff; border-radius:50%; transition:transform .2s;
+}
+.toggle-switch input:checked + .toggle-track::after { transform:translateX(13px); }
+
+/* Sort controls */
+.sort-btn { font-size:.65rem; color:#4b5563; cursor:pointer; padding:.2rem .45rem; border-radius:.3rem; border:1px solid transparent; transition:all .12s; white-space:nowrap; }
+.sort-btn:hover { color:#9ca3af; border-color:#2a2d3a; }
+.sort-btn.active { color:#4a90e2; border-color:#1a3a5a; background:#0d1a2a; }
+
+/* Sidebar date label */
+.conv-date { font-size:.58rem; color:#374151; margin-top:.15rem; display:none; }
+body.show-ts .conv-date { display:block; }
+
+/* Provider filter buttons in settings menu */
+.provider-filter-btn { font-size:.65rem; cursor:pointer; padding:.2rem .5rem; border-radius:.3rem; border:1px solid transparent; transition:all .12s; white-space:nowrap; }
+.provider-filter-btn:hover { color:#9ca3af; border-color:#2a2d3a; }
+.provider-filter-btn.active { border-color:#1a3a5a; background:#0d1a2a; }
+.provider-filter-btn.active[data-p="deepseek"] { color:#4a90e2; border-color:#1a3a5a; }
+.provider-filter-btn.active[data-p="claude"]   { color:#a78bfa; border-color:#2a1a4a; background:#0e0a1a; }
+.provider-filter-btn.active[data-p="all"]      { color:#7c5cbf; border-color:#2a1a4a; background:#0d0a1a; }
+
+/* Provider dot in sidebar list */
+.provider-dot { display:inline-block; width:6px; height:6px; border-radius:50%; flex-shrink:0; vertical-align:middle; margin-right:.3rem; }
+.provider-dot[data-p="deepseek"] { background:#4a90e2; }
+.provider-dot[data-p="claude"]   { background:#a78bfa; }
+
+/* Search mode badge */
+#search-mode-badge {
+  display:none; font-size:.6rem; background:#2a1800; color:#f59e0b;
+  border:1px solid #4a3000; border-radius:3px; padding:.1rem .4rem; white-space:nowrap;
+}
+#search-mode-badge.active { display:inline-block; }
+
+/* Fade transition */
+@keyframes fadeIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:none; } }
+.fade-in { animation: fadeIn .22s ease; }
+
+/* Mobile sidebar */
+#sidebar-overlay { display: none; }
+@media (max-width: 768px) {
+  #sidebar { transform: translateX(-100%); transition: transform .2s; position: fixed; z-index: 40; height: 100vh; }
+  #sidebar.open { transform: translateX(0); }
+  #sidebar-overlay.active { display: block; position: fixed; inset: 0; background: rgba(0,0,0,.6); z-index: 30; }
+}
+
+
+/* Thread content area — base styles for #conv-content */
+
+#conv-content h1 { font-size: 1.5rem; font-weight: 700; color: #fff; margin-bottom: .25rem; }
+#conv-content h2 { font-size: 1.15rem; font-weight: 600; color: #d1d5db; margin: 1.2rem 0 .5rem; }
+#conv-content h3 { font-size: 1rem; font-weight: 600; color: #c4cad3; margin: 1rem 0 .4rem; }
+#conv-content h4 { font-size: .9rem; font-weight: 600; color: #9ca3af; margin: .8rem 0 .3rem; }
+#conv-content p  { margin-bottom: .75rem; line-height: 1.75; color: #d1d5db; }
+#conv-content ul, #conv-content ol { padding-left: 1.4rem; margin-bottom: .75rem; color: #d1d5db; }
+#conv-content li { margin-bottom: .25rem; line-height: 1.7; }
+#conv-content a  { color: #4a90e2; text-decoration: underline; text-underline-offset: 2px; }
+#conv-content blockquote { border-left: 3px solid #374151; padding-left: 1rem; color: #9ca3af; margin-bottom: .75rem; }
+#conv-content hr { border: none; border-top: 1px solid #1f2937; margin: 1.5rem 0; }
+#conv-content table { width: 100%; border-collapse: collapse; margin-bottom: .75rem; font-size: .85rem; }
+#conv-content th, #conv-content td { border: 1px solid #1f2937; padding: .35rem .65rem; color: #d1d5db; }
+#conv-content th { background: #161922; color: #9ca3af; }
+
+#conv-content pre {
+  background: #0a0c10; border: 1px solid #1f2937; border-radius: .5rem;
+  padding: 1rem 1.2rem; overflow-x: auto; font-size: .82rem; margin-bottom: .75rem;
+  font-family: "JetBrains Mono","Fira Code",monospace;
+  white-space: pre-wrap; word-break: break-word; line-height: 1.6; color: #e2e8f0;
+}
+#conv-content code {
+  background: #161922; border-radius: 3px; padding: .1em .35em;
+  font-size: .85em; font-family: "JetBrains Mono","Fira Code",monospace; color: #93c5fd;
+}
+#conv-content pre code { background: none; padding: 0; color: inherit; }
+
+#conv-content .message { margin-bottom: 1.5rem; border-radius: .625rem; padding: 1.1rem 1.4rem; }
+#conv-content .role-label {
+  font-size: .68rem; font-weight: 700; letter-spacing: .08em;
+  text-transform: uppercase; opacity: .6; margin-bottom: .5rem;
+}
+#conv-content .msg-time { font-size: .68rem; color: #4b5563; float: right; margin-top: .1rem; }
+
+/* Timestamp visibility — controlled by body class */
+#conv-content .msg-time { display: none; }
+body.show-ts #conv-content .msg-time { display: inline; }
+#conv-content .meta .ts-display { opacity: 0.5; }
+body.show-ts #conv-content .meta .ts-display { opacity: 1; }
+
+#conv-content .thinking {
+  background: #111108; border: 1px solid #2a2a18; border-radius: .45rem;
+  padding: .75rem 1rem; margin-bottom: .85rem; font-style: italic;
+  color: #6b7040; font-size: .84rem; line-height: 1.7;
+}
+#conv-content .thinking-label {
+  font-size: .65rem; font-weight: 700; letter-spacing: .08em;
+  text-transform: uppercase; color: #4a4a28; margin-bottom: .35rem;
+}
+
+#conv-content .search-block {
+  background: #0a1018; border: 1px dashed #1e3048; border-radius: .45rem;
+  padding: .65rem .9rem; margin-bottom: .75rem; font-size: .8rem; color: #5a8aaa;
+}
+#conv-content .search-block .search-label {
+  font-size: .65rem; font-weight: 700; letter-spacing: .08em;
+  text-transform: uppercase; color: #2a5a7a; margin-bottom: .35rem;
+}
+#conv-content .search-result { margin-top: .35rem; padding-left: .7rem; border-left: 2px solid #1a3a52; }
+#conv-content .search-result a { color: #4a80aa; text-decoration: none; }
+#conv-content .search-result a:hover { text-decoration: underline; }
+#conv-content .search-result .snippet { color: #445566; font-size: .77rem; }
+
+#conv-content .read-link-block {
+  background: #0a1214; border: 1px dashed #1a3030; border-radius: .45rem;
+  padding: .45rem .8rem; margin-bottom: .75rem; font-size: .78rem; color: #4a8888;
+}
+
+#conv-content .meta { font-size: .75rem; color: #4b5563; margin-bottom: 2rem; }
+
+.thinking-toggle { cursor: pointer; }
+.thinking-toggle summary { list-style: none; }
+.thinking-toggle summary::-webkit-details-marker { display: none; }
+
+mark { background: #3b2a00; color: #fbbf24; border-radius: 2px; padding: 0 2px; }
+mark.search-active { background: #7a4a00; outline: 1px solid #f59e0b; }
+
+
+/* DeepSeek provider — thread accent colour overrides */
+
+#conv-content.provider-deepseek .message.user    { background: #111827; border-left: 3px solid #4a90e2; }
+#conv-content.provider-deepseek .message.assistant { background: #0f1a0f; border-left: 3px solid #4ade80; }
+#conv-content.provider-deepseek .message.user .role-label    { color: #4a90e2; }
+#conv-content.provider-deepseek .message.assistant .role-label { color: #4ade80; }
+
+
+/* Claude provider — thread accent colour overrides */
+/* User: violet (#a78bfa) / Assistant: teal (#2dd4bf) — distinct hues, colourblind-safe */
+
+#conv-content.provider-claude .message.user      { background: #110f1a; border-left: 3px solid #a78bfa; }
+#conv-content.provider-claude .message.assistant { background: #0a1614; border-left: 3px solid #2dd4bf; }
+#conv-content.provider-claude .message.user .role-label      { color: #a78bfa; }
+#conv-content.provider-claude .message.assistant .role-label { color: #2dd4bf; }
+
 </style>
 </head>
 <body class="bg-[#0c0e14] text-gray-300 font-sans h-screen flex flex-col overflow-hidden">
@@ -212,7 +244,15 @@ _HTML_TEMPLATE = """\
     <!-- User menu -->
     <div id="user-menu" class="hidden">
       <!-- Provider filter -->
-      %%PROVIDER_MENU_SECTION%%
+            <div class="menu-section">
+        <div class="menu-section-title">Provider</div>
+        <div class="flex flex-wrap gap-1.5">
+          <button class="provider-filter-btn" data-p="deepseek">DeepSeek</button>
+          <button class="provider-filter-btn" data-p="claude">Claude</button>
+          <button class="provider-filter-btn" data-p="all">All</button>
+        </div>
+      </div>
+
 
       <!-- Sort controls -->
       <div class="menu-section">
@@ -220,8 +260,8 @@ _HTML_TEMPLATE = """\
         <div class="flex flex-wrap gap-1.5">
           <button class="sort-btn" data-sort="date-desc">Newest first</button>
           <button class="sort-btn" data-sort="date-asc">Oldest first</button>
-          <button class="sort-btn" data-sort="alpha-asc">A \u2192 Z</button>
-          <button class="sort-btn" data-sort="alpha-desc">Z \u2192 A</button>
+          <button class="sort-btn" data-sort="alpha-asc">A → Z</button>
+          <button class="sort-btn" data-sort="alpha-desc">Z → A</button>
         </div>
       </div>
 
@@ -250,7 +290,7 @@ _HTML_TEMPLATE = """\
       <svg class="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M17 11A6 6 0 105 11a6 6 0 0012 0z"/>
       </svg>
-      <input id="search-input" type="text" placeholder="Search conversations\u2026"
+      <input id="search-input" type="text" placeholder="Search conversations…"
         class="w-full bg-[#1c1f28] border border-gray-800 rounded-md py-1.5 pl-8 pr-3 text-xs text-gray-300 placeholder-gray-600 focus:outline-none focus:border-blue-700 focus:ring-1 focus:ring-blue-800">
     </div>
   </div>
@@ -295,7 +335,7 @@ _HTML_TEMPLATE = """\
     </div>
     <div id="loading-state" class="flex items-center justify-center h-full gap-2 opacity-40" style="display:none!important">
       <div class="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-      <span class="text-sm">Loading\u2026</span>
+      <span class="text-sm">Loading…</span>
     </div>
     <div id="conv-content" class="max-w-3xl mx-auto px-6 py-8 fade-in" style="display:none"></div>
   </main>
@@ -303,7 +343,14 @@ _HTML_TEMPLATE = """\
 
 <script>
 // ─── Data ───────────────────────────────────────────────────────────────────
-const ALL_CONVERSATIONS = %%ALL_CONVERSATIONS%%;
+const ALL_CONVERSATIONS = [
+  { file:"understanding-black-holes.html", title:"Understanding Black Holes", ts:1748975400000, provider:"deepseek" },
+  { file:"writing-a-python-web-scraper.html", title:"Writing a Python Web Scraper", ts:1748872800000, provider:"deepseek" },
+  { file:"explaining-photosynthesis.html", title:"Explaining Photosynthesis", ts:1748768400000, provider:"deepseek" },
+  { file:"debugging-a-memory-leak-in-nodejs.html", title:"Debugging a Memory Leak in Node.js", ts:1749369600000, provider:"claude" },
+  { file:"designing-a-rest-api-for-a-todo-app.html", title:"Designing a REST API for a Todo App", ts:1749222000000, provider:"claude" },
+  { file:"how-git-branching-works.html", title:"How Git Branching Works", ts:1749117600000, provider:"claude" }
+];
 
 // ─── Persistence ────────────────────────────────────────────────────────────
 const LS = {
@@ -321,7 +368,7 @@ const LS = {
   saveHidden(s) { try { localStorage.setItem(this.KEY_HIDDEN,JSON.stringify([...s])); } catch{} },
   getPrefs()    { try { return Object.assign({sort:'date-desc',showTs:false}, JSON.parse(localStorage.getItem(this.KEY_PREFS)||'{}')); } catch{return {sort:'date-desc',showTs:false};} },
   savePrefs(p)  { try { localStorage.setItem(this.KEY_PREFS,JSON.stringify(p)); } catch{} },
-  getProvider() { return localStorage.getItem(this.KEY_PROVIDER)||'%%DEFAULT_PROVIDER%%'; },
+  getProvider() { return localStorage.getItem(this.KEY_PROVIDER)||'all'; },
   saveProvider(p){ try { localStorage.setItem(this.KEY_PROVIDER,p); } catch{} },
 };
 
@@ -363,7 +410,7 @@ const toggleTs         = document.getElementById('toggle-ts');
 function fileKey(conv) { return conv.provider + ':' + conv.file; }
 function pathFor(conv)  { return conv.provider + '/' + conv.file; }
 
-const PROVIDER_LABELS = %%PROVIDER_LABELS%%;
+const PROVIDER_LABELS = {"deepseek":"DeepSeek","claude":"Claude"};
 const headerTitle = document.getElementById('header-title');
 
 function updateHeaderTitle(p) {
@@ -374,7 +421,7 @@ function escHtml(s) {
   return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-function escapeRegex(s) { return s.replace(/[.*+?^${}()|[\\]\\\\]/g,'\\\\$&'); }
+function escapeRegex(s) { return s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'); }
 
 function fmtTs(ts) {
   if (!ts) return '';
@@ -469,7 +516,7 @@ function renderList(searchHits) {
     li.className = 'conv-item rounded-md px-2.5 py-2 cursor-pointer' + (isActive ? ' active' : '');
     li.dataset.idx = i;
 
-    const short = conv.title.length > 36 ? conv.title.slice(0,34) + '\u2026' : conv.title;
+    const short = conv.title.length > 36 ? conv.title.slice(0,34) + '…' : conv.title;
     const hits   = searchHits && searchHits.has(i);
     const dateStr = fmtTs(conv.ts);
     const dot    = activeProvider === 'all'
@@ -479,7 +526,7 @@ function renderList(searchHits) {
       '<div class="flex items-center gap-1">' +
         dot +
         '<span class="block text-xs leading-snug text-gray-300 flex-1">' + escHtml(short) + '</span>' +
-        (hits ? '<span class="text-[.58rem] text-amber-500 flex-none">' + searchHits.get(i).length + '\u00d7</span>' : '') +
+        (hits ? '<span class="text-[.58rem] text-amber-500 flex-none">' + searchHits.get(i).length + '×</span>' : '') +
         '<button class="remove-btn text-gray-700 hover:text-red-500 p-0.5 rounded" title="Remove" data-idx="' + i + '">' +
           '<svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">' +
             '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>' +
@@ -488,7 +535,7 @@ function renderList(searchHits) {
       '</div>' +
       '<div class="conv-date">' + dateStr + '</div>' +
       (hits ? '<div class="mt-0.5 space-y-0.5">' + searchHits.get(i).slice(0,2).map(s =>
-        '<div class="text-[.6rem] text-amber-700/80 leading-snug line-clamp-1 pl-1 border-l border-amber-900">\u2026' + escHtml(s) + '\u2026</div>'
+        '<div class="text-[.6rem] text-amber-700/80 leading-snug line-clamp-1 pl-1 border-l border-amber-900">…' + escHtml(s) + '…</div>'
       ).join('') + '</div>' : '');
 
     li.setAttribute('title', conv.title);
@@ -526,14 +573,14 @@ function renderMenuFileList() {
   allConvs.forEach(conv => {
     const key     = fileKey(conv);
     const visible = !hiddenFiles.has(key);
-    const short   = conv.title.length > 36 ? conv.title.slice(0,34) + '\u2026' : conv.title;
+    const short   = conv.title.length > 36 ? conv.title.slice(0,34) + '…' : conv.title;
     const dot     = '<span class="provider-dot" data-p="' + conv.provider + '" style="display:inline-block;margin-right:.25rem"></span>';
     const row = document.createElement('div');
     row.className = 'file-row';
     row.innerHTML =
       '<span class="file-name" title="' + escHtml(conv.title) + '">' + dot + escHtml(short) + '</span>' +
       (visible
-        ? '<span class="file-status">\u2713</span><button class="file-action remove" data-key="' + key + '">Remove</button>'
+        ? '<span class="file-status">✓</span><button class="file-action remove" data-key="' + key + '">Remove</button>'
         : '<button class="file-action add" data-key="' + key + '">Add</button>');
     menuFileList.appendChild(row);
   });
@@ -610,7 +657,7 @@ async function handleSearch() {
       while (snippets.length < 3) {
         const pos = tl.indexOf(lq, idx2);
         if (pos === -1) break;
-        snippets.push(text.slice(Math.max(0,pos-28), Math.min(text.length,pos+lq.length+28)).replace(/\\n+/g,' ').trim());
+        snippets.push(text.slice(Math.max(0,pos-28), Math.min(text.length,pos+lq.length+28)).replace(/\n+/g,' ').trim());
         idx2 = pos + lq.length;
       }
       searchHits.set(i, snippets);
@@ -695,23 +742,23 @@ function buildJumpNav() {
   const items = [];
 
   userMsgs.forEach((msg, i) => {
-    const text = msg.textContent.trim().replace(/^YOU\\s*/i,'').slice(0,52);
+    const text = msg.textContent.trim().replace(/^YOU\s*/i,'').slice(0,52);
     const label = text || ('Turn ' + (i+1));
     const id = 'jump-msg-' + i;
     msg.id = id;
-    items.push({ id, label: label.length>50 ? label.slice(0,48)+'\u2026' : label });
+    items.push({ id, label: label.length>50 ? label.slice(0,48)+'…' : label });
   });
 
   convContent.querySelectorAll('.message.assistant h2, .message.assistant h3').forEach((h,i) => {
     const text = h.textContent.trim().slice(0,52);
     const id = 'jump-h-' + i; h.id = id;
-    if (text.length > 3) items.push({ id, label: text.length>50?text.slice(0,48)+'\u2026':text, isHeading:true });
+    if (text.length > 3) items.push({ id, label: text.length>50?text.slice(0,48)+'…':text, isHeading:true });
   });
 
   if (items.length === 0) return;
   items.forEach(item => {
     const li = document.createElement('li');
-    li.innerHTML = '<a href="#' + item.id + '" class="jump-link block px-2.5 py-1 rounded truncate' + (item.isHeading?' pl-5 italic':'') + '" data-target="' + item.id + '" title="' + escHtml(item.label) + '">' + (item.isHeading?'\u21b3 ':'') + escHtml(item.label) + '</a>';
+    li.innerHTML = '<a href="#' + item.id + '" class="jump-link block px-2.5 py-1 rounded truncate' + (item.isHeading?' pl-5 italic':'') + '" data-target="' + item.id + '" title="' + escHtml(item.label) + '">' + (item.isHeading?'↳ ':'') + escHtml(item.label) + '</a>';
     li.querySelector('a').addEventListener('click', e => { e.preventDefault(); scrollToTarget(item.id, li.querySelector('a')); });
     jumpNav.appendChild(li);
   });
@@ -732,10 +779,10 @@ function buildJumpNavWithSearchHits(q) {
     if (marks.length === 0) return;
     const msgId = msg.id || ('jump-m-' + i); msg.id = msgId;
     const labelEl = msg.querySelector('.role-label');
-    const rawText = (labelEl ? msg.textContent.replace(labelEl.textContent,'') : msg.textContent).trim().replace(/\\n+/g,' ');
-    const label = rawText.slice(0,46) + (rawText.length>46?'\u2026':'');
+    const rawText = (labelEl ? msg.textContent.replace(labelEl.textContent,'') : msg.textContent).trim().replace(/\n+/g,' ');
+    const label = rawText.slice(0,46) + (rawText.length>46?'…':'');
     const li = document.createElement('li');
-    li.innerHTML = '<a href="#' + msgId + '" class="jump-link search-hit block px-2.5 py-1 rounded truncate" data-target="' + msgId + '" title="' + escHtml(label) + '"><span class="text-[.58rem] text-amber-600 mr-0.5">' + marks.length + '\u00d7</span>' + escHtml(label) + '</a>';
+    li.innerHTML = '<a href="#' + msgId + '" class="jump-link search-hit block px-2.5 py-1 rounded truncate" data-target="' + msgId + '" title="' + escHtml(label) + '"><span class="text-[.58rem] text-amber-600 mr-0.5">' + marks.length + '×</span>' + escHtml(label) + '</a>';
     li.querySelector('a').addEventListener('click', e => {
       e.preventDefault(); scrollToTarget(msgId, li.querySelector('a'));
       const fm = msg.querySelector('mark');
@@ -915,91 +962,3 @@ if (lastFile) {
 </script>
 </body>
 </html>
-"""
-
-
-# ---------------------------------------------------------------------------
-# Public API
-# ---------------------------------------------------------------------------
-
-def build_spa(
-    output_dir: Path,
-    config_path: Path | None = None,
-    providers: list[str] | None = None,
-) -> str:
-    """
-    Build the SPA HTML string.
-
-    Args:
-        output_dir:  root output directory (contains provider subdirs)
-        config_path: path to spa.toml; defaults to output_dir/../../config/spa.toml
-        providers:   list of providers to include; defaults to all with HTML files
-    """
-    # Resolve config
-    if config_path is None:
-        config_path = output_dir.parent / "config" / "spa.toml"
-        if not config_path.exists():
-            # Try sibling config/ (when output_dir is inside the project)
-            config_path = Path(__file__).parent.parent / "config" / "spa.toml"
-
-    config   = load_config(config_path)
-    base_dir = Path(__file__).parent.parent  # project root
-
-    if providers is None:
-        providers = [p for p in PROVIDERS if (output_dir / p).is_dir()
-                     and any(f for f in (output_dir / p).glob("*.html") if f.name != "index.html")]
-
-    # Collect conversations per provider
-    all_convs       = []
-    found_providers = []
-    for p in providers:
-        convs = scan_provider(output_dir, p)
-        if convs:
-            all_convs.extend(convs)
-            found_providers.append(p)
-
-    if not all_convs:
-        raise ValueError(
-            f"No HTML conversations found in {output_dir} for providers: {providers}"
-        )
-
-    default_provider = found_providers[0] if len(found_providers) == 1 else "all"
-
-    # Build provider filter section for settings menu
-    if len(found_providers) > 1:
-        btns = []
-        for p in found_providers:
-            label = config["providers"].get(p, {}).get("label") or PROVIDER_LABELS.get(p, p.title())
-            btns.append(f'          <button class="provider-filter-btn" data-p="{p}">{label}</button>')
-        btns.append(f'          <button class="provider-filter-btn" data-p="all">All</button>')
-        provider_section = (
-            '      <div class="menu-section">\n'
-            '        <div class="menu-section-title">Provider</div>\n'
-            '        <div class="flex flex-wrap gap-1.5">\n'
-            + "\n".join(btns) + "\n"
-            "        </div>\n"
-            "      </div>\n"
-        )
-    else:
-        provider_section = ""  # Single provider — no filter needed
-
-    # Load CSS from templates
-    css = load_css_templates(config, base_dir)
-
-    js_data = _js_conv_list(all_convs)
-
-    # Build JS provider labels object: { deepseek: "DeepSeek", claude: "Claude", ... }
-    label_pairs = []
-    for p in found_providers:
-        label = config["providers"].get(p, {}).get("label") or PROVIDER_LABELS.get(p, p.title())
-        label_pairs.append(f'"{p}":"{label}"')
-    js_provider_labels = "{" + ",".join(label_pairs) + "}"
-
-    html = _HTML_TEMPLATE
-    html = html.replace("%%CSS%%", css)
-    html = html.replace("%%PROVIDER_MENU_SECTION%%", provider_section)
-    html = html.replace("%%ALL_CONVERSATIONS%%", js_data)
-    html = html.replace("%%DEFAULT_PROVIDER%%", default_provider)
-    html = html.replace("%%PROVIDER_LABELS%%", js_provider_labels)
-
-    return html

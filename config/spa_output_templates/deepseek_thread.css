@@ -1,0 +1,6 @@
+/* DeepSeek provider — thread accent colour overrides */
+
+#conv-content.provider-deepseek .message.user    { background: #111827; border-left: 3px solid #4a90e2; }
+#conv-content.provider-deepseek .message.assistant { background: #0f1a0f; border-left: 3px solid #4ade80; }
+#conv-content.provider-deepseek .message.user .role-label    { color: #4a90e2; }
+#conv-content.provider-deepseek .message.assistant .role-label { color: #4ade80; }

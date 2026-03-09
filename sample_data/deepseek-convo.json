@@ -1,0 +1,265 @@
+[
+  {
+    "id": "ds-sample-001",
+    "title": "Explaining Photosynthesis",
+    "inserted_at": "2025-06-01T09:00:00.000Z",
+    "updated_at": "2025-06-01T09:05:30.000Z",
+    "mapping": {
+      "root": {
+        "id": "root",
+        "parent": null,
+        "children": ["ds-msg-001"],
+        "message": null
+      },
+      "ds-msg-001": {
+        "id": "ds-msg-001",
+        "parent": "root",
+        "children": ["ds-msg-002"],
+        "message": {
+          "files": [],
+          "model": null,
+          "inserted_at": "2025-06-01T09:00:00.000Z",
+          "fragments": [
+            {
+              "type": "REQUEST",
+              "content": "Can you explain how photosynthesis works in simple terms?"
+            }
+          ]
+        }
+      },
+      "ds-msg-002": {
+        "id": "ds-msg-002",
+        "parent": "ds-msg-001",
+        "children": ["ds-msg-003"],
+        "message": {
+          "files": [],
+          "model": "deepseek-chat",
+          "inserted_at": "2025-06-01T09:00:08.000Z",
+          "fragments": [
+            {
+              "type": "THINK",
+              "content": "The user wants a simple explanation of photosynthesis. I should cover the key inputs (light, CO2, water), the outputs (glucose, oxygen), and where it happens (chloroplasts). Keep it accessible."
+            },
+            {
+              "type": "RESPONSE",
+              "content": "Photosynthesis is the process plants use to make their own food. Here's the simplified version:\n\n## The basic idea\n\nPlants capture **sunlight** and use it to convert carbon dioxide (CO₂) from the air and **water** from the soil into **glucose** (sugar) and **oxygen**.\n\n## The equation\n\n```\n6CO₂ + 6H₂O + light energy → C₆H₁₂O₆ + 6O₂\n```\n\n## Where it happens\n\nThis process takes place inside **chloroplasts** — tiny green structures in plant cells. Chloroplasts contain a pigment called **chlorophyll**, which gives plants their green color and is what actually absorbs sunlight.\n\n## Two main stages\n\n1. **Light-dependent reactions** — happen in the thylakoid membranes, use sunlight to split water and produce ATP (energy currency).\n2. **Calvin cycle** — happens in the stroma, uses that ATP to build glucose from CO₂.\n\nIn short: plants eat sunlight and breathe out oxygen. The glucose they produce fuels their growth and everything they do."
+            }
+          ]
+        }
+      },
+      "ds-msg-003": {
+        "id": "ds-msg-003",
+        "parent": "ds-msg-002",
+        "children": ["ds-msg-004"],
+        "message": {
+          "files": [],
+          "model": null,
+          "inserted_at": "2025-06-01T09:03:00.000Z",
+          "fragments": [
+            {
+              "type": "REQUEST",
+              "content": "What would happen to photosynthesis if the amount of CO₂ in the atmosphere doubled?"
+            }
+          ]
+        }
+      },
+      "ds-msg-004": {
+        "id": "ds-msg-004",
+        "parent": "ds-msg-003",
+        "children": [],
+        "message": {
+          "files": [],
+          "model": "deepseek-chat",
+          "inserted_at": "2025-06-01T09:03:12.000Z",
+          "fragments": [
+            {
+              "type": "THINK",
+              "content": "The CO2 fertilization effect is well-studied. Higher CO2 generally increases photosynthesis rates up to a point (CO2 saturation), but other factors like temperature, water, and nutrients become limiting. I should mention both the short-term boost and the longer-term caveats."
+            },
+            {
+              "type": "SEARCH",
+              "results": [
+                {
+                  "url": "https://example.com/co2-fertilization",
+                  "title": "CO₂ Fertilization Effect — Overview",
+                  "snippet": "Elevated CO₂ concentrations can increase plant growth by up to 30–50% under ideal conditions, a phenomenon known as the CO₂ fertilization effect.",
+                  "cite_index": 1
+                },
+                {
+                  "url": "https://example.com/photosynthesis-limits",
+                  "title": "Limiting Factors in Photosynthesis",
+                  "snippet": "Beyond a saturation point, additional CO₂ provides no further benefit; light intensity, temperature, and water availability become the primary constraints.",
+                  "cite_index": 2
+                }
+              ]
+            },
+            {
+              "type": "RESPONSE",
+              "content": "Great question! Doubling atmospheric CO₂ would have a notable but nuanced effect on photosynthesis:\n\n### Short-term boost (CO₂ fertilization)\n\n- More CO₂ means more raw material for the Calvin cycle, so photosynthesis rates generally **increase** — up to ~30–50% under ideal conditions.\n- Plants may also partially close their stomata (the pores they breathe through), reducing water loss while maintaining the same carbon uptake.\n\n### Why it doesn't keep scaling\n\nOther factors quickly become the bottleneck:\n\n| Limiting factor | Effect |\n|---|---|\n| Light | No extra CO₂ helps if there isn't enough sunlight |\n| Water | Drought negates the stomatal benefit |\n| Nutrients | Plants need nitrogen, phosphorus, etc. to grow more |\n| Temperature | Photosynthetic enzymes (like RuBisCO) have optimal ranges |\n\n### Real-world complexity\n\n- Not all plants benefit equally. **C3 plants** (wheat, rice, trees) gain more than **C4 plants** (corn, sugarcane), which already concentrate CO₂ internally.\n- Faster growth may dilute the **nutritional density** of crops (lower protein and mineral content per gram).\n- The overall climate warming caused by higher CO₂ would partially offset gains.\n\nSo: a short-term win for photosynthesis, but with significant caveats when the full picture is considered."
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "id": "ds-sample-002",
+    "title": "Writing a Python Web Scraper",
+    "inserted_at": "2025-06-02T14:00:00.000Z",
+    "updated_at": "2025-06-02T14:10:45.000Z",
+    "mapping": {
+      "root": {
+        "id": "root",
+        "parent": null,
+        "children": ["ds-msg-010"],
+        "message": null
+      },
+      "ds-msg-010": {
+        "id": "ds-msg-010",
+        "parent": "root",
+        "children": ["ds-msg-011"],
+        "message": {
+          "files": [],
+          "model": null,
+          "inserted_at": "2025-06-02T14:00:00.000Z",
+          "fragments": [
+            {
+              "type": "REQUEST",
+              "content": "How do I write a basic web scraper in Python that extracts all links from a page?"
+            }
+          ]
+        }
+      },
+      "ds-msg-011": {
+        "id": "ds-msg-011",
+        "parent": "ds-msg-010",
+        "children": ["ds-msg-012"],
+        "message": {
+          "files": [],
+          "model": "deepseek-coder",
+          "inserted_at": "2025-06-02T14:00:09.000Z",
+          "fragments": [
+            {
+              "type": "RESPONSE",
+              "content": "Here's a minimal Python web scraper using `requests` and `BeautifulSoup`:\n\n## Install dependencies\n\n```bash\npip install requests beautifulsoup4\n```\n\n## The scraper\n\n```python\nimport requests\nfrom bs4 import BeautifulSoup\nfrom urllib.parse import urljoin\n\ndef get_links(url: str) -> list[str]:\n    \"\"\"Fetch a page and return all absolute links found in it.\"\"\"\n    response = requests.get(url, timeout=10)\n    response.raise_for_status()\n\n    soup = BeautifulSoup(response.text, \"html.parser\")\n    links = []\n\n    for tag in soup.find_all(\"a\", href=True):\n        absolute = urljoin(url, tag[\"href\"])\n        links.append(absolute)\n\n    return links\n\n\nif __name__ == \"__main__\":\n    target = \"https://example.com\"\n    found = get_links(target)\n    for link in found:\n        print(link)\n```\n\n## What it does\n\n1. **`requests.get`** — downloads the HTML of the page.\n2. **`BeautifulSoup`** — parses the HTML into a searchable tree.\n3. **`soup.find_all(\"a\", href=True)`** — finds every `<a>` tag that has an `href` attribute.\n4. **`urljoin`** — converts relative paths like `/about` into full URLs.\n\n## Tips\n\n- Always check a site's `robots.txt` and terms of service before scraping.\n- Add delays between requests to avoid overloading servers.\n- For JavaScript-heavy pages, consider `playwright` or `selenium` instead."
+            }
+          ]
+        }
+      },
+      "ds-msg-012": {
+        "id": "ds-msg-012",
+        "parent": "ds-msg-011",
+        "children": ["ds-msg-013"],
+        "message": {
+          "files": [],
+          "model": null,
+          "inserted_at": "2025-06-02T14:07:00.000Z",
+          "fragments": [
+            {
+              "type": "REQUEST",
+              "content": "How would I extend this to only keep links pointing to the same domain?"
+            }
+          ]
+        }
+      },
+      "ds-msg-013": {
+        "id": "ds-msg-013",
+        "parent": "ds-msg-012",
+        "children": [],
+        "message": {
+          "files": [],
+          "model": "deepseek-coder",
+          "inserted_at": "2025-06-02T14:07:08.000Z",
+          "fragments": [
+            {
+              "type": "RESPONSE",
+              "content": "Use `urllib.parse.urlparse` to compare the `netloc` (domain) of each link against the starting URL:\n\n```python\nfrom urllib.parse import urljoin, urlparse\n\ndef get_same_domain_links(url: str) -> list[str]:\n    \"\"\"Return only links that share the same domain as the input URL.\"\"\"\n    base_domain = urlparse(url).netloc\n\n    response = requests.get(url, timeout=10)\n    response.raise_for_status()\n    soup = BeautifulSoup(response.text, \"html.parser\")\n\n    links = []\n    for tag in soup.find_all(\"a\", href=True):\n        absolute = urljoin(url, tag[\"href\"])\n        if urlparse(absolute).netloc == base_domain:\n            links.append(absolute)\n\n    return list(set(links))  # deduplicate\n```\n\nThe key addition is:\n\n```python\nbase_domain = urlparse(url).netloc           # e.g. \"example.com\"\nif urlparse(absolute).netloc == base_domain:  # only keep same-domain links\n```\n\nWrapping in `set()` at the end removes any duplicates (the same link appearing multiple times on the page)."
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "id": "ds-sample-003",
+    "title": "Understanding Black Holes",
+    "inserted_at": "2025-06-03T18:30:00.000Z",
+    "updated_at": "2025-06-03T18:40:00.000Z",
+    "mapping": {
+      "root": {
+        "id": "root",
+        "parent": null,
+        "children": ["ds-msg-020"],
+        "message": null
+      },
+      "ds-msg-020": {
+        "id": "ds-msg-020",
+        "parent": "root",
+        "children": ["ds-msg-021"],
+        "message": {
+          "files": [],
+          "model": null,
+          "inserted_at": "2025-06-03T18:30:00.000Z",
+          "fragments": [
+            {
+              "type": "REQUEST",
+              "content": "What is a black hole and why can't light escape from it?"
+            }
+          ]
+        }
+      },
+      "ds-msg-021": {
+        "id": "ds-msg-021",
+        "parent": "ds-msg-020",
+        "children": ["ds-msg-022"],
+        "message": {
+          "files": [],
+          "model": "deepseek-chat",
+          "inserted_at": "2025-06-03T18:30:11.000Z",
+          "fragments": [
+            {
+              "type": "THINK",
+              "content": "The user wants an intuitive explanation of black holes and the escape velocity concept. I should explain event horizons, escape velocity reaching c, and Schwarzschild radius without getting too deep into tensor equations."
+            },
+            {
+              "type": "RESPONSE",
+              "content": "A **black hole** is a region of space where gravity is so intense that nothing — not even light — can escape once it crosses a boundary called the **event horizon**.\n\n## How do black holes form?\n\nMost black holes form when a massive star (more than ~20× the mass of the Sun) runs out of nuclear fuel and collapses under its own gravity. The core compresses into an incredibly dense point called a **singularity**.\n\n## Why can't light escape?\n\nThe key concept is **escape velocity** — the speed you need to break free from a gravitational field.\n\n- To escape Earth, you need to travel ~11 km/s.\n- Near a black hole, the escape velocity exceeds **the speed of light (299,792 km/s)**.\n- Since nothing travels faster than light, nothing gets out.\n\nThe radius at which escape velocity equals the speed of light is called the **Schwarzschild radius**. For the Sun, it would be about 3 km — crush the entire Sun into a sphere 3 km across and you'd have a black hole.\n\n## The event horizon\n\nThe event horizon isn't a physical surface — it's just the \"point of no return.\" If you were falling in, you wouldn't feel anything special as you crossed it. But from the outside, you'd appear frozen in time due to extreme **gravitational time dilation** (a prediction of general relativity).\n\n## Types of black holes\n\n| Type | Mass |\n|---|---|\n| Stellar | ~3–100 solar masses |\n| Intermediate | ~100–100,000 solar masses |\n| Supermassive | Millions to billions of solar masses |\n\nThe black hole at the center of our galaxy, **Sagittarius A\\***, is about 4 million times the mass of the Sun."
+            }
+          ]
+        }
+      },
+      "ds-msg-022": {
+        "id": "ds-msg-022",
+        "parent": "ds-msg-021",
+        "children": ["ds-msg-023"],
+        "message": {
+          "files": [],
+          "model": null,
+          "inserted_at": "2025-06-03T18:37:00.000Z",
+          "fragments": [
+            {
+              "type": "REQUEST",
+              "content": "Does anything ever come out of a black hole? I heard something about Hawking radiation."
+            }
+          ]
+        }
+      },
+      "ds-msg-023": {
+        "id": "ds-msg-023",
+        "parent": "ds-msg-022",
+        "children": [],
+        "message": {
+          "files": [],
+          "model": "deepseek-chat",
+          "inserted_at": "2025-06-03T18:37:14.000Z",
+          "fragments": [
+            {
+              "type": "RESPONSE",
+              "content": "You heard right! **Hawking radiation** is a fascinating theoretical prediction by physicist Stephen Hawking (1974).\n\n## The quantum trick\n\nQuantum mechanics tells us that even \"empty\" space is filled with pairs of **virtual particles** constantly popping into and out of existence. Normally they annihilate each other immediately.\n\nNear the event horizon, something strange happens:\n\n1. A particle pair forms right at the edge.\n2. One particle falls **into** the black hole.\n3. The other escapes as **real radiation**.\n\nThe black hole effectively loses a tiny bit of mass to compensate — it \"pays\" for the escaping particle.\n\n## Implications\n\n- Black holes very slowly **evaporate** over astronomical timescales.\n- A stellar-mass black hole would take ~10⁶⁷ years to evaporate — far longer than the current age of the universe.\n- Tiny primordial black holes (if they exist) could be evaporating right now.\n\n## The information paradox\n\nHawking radiation is essentially **thermal** — it carries no information about what fell in. This creates a famous unsolved problem: if a black hole evaporates completely, what happened to all the information about the matter that formed it? This \"black hole information paradox\" is still actively debated in theoretical physics.\n\n> **Note:** Hawking radiation has never been directly observed — the signal from a stellar-mass black hole is far too faint to detect with current technology. It remains a theoretical prediction."
+            }
+          ]
+        }
+      }
+    }
+  }
+]
