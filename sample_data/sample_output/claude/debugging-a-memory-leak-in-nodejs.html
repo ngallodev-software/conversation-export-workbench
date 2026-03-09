@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Debugging a Memory Leak in Node.js</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: #0f1117;
+    color: #e0e0e0;
+    line-height: 1.7;
+    padding: 2rem 1rem;
+  }
+  .container { max-width: 860px; margin: 0 auto; }
+  h1 {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 0.3rem;
+  }
+  .meta {
+    font-size: 0.8rem;
+    color: #666;
+    margin-bottom: 2.5rem;
+  }
+  .message {
+    margin-bottom: 1.8rem;
+    border-radius: 10px;
+    padding: 1.2rem 1.5rem;
+    position: relative;
+  }
+  .message.user {
+    background: #1a1f2e;
+    border-left: 3px solid #4a90e2;
+  }
+  .message.assistant {
+    background: #141a14;
+    border-left: 3px solid #5cb85c;
+  }
+  .role-label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 0.6rem;
+    opacity: 0.6;
+  }
+  .message.user .role-label { color: #4a90e2; }
+  .message.assistant .role-label { color: #5cb85c; }
+  .msg-time {
+    font-size: 0.72rem;
+    color: #555;
+    float: right;
+    margin-top: 0.1rem;
+  }
+  .thinking {
+    background: #1a1a10;
+    border: 1px solid #3a3a20;
+    border-radius: 6px;
+    padding: 0.8rem 1.1rem;
+    margin-bottom: 1rem;
+    font-style: italic;
+    color: #999;
+    font-size: 0.88rem;
+  }
+  .thinking-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #6a6a40;
+    margin-bottom: 0.4rem;
+  }
+  .search-block {
+    background: #111820;
+    border: 1px dashed #2a3a50;
+    border-radius: 6px;
+    padding: 0.7rem 1rem;
+    margin-bottom: 0.8rem;
+    font-size: 0.82rem;
+    color: #7a9fc0;
+  }
+  .search-block .search-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #3a6a90;
+    margin-bottom: 0.4rem;
+  }
+  .search-result {
+    margin-top: 0.4rem;
+    padding-left: 0.8rem;
+    border-left: 2px solid #2a4a60;
+  }
+  .search-result a { color: #5a9fc0; text-decoration: none; }
+  .search-result a:hover { text-decoration: underline; }
+  .search-result .snippet { color: #668; font-size: 0.8rem; }
+  .read-link-block {
+    background: #11181a;
+    border: 1px dashed #2a4040;
+    border-radius: 6px;
+    padding: 0.5rem 0.9rem;
+    margin-bottom: 0.8rem;
+    font-size: 0.8rem;
+    color: #6ab;
+  }
+  .content p { margin-bottom: 0.8rem; }
+  .content pre {
+    background: #0a0a0a;
+    border: 1px solid #2a2a2a;
+    border-radius: 6px;
+    padding: 1rem;
+    overflow-x: auto;
+    font-size: 0.85rem;
+    margin-bottom: 0.8rem;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .content code {
+    background: #1a1a1a;
+    border-radius: 3px;
+    padding: 0.1em 0.35em;
+    font-size: 0.87em;
+    font-family: "JetBrains Mono", "Fira Code", monospace;
+  }
+  .content pre code { background: none; padding: 0; }
+  .content h1, .content h2, .content h3, .content h4 {
+    color: #d0d0d0;
+    margin: 1rem 0 0.5rem;
+  }
+  .content ul, .content ol {
+    padding-left: 1.5rem;
+    margin-bottom: 0.8rem;
+  }
+  .content li { margin-bottom: 0.3rem; }
+  .content blockquote {
+    border-left: 3px solid #444;
+    padding-left: 1rem;
+    color: #999;
+    margin-bottom: 0.8rem;
+  }
+  .content table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 0.8rem;
+    font-size: 0.88rem;
+  }
+  .content th, .content td {
+    border: 1px solid #2a2a2a;
+    padding: 0.4rem 0.7rem;
+  }
+  .content th { background: #1a1a1a; }
+  .content hr { border: none; border-top: 1px solid #2a2a2a; margin: 1rem 0; }
+  .content a { color: #4a90e2; }
+  .divider {
+    border: none;
+    border-top: 1px solid #1e1e1e;
+    margin: 2rem 0;
+  }
+  #index { margin-bottom: 2.5rem; }
+  #index h2 { font-size: 1rem; color: #888; margin-bottom: 0.8rem; }
+  #index ul { list-style: none; padding: 0; }
+  #index li { margin-bottom: 0.4rem; }
+  #index a { color: #4a90e2; text-decoration: none; font-size: 0.9rem; }
+  #index a:hover { text-decoration: underline; }
+  .conv-header { margin: 3rem 0 1rem; }
+  .conv-header h2 { font-size: 1.25rem; color: #ccc; }
+</style>
+</head>
+<body>
+<div class="container">
+<h1>Debugging a Memory Leak in Node.js</h1>
+<div class="meta" data-started-ts="1749369600000" data-updated-ts="1749370800000" data-started-iso="2025-06-08T08:00:00.000000Z" data-updated-iso="2025-06-08T08:20:00.000000Z">Started <span class="ts-display">2025-06-08 08:00</span> &nbsp;·&nbsp; Last updated <span class="ts-display">2025-06-08 08:20</span></div>
+<div class="message user" data-ts="1749369600000" data-ts-iso="2025-06-08T08:00:00.000000Z"><div class="role-label">You <span class="msg-time ts-display" data-ts="1749369600000" data-ts-iso="2025-06-08T08:00:00.000000Z">2025-06-08 08:00</span></div><div class="content"><p>My Node.js server's memory usage keeps growing over time and eventually crashes. How do I find the memory leak?</p></div></div>
+<div class="message assistant" data-ts="1749369618000" data-ts-iso="2025-06-08T08:00:18.000000Z"><div class="role-label">Claude <span class="msg-time ts-display" data-ts="1749369618000" data-ts-iso="2025-06-08T08:00:18.000000Z">2025-06-08 08:00</span></div><div class="thinking"><div class="thinking-label">Thinking</div>The user has a Node.js memory leak. I should cover: how to detect and confirm a leak (heap snapshots, process.memoryUsage), common causes (event listener accumulation, closure references, caches without eviction, timers), and tools (Chrome DevTools heap profiler, node --inspect, clinic.js). Give actionable steps.</div>
+<div class="content"><p>Memory leaks in Node.js are almost always caused by <strong>unintentional object references</strong> that prevent the garbage collector from freeing memory. Here's how to find and fix them:</p>
+<h2>Step 1: Confirm it's actually a leak</h2>
+<p>First, monitor heap usage over time:</p>
+<p><pre><code class="language-javascript">// Add this to your server and watch the output setInterval(() =&gt; {   const { heapUsed, heapTotal } = process.memoryUsage();   console.log(<code>Heap: ${Math.round(heapUsed / 1024 / 1024)}MB used / ${Math.round(heapTotal / 1024 / 1024)}MB total</code>); }, 5000); </code></pre></p>
+<p>If <code>heapUsed</code> grows steadily and never comes back down, you have a leak.</p>
+<h2>Step 2: Take heap snapshots</h2>
+<p>Run your server with the inspector:</p>
+<p><pre><code class="language-bash">node --inspect server.js </code></pre></p>
+<p>Open Chrome → navigate to <code>chrome://inspect</code> → click <strong>Open dedicated DevTools for Node</strong>.</p>
+<ol>
+<li>Go to the <strong>Memory</strong> tab.</li>
+<li>Take a baseline heap snapshot.</li>
+<li>Trigger the leaky behavior (make requests, run the workflow).</li>
+<li>Take a second snapshot.</li>
+<li>Compare: look for objects that grew significantly.</li>
+</ol>
+<h2>Step 3: Common culprits</h2>
+<h3>Event listener accumulation</h3>
+<p><pre><code class="language-javascript">// BAD — adds a new listener every time this runs function handleRequest(req, res) {   someEmitter.on('data', (chunk) =&gt; { /<em> ... </em>/ }); }</p>
+<p>// GOOD — register once, or use .once() someEmitter.on('data', handleData); // outside the request handler </code></pre></p>
+<h3>Unbounded caches</h3>
+<p><pre><code class="language-javascript">// BAD — grows forever const cache = {}; app.get('/user/:id', (req, res) =&gt; {   cache[req.params.id] = fetchUser(req.params.id); // never evicted });</p>
+<p>// GOOD — use a LRU cache with a size limit import LRU from 'lru-cache'; const cache = new LRU({ max: 500 }); </code></pre></p>
+<h3>Forgotten timers/intervals</h3>
+<p><pre><code class="language-javascript">// BAD — interval keeps a reference alive const timer = setInterval(doWork, 1000); // Missing: clearInterval(timer) when done</p>
+<p>// GOOD const timer = setInterval(doWork, 1000); process.on('SIGTERM', () =&gt; clearInterval(timer)); </code></pre></p>
+<h3>Closures holding large objects</h3>
+<p><pre><code class="language-javascript">// The closure keeps 'largeData' alive even if only 'id' is needed function createHandler(largeData) {   const id = largeData.id; // extract only what you need   return () =&gt; console.log(id); // closure only holds 'id' } </code></pre></p>
+<h2>Useful tools</h2>
+<ul>
+<li><strong><code>clinic.js</code></strong> (<code>npm i -g clinic</code>) — <code>clinic heap -- node server.js</code> generates a flame graph</li>
+<li><strong><code>node-memwatch</code></strong> — emits events when heap grows unexpectedly</li>
+<li><strong><code>heapdump</code></strong> — write heap snapshots from inside the process on demand</li>
+</ul></div></div>
+<div class="message user" data-ts="1749370500000" data-ts-iso="2025-06-08T08:15:00.000000Z"><div class="role-label">You <span class="msg-time ts-display" data-ts="1749370500000" data-ts-iso="2025-06-08T08:15:00.000000Z">2025-06-08 08:15</span></div><div class="content"><p>I found it — I was adding an event listener inside a request handler without removing it. How do I fix it cleanly?</p></div></div>
+<div class="message assistant" data-ts="1749370520000" data-ts-iso="2025-06-08T08:15:20.000000Z"><div class="role-label">Claude <span class="msg-time ts-display" data-ts="1749370520000" data-ts-iso="2025-06-08T08:15:20.000000Z">2025-06-08 08:15</span></div><div class="content"><p>Great find! There are three clean patterns depending on your situation:</p>
+<h2>Pattern 1: Use <code>.once()</code> for one-shot listeners</h2>
+<p>If you only need the listener to fire one time per request:</p>
+<p><pre><code class="language-javascript">// Automatically removed after firing once someEmitter.once('data', (chunk) =&gt; {   res.send(chunk); }); </code></pre></p>
+<h2>Pattern 2: Remove the listener when done</h2>
+<p>If the listener needs to fire multiple times but only for the lifetime of a request:</p>
+<p><pre><code class="language-javascript">const handler = (chunk) =&gt; {   // process chunk };</p>
+<p>someEmitter.on('data', handler);</p>
+<p>res.on('finish', () =&gt; {   someEmitter.off('data', handler); // clean up when response is done });</p>
+<p>req.on('close', () =&gt; {   someEmitter.off('data', handler); // clean up if client disconnects early }); </code></pre></p>
+<h2>Pattern 3: Use AbortController (modern Node.js)</h2>
+<p>For complex scenarios with multiple listeners:</p>
+<p><pre><code class="language-javascript">const ac = new AbortController(); const { signal } = ac;</p>
+<p>// The { signal } option auto-removes the listener when aborted someEmitter.on('data', handler, { signal }); anotherEmitter.on('event', otherHandler, { signal });</p>
+<p>res.on('finish', () =&gt; ac.abort()); // removes ALL listeners at once </code></pre></p>
+<h2>Pattern 4: Move registration outside the handler</h2>
+<p>If the emitter and handler are both long-lived, register once at startup:</p>
+<p><pre><code class="language-javascript">// At startup — registered once someEmitter.on('data', globalDataHandler);</p>
+<p>// In your request handler — no listener registration here app.get('/stream', (req, res) =&gt; {   // just use the already-registered global handler }); </code></pre></p>
+<h2>Quick sanity check</h2>
+<p>Add this temporarily to catch future violations:</p>
+<p><pre><code class="language-javascript">// Warns if any single emitter exceeds 10 listeners someEmitter.setMaxListeners(10); // Node.js will print a warning if you exceed this </code></pre></p>
+<p>Pattern 2 or 3 is usually the right choice for per-request listeners tied to a response lifecycle.</p></div></div>
+</div>
+</body>
+</html>

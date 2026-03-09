@@ -1,0 +1,80 @@
+{
+  "_template_meta": {
+    "provider": "deepseek",
+    "file_type": "conversations",
+    "description": "Template for DeepSeek chat export (conversations.json). Used for provider auto-detection.",
+    "required_root": "array",
+    "notes": [
+      "Top-level value is a JSON array of conversation objects.",
+      "Each conversation has a 'mapping' field (tree of message nodes).",
+      "Each node: { id, parent, children, message }",
+      "Each message: { files, model, inserted_at, fragments[] }",
+      "Fragment types: REQUEST, RESPONSE, THINK, SEARCH, READ_LINK"
+    ]
+  },
+  "_required_conversation_fields": ["id", "title", "inserted_at", "updated_at", "mapping"],
+  "_required_mapping_node_fields": ["id", "children", "message"],
+  "_required_message_fields": ["fragments", "inserted_at"],
+  "_fragment_types": {
+    "REQUEST":   { "required": ["type", "content"] },
+    "RESPONSE":  { "required": ["type", "content"] },
+    "THINK":     { "required": ["type", "content"] },
+    "SEARCH":    { "required": ["type", "results"], "results_item": ["url", "title", "snippet", "cite_index"] },
+    "READ_LINK": { "required": ["type", "url"] }
+  },
+  "_detection_signature": {
+    "root_type": "array",
+    "item_must_contain": ["mapping"],
+    "item_must_not_contain": ["chat_messages", "uuid"]
+  },
+  "example_conversation": {
+    "id": "aabbccdd-1111-2222-3333-eeff00112233",
+    "title": "Example Conversation Title",
+    "inserted_at": "2025-01-15T10:30:00.000Z",
+    "updated_at": "2025-01-15T11:00:00.000Z",
+    "mapping": {
+      "root": {
+        "id": "root",
+        "parent": null,
+        "children": ["msg-001"],
+        "message": null
+      },
+      "msg-001": {
+        "id": "msg-001",
+        "parent": "root",
+        "children": ["msg-002"],
+        "message": {
+          "files": [],
+          "model": null,
+          "inserted_at": "2025-01-15T10:30:00.000Z",
+          "fragments": [
+            {
+              "type": "REQUEST",
+              "content": "User message text goes here."
+            }
+          ]
+        }
+      },
+      "msg-002": {
+        "id": "msg-002",
+        "parent": "msg-001",
+        "children": [],
+        "message": {
+          "files": [],
+          "model": "deepseek-chat",
+          "inserted_at": "2025-01-15T10:30:05.000Z",
+          "fragments": [
+            {
+              "type": "THINK",
+              "content": "Internal reasoning / chain-of-thought."
+            },
+            {
+              "type": "RESPONSE",
+              "content": "Assistant response text goes here."
+            }
+          ]
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,71 @@
+{
+  "_template_meta": {
+    "provider": "claude",
+    "file_type": "conversations",
+    "description": "Template for Claude (Anthropic) chat export (conversations.json). Used for provider auto-detection.",
+    "required_root": "array",
+    "notes": [
+      "Top-level value is a JSON array of conversation objects.",
+      "Each conversation has 'uuid', 'name', 'chat_messages' fields.",
+      "Each chat_message: { uuid, sender, created_at, updated_at, content[] }",
+      "sender is 'human' or 'assistant'.",
+      "content blocks: { type, text } for text, { type, thinking } for extended thinking."
+    ]
+  },
+  "_required_conversation_fields": ["uuid", "name", "created_at", "updated_at", "chat_messages"],
+  "_required_message_fields": ["uuid", "sender", "created_at", "updated_at", "content"],
+  "_message_senders": ["human", "assistant"],
+  "_content_block_types": {
+    "text":       { "required": ["type", "text"] },
+    "thinking":   { "required": ["type", "thinking"] },
+    "tool_use":   { "required": ["type", "id", "name", "input"] },
+    "tool_result":{ "required": ["type", "tool_use_id", "content"] }
+  },
+  "_detection_signature": {
+    "root_type": "array",
+    "item_must_contain": ["chat_messages", "uuid"],
+    "item_must_not_contain": ["mapping"]
+  },
+  "example_conversation": {
+    "uuid": "aabbccdd-1111-2222-3333-eeff00112233",
+    "name": "Example Conversation Title",
+    "created_at": "2025-01-15T10:30:00.000000Z",
+    "updated_at": "2025-01-15T11:00:00.000000Z",
+    "chat_messages": [
+      {
+        "uuid": "msg-uuid-0001",
+        "sender": "human",
+        "created_at": "2025-01-15T10:30:00.000000Z",
+        "updated_at": "2025-01-15T10:30:00.000000Z",
+        "text": "User message text goes here.",
+        "content": [
+          {
+            "type": "text",
+            "text": "User message text goes here."
+          }
+        ],
+        "attachments": [],
+        "files": []
+      },
+      {
+        "uuid": "msg-uuid-0002",
+        "sender": "assistant",
+        "created_at": "2025-01-15T10:30:05.000000Z",
+        "updated_at": "2025-01-15T10:30:05.000000Z",
+        "text": "Assistant response text.",
+        "content": [
+          {
+            "type": "thinking",
+            "thinking": "Internal reasoning / extended thinking block."
+          },
+          {
+            "type": "text",
+            "text": "Assistant response text goes here."
+          }
+        ],
+        "attachments": [],
+        "files": []
+      }
+    ]
+  }
+}

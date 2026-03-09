@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Understanding Black Holes</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: #0f1117;
+    color: #e0e0e0;
+    line-height: 1.7;
+    padding: 2rem 1rem;
+  }
+  .container { max-width: 860px; margin: 0 auto; }
+  h1 {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 0.3rem;
+  }
+  .meta {
+    font-size: 0.8rem;
+    color: #666;
+    margin-bottom: 2.5rem;
+  }
+  .message {
+    margin-bottom: 1.8rem;
+    border-radius: 10px;
+    padding: 1.2rem 1.5rem;
+    position: relative;
+  }
+  .message.user {
+    background: #1a1f2e;
+    border-left: 3px solid #4a90e2;
+  }
+  .message.assistant {
+    background: #141a14;
+    border-left: 3px solid #5cb85c;
+  }
+  .role-label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 0.6rem;
+    opacity: 0.6;
+  }
+  .message.user .role-label { color: #4a90e2; }
+  .message.assistant .role-label { color: #5cb85c; }
+  .msg-time {
+    font-size: 0.72rem;
+    color: #555;
+    float: right;
+    margin-top: 0.1rem;
+  }
+  .thinking {
+    background: #1a1a10;
+    border: 1px solid #3a3a20;
+    border-radius: 6px;
+    padding: 0.8rem 1.1rem;
+    margin-bottom: 1rem;
+    font-style: italic;
+    color: #999;
+    font-size: 0.88rem;
+  }
+  .thinking-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #6a6a40;
+    margin-bottom: 0.4rem;
+  }
+  .search-block {
+    background: #111820;
+    border: 1px dashed #2a3a50;
+    border-radius: 6px;
+    padding: 0.7rem 1rem;
+    margin-bottom: 0.8rem;
+    font-size: 0.82rem;
+    color: #7a9fc0;
+  }
+  .search-block .search-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #3a6a90;
+    margin-bottom: 0.4rem;
+  }
+  .search-result {
+    margin-top: 0.4rem;
+    padding-left: 0.8rem;
+    border-left: 2px solid #2a4a60;
+  }
+  .search-result a { color: #5a9fc0; text-decoration: none; }
+  .search-result a:hover { text-decoration: underline; }
+  .search-result .snippet { color: #668; font-size: 0.8rem; }
+  .read-link-block {
+    background: #11181a;
+    border: 1px dashed #2a4040;
+    border-radius: 6px;
+    padding: 0.5rem 0.9rem;
+    margin-bottom: 0.8rem;
+    font-size: 0.8rem;
+    color: #6ab;
+  }
+  .content p { margin-bottom: 0.8rem; }
+  .content pre {
+    background: #0a0a0a;
+    border: 1px solid #2a2a2a;
+    border-radius: 6px;
+    padding: 1rem;
+    overflow-x: auto;
+    font-size: 0.85rem;
+    margin-bottom: 0.8rem;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .content code {
+    background: #1a1a1a;
+    border-radius: 3px;
+    padding: 0.1em 0.35em;
+    font-size: 0.87em;
+    font-family: "JetBrains Mono", "Fira Code", monospace;
+  }
+  .content pre code { background: none; padding: 0; }
+  .content h1, .content h2, .content h3, .content h4 {
+    color: #d0d0d0;
+    margin: 1rem 0 0.5rem;
+  }
+  .content ul, .content ol {
+    padding-left: 1.5rem;
+    margin-bottom: 0.8rem;
+  }
+  .content li { margin-bottom: 0.3rem; }
+  .content blockquote {
+    border-left: 3px solid #444;
+    padding-left: 1rem;
+    color: #999;
+    margin-bottom: 0.8rem;
+  }
+  .content table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 0.8rem;
+    font-size: 0.88rem;
+  }
+  .content th, .content td {
+    border: 1px solid #2a2a2a;
+    padding: 0.4rem 0.7rem;
+  }
+  .content th { background: #1a1a1a; }
+  .content hr { border: none; border-top: 1px solid #2a2a2a; margin: 1rem 0; }
+  .content a { color: #4a90e2; }
+  .divider {
+    border: none;
+    border-top: 1px solid #1e1e1e;
+    margin: 2rem 0;
+  }
+  #index { margin-bottom: 2.5rem; }
+  #index h2 { font-size: 1rem; color: #888; margin-bottom: 0.8rem; }
+  #index ul { list-style: none; padding: 0; }
+  #index li { margin-bottom: 0.4rem; }
+  #index a { color: #4a90e2; text-decoration: none; font-size: 0.9rem; }
+  #index a:hover { text-decoration: underline; }
+  .conv-header { margin: 3rem 0 1rem; }
+  .conv-header h2 { font-size: 1.25rem; color: #ccc; }
+</style>
+</head>
+<body>
+<div class="container">
+<h1>Understanding Black Holes</h1>
+<div class="meta" data-started-ts="1748975400000" data-updated-ts="1748976000000" data-started-iso="2025-06-03T18:30:00.000Z" data-updated-iso="2025-06-03T18:40:00.000Z">Started <span class="ts-display">2025-06-03 18:30</span> &nbsp;·&nbsp; Last updated <span class="ts-display">2025-06-03 18:40</span></div>
+<div class="message user" data-ts="1748975400000" data-ts-iso="2025-06-03T18:30:00.000Z"><div class="role-label">You <span class="msg-time ts-display" data-ts="1748975400000" data-ts-iso="2025-06-03T18:30:00.000Z">2025-06-03 18:30</span></div><div class="content"><p>What is a black hole and why can't light escape from it?</p></div></div>
+<div class="message assistant" data-ts="1748975411000" data-ts-iso="2025-06-03T18:30:11.000Z"><div class="role-label">DeepSeek <span class="msg-time ts-display" data-ts="1748975411000" data-ts-iso="2025-06-03T18:30:11.000Z">2025-06-03 18:30</span></div><div class="thinking"><div class="thinking-label">Thinking</div>The user wants an intuitive explanation of black holes and the escape velocity concept. I should explain event horizons, escape velocity reaching c, and Schwarzschild radius without getting too deep into tensor equations.</div><div class="content"><p>A <strong>black hole</strong> is a region of space where gravity is so intense that nothing — not even light — can escape once it crosses a boundary called the <strong>event horizon</strong>.</p>
+<h2>How do black holes form?</h2>
+<p>Most black holes form when a massive star (more than ~20× the mass of the Sun) runs out of nuclear fuel and collapses under its own gravity. The core compresses into an incredibly dense point called a <strong>singularity</strong>.</p>
+<h2>Why can't light escape?</h2>
+<p>The key concept is <strong>escape velocity</strong> — the speed you need to break free from a gravitational field.</p>
+<ul>
+<li>To escape Earth, you need to travel ~11 km/s.</li>
+<li>Near a black hole, the escape velocity exceeds <strong>the speed of light (299,792 km/s)</strong>.</li>
+<li>Since nothing travels faster than light, nothing gets out.</li>
+</ul>
+<p>The radius at which escape velocity equals the speed of light is called the <strong>Schwarzschild radius</strong>. For the Sun, it would be about 3 km — crush the entire Sun into a sphere 3 km across and you'd have a black hole.</p>
+<h2>The event horizon</h2>
+<p>The event horizon isn't a physical surface — it's just the "point of no return." If you were falling in, you wouldn't feel anything special as you crossed it. But from the outside, you'd appear frozen in time due to extreme <strong>gravitational time dilation</strong> (a prediction of general relativity).</p>
+<h2>Types of black holes</h2>
+<table><thead><tr><th>Type</th><th>Mass</th></tr></thead><tbody>
+<tr><td>Stellar</td><td>~3–100 solar masses</td></tr>
+<tr><td>Intermediate</td><td>~100–100,000 solar masses</td></tr>
+<tr><td>Supermassive</td><td>Millions to billions of solar masses</td></tr>
+</tbody></table>
+<p>The black hole at the center of our galaxy, <strong>Sagittarius A\</strong>*, is about 4 million times the mass of the Sun.</p></div></div>
+<div class="message user" data-ts="1748975820000" data-ts-iso="2025-06-03T18:37:00.000Z"><div class="role-label">You <span class="msg-time ts-display" data-ts="1748975820000" data-ts-iso="2025-06-03T18:37:00.000Z">2025-06-03 18:37</span></div><div class="content"><p>Does anything ever come out of a black hole? I heard something about Hawking radiation.</p></div></div>
+<div class="message assistant" data-ts="1748975834000" data-ts-iso="2025-06-03T18:37:14.000Z"><div class="role-label">DeepSeek <span class="msg-time ts-display" data-ts="1748975834000" data-ts-iso="2025-06-03T18:37:14.000Z">2025-06-03 18:37</span></div><div class="content"><p>You heard right! <strong>Hawking radiation</strong> is a fascinating theoretical prediction by physicist Stephen Hawking (1974).</p>
+<h2>The quantum trick</h2>
+<p>Quantum mechanics tells us that even "empty" space is filled with pairs of <strong>virtual particles</strong> constantly popping into and out of existence. Normally they annihilate each other immediately.</p>
+<p>Near the event horizon, something strange happens:</p>
+<ol>
+<li>A particle pair forms right at the edge.</li>
+<li>One particle falls <strong>into</strong> the black hole.</li>
+<li>The other escapes as <strong>real radiation</strong>.</li>
+</ol>
+<p>The black hole effectively loses a tiny bit of mass to compensate — it "pays" for the escaping particle.</p>
+<h2>Implications</h2>
+<ul>
+<li>Black holes very slowly <strong>evaporate</strong> over astronomical timescales.</li>
+<li>A stellar-mass black hole would take ~10⁶⁷ years to evaporate — far longer than the current age of the universe.</li>
+<li>Tiny primordial black holes (if they exist) could be evaporating right now.</li>
+</ul>
+<h2>The information paradox</h2>
+<p>Hawking radiation is essentially <strong>thermal</strong> — it carries no information about what fell in. This creates a famous unsolved problem: if a black hole evaporates completely, what happened to all the information about the matter that formed it? This "black hole information paradox" is still actively debated in theoretical physics.</p>
+<blockquote><strong>Note:</strong> Hawking radiation has never been directly observed — the signal from a stellar-mass black hole is far too faint to detect with current technology. It remains a theoretical prediction.</blockquote></div></div>
+</div>
+</body>
+</html>

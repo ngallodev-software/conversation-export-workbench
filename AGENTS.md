@@ -1,0 +1,1 @@
+Read `/lump/apps/deepseek_export_formatter/testing-instructions.md` at the start of any end-to-end testing or browser-validation session for this repo. Treat it as additional task-specific instructions for the current run.

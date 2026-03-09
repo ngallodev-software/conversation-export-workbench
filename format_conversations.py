@@ -31,13 +31,67 @@ from formatters.shared import safe_write, slugify
 # Registry: ordered list of formatter modules; first match wins
 _FORMATTERS = [deepseek, claude]
 
+# Directory containing provider detection templates
+_TEMPLATES_DIR = Path(__file__).parent / "provider_templates"
+
 
 # ---------------------------------------------------------------------------
-# Provider detection
+# Template-based provider detection
 # ---------------------------------------------------------------------------
+
+def _load_templates() -> list[dict]:
+    """
+    Load all *.conversations-template.json files from provider_templates/.
+    Returns list of dicts with keys: provider, must_contain, must_not_contain.
+    """
+    templates = []
+    if not _TEMPLATES_DIR.is_dir():
+        return templates
+    for tpl_path in sorted(_TEMPLATES_DIR.glob("*.conversations-template.json")):
+        try:
+            tpl = json.loads(tpl_path.read_text(encoding="utf-8"))
+            sig = tpl.get("_detection_signature", {})
+            provider = tpl.get("_template_meta", {}).get("provider", tpl_path.stem.split(".")[0])
+            templates.append({
+                "provider": provider,
+                "must_contain": sig.get("item_must_contain", []),
+                "must_not_contain": sig.get("item_must_not_contain", []),
+            })
+        except Exception:
+            pass  # malformed template — skip silently
+    return templates
+
+
+def _detect_provider_from_templates(data: list) -> str | None:
+    """
+    Try to match data against loaded provider templates.
+    Returns provider name string, or None if no match.
+    """
+    if not data or not isinstance(data[0], dict):
+        return None
+    first = data[0]
+    for tpl in _load_templates():
+        must_have = tpl["must_contain"]
+        must_not  = tpl["must_not_contain"]
+        if all(k in first for k in must_have) and not any(k in first for k in must_not):
+            return tpl["provider"]
+    return None
+
 
 def detect_provider(data: list):
-    """Return the matching formatter module, or None."""
+    """
+    Return the matching formatter module, or None.
+    Uses provider_templates/ for detection; falls back to each formatter's
+    built-in detect() for backwards compatibility.
+    """
+    provider_name = _detect_provider_from_templates(data)
+    if provider_name:
+        mod_map = {m.PROVIDER: m for m in _FORMATTERS}
+        mod = mod_map.get(provider_name)
+        if mod:
+            return mod
+
+    # Fallback: use each formatter's own detect() method
     for mod in _FORMATTERS:
         if mod.detect(data):
             return mod

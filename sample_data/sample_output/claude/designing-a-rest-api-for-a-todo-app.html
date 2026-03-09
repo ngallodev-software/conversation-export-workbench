@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Designing a REST API for a Todo App</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: #0f1117;
+    color: #e0e0e0;
+    line-height: 1.7;
+    padding: 2rem 1rem;
+  }
+  .container { max-width: 860px; margin: 0 auto; }
+  h1 {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 0.3rem;
+  }
+  .meta {
+    font-size: 0.8rem;
+    color: #666;
+    margin-bottom: 2.5rem;
+  }
+  .message {
+    margin-bottom: 1.8rem;
+    border-radius: 10px;
+    padding: 1.2rem 1.5rem;
+    position: relative;
+  }
+  .message.user {
+    background: #1a1f2e;
+    border-left: 3px solid #4a90e2;
+  }
+  .message.assistant {
+    background: #141a14;
+    border-left: 3px solid #5cb85c;
+  }
+  .role-label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 0.6rem;
+    opacity: 0.6;
+  }
+  .message.user .role-label { color: #4a90e2; }
+  .message.assistant .role-label { color: #5cb85c; }
+  .msg-time {
+    font-size: 0.72rem;
+    color: #555;
+    float: right;
+    margin-top: 0.1rem;
+  }
+  .thinking {
+    background: #1a1a10;
+    border: 1px solid #3a3a20;
+    border-radius: 6px;
+    padding: 0.8rem 1.1rem;
+    margin-bottom: 1rem;
+    font-style: italic;
+    color: #999;
+    font-size: 0.88rem;
+  }
+  .thinking-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #6a6a40;
+    margin-bottom: 0.4rem;
+  }
+  .search-block {
+    background: #111820;
+    border: 1px dashed #2a3a50;
+    border-radius: 6px;
+    padding: 0.7rem 1rem;
+    margin-bottom: 0.8rem;
+    font-size: 0.82rem;
+    color: #7a9fc0;
+  }
+  .search-block .search-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #3a6a90;
+    margin-bottom: 0.4rem;
+  }
+  .search-result {
+    margin-top: 0.4rem;
+    padding-left: 0.8rem;
+    border-left: 2px solid #2a4a60;
+  }
+  .search-result a { color: #5a9fc0; text-decoration: none; }
+  .search-result a:hover { text-decoration: underline; }
+  .search-result .snippet { color: #668; font-size: 0.8rem; }
+  .read-link-block {
+    background: #11181a;
+    border: 1px dashed #2a4040;
+    border-radius: 6px;
+    padding: 0.5rem 0.9rem;
+    margin-bottom: 0.8rem;
+    font-size: 0.8rem;
+    color: #6ab;
+  }
+  .content p { margin-bottom: 0.8rem; }
+  .content pre {
+    background: #0a0a0a;
+    border: 1px solid #2a2a2a;
+    border-radius: 6px;
+    padding: 1rem;
+    overflow-x: auto;
+    font-size: 0.85rem;
+    margin-bottom: 0.8rem;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .content code {
+    background: #1a1a1a;
+    border-radius: 3px;
+    padding: 0.1em 0.35em;
+    font-size: 0.87em;
+    font-family: "JetBrains Mono", "Fira Code", monospace;
+  }
+  .content pre code { background: none; padding: 0; }
+  .content h1, .content h2, .content h3, .content h4 {
+    color: #d0d0d0;
+    margin: 1rem 0 0.5rem;
+  }
+  .content ul, .content ol {
+    padding-left: 1.5rem;
+    margin-bottom: 0.8rem;
+  }
+  .content li { margin-bottom: 0.3rem; }
+  .content blockquote {
+    border-left: 3px solid #444;
+    padding-left: 1rem;
+    color: #999;
+    margin-bottom: 0.8rem;
+  }
+  .content table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 0.8rem;
+    font-size: 0.88rem;
+  }
+  .content th, .content td {
+    border: 1px solid #2a2a2a;
+    padding: 0.4rem 0.7rem;
+  }
+  .content th { background: #1a1a1a; }
+  .content hr { border: none; border-top: 1px solid #2a2a2a; margin: 1rem 0; }
+  .content a { color: #4a90e2; }
+  .divider {
+    border: none;
+    border-top: 1px solid #1e1e1e;
+    margin: 2rem 0;
+  }
+  #index { margin-bottom: 2.5rem; }
+  #index h2 { font-size: 1rem; color: #888; margin-bottom: 0.8rem; }
+  #index ul { list-style: none; padding: 0; }
+  #index li { margin-bottom: 0.4rem; }
+  #index a { color: #4a90e2; text-decoration: none; font-size: 0.9rem; }
+  #index a:hover { text-decoration: underline; }
+  .conv-header { margin: 3rem 0 1rem; }
+  .conv-header h2 { font-size: 1.25rem; color: #ccc; }
+</style>
+</head>
+<body>
+<div class="container">
+<h1>Designing a REST API for a Todo App</h1>
+<div class="meta" data-started-ts="1749222000000" data-updated-ts="1749222900000" data-started-iso="2025-06-06T15:00:00.000000Z" data-updated-iso="2025-06-06T15:15:00.000000Z">Started <span class="ts-display">2025-06-06 15:00</span> &nbsp;·&nbsp; Last updated <span class="ts-display">2025-06-06 15:15</span></div>
+<div class="message user" data-ts="1749222000000" data-ts-iso="2025-06-06T15:00:00.000000Z"><div class="role-label">You <span class="msg-time ts-display" data-ts="1749222000000" data-ts-iso="2025-06-06T15:00:00.000000Z">2025-06-06 15:00</span></div><div class="content"><p>I want to design a REST API for a simple todo app. What endpoints should I create?</p></div></div>
+<div class="message assistant" data-ts="1749222015000" data-ts-iso="2025-06-06T15:00:15.000000Z"><div class="role-label">Claude <span class="msg-time ts-display" data-ts="1749222015000" data-ts-iso="2025-06-06T15:00:15.000000Z">2025-06-06 15:00</span></div><div class="thinking"><div class="thinking-label">Thinking</div>The user wants to design REST API endpoints for a todo app. I should cover standard CRUD operations, good URL naming conventions, appropriate HTTP methods and status codes, and maybe touch on authentication. I'll keep it practical and show request/response examples.</div>
+<div class="content"><p>Here's a clean REST API design for a todo app. REST follows a resource-oriented approach, so everything revolves around your <strong>todo items</strong> (and optionally <strong>lists</strong>).</p>
+<h2>Core endpoints</h2>
+<h3>Todo Items</h3>
+<table><thead><tr><th>Method</th><th>Path</th><th>Description</th></tr></thead><tbody>
+<tr><td><code>GET</code></td><td><code>/todos</code></td><td>List all todos</td></tr>
+<tr><td><code>POST</code></td><td><code>/todos</code></td><td>Create a new todo</td></tr>
+<tr><td><code>GET</code></td><td><code>/todos/:id</code></td><td>Get a specific todo</td></tr>
+<tr><td><code>PATCH</code></td><td><code>/todos/:id</code></td><td>Update a todo (partial)</td></tr>
+<tr><td><code>DELETE</code></td><td><code>/todos/:id</code></td><td>Delete a todo</td></tr>
+</tbody></table>
+<h2>Example: Create a todo</h2>
+<p><strong>Request:</strong> <pre><code class="language-http">POST /todos Content-Type: application/json</p>
+<p>{   "title": "Buy groceries",   "due_date": "2025-06-10",   "priority": "medium" } </code></pre></p>
+<p><strong>Response (201 Created):</strong> <pre><code class="language-json">{   "id": "todo-abc123",   "title": "Buy groceries",   "completed": false,   "due_date": "2025-06-10",   "priority": "medium",   "created_at": "2025-06-06T15:01:00Z",   "updated_at": "2025-06-06T15:01:00Z" } </code></pre></p>
+<h2>Example: Mark as complete</h2>
+<p><pre><code class="language-http">PATCH /todos/todo-abc123 Content-Type: application/json</p>
+<p>{ "completed": true } </code></pre></p>
+<h2>Useful query parameters for listing</h2>
+<p><pre><code>GET /todos?completed=false        # Only incomplete todos GET /todos?priority=high          # Filter by priority GET /todos?sort=due_date&amp;order=asc # Sort by due date GET /todos?page=2&amp;limit=20        # Pagination </code></pre></p>
+<h2>HTTP status codes to use</h2>
+<table><thead><tr><th>Code</th><th>When to use</th></tr></thead><tbody>
+<tr><td>200 OK</td><td>Successful GET, PATCH</td></tr>
+<tr><td>201 Created</td><td>Successful POST</td></tr>
+<tr><td>204 No Content</td><td>Successful DELETE</td></tr>
+<tr><td>400 Bad Request</td><td>Invalid input</td></tr>
+<tr><td>404 Not Found</td><td>Todo doesn't exist</td></tr>
+<tr><td>422 Unprocessable Entity</td><td>Validation errors</td></tr>
+</tbody></table></div></div>
+<div class="message user" data-ts="1749222600000" data-ts-iso="2025-06-06T15:10:00.000000Z"><div class="role-label">You <span class="msg-time ts-display" data-ts="1749222600000" data-ts-iso="2025-06-06T15:10:00.000000Z">2025-06-06 15:10</span></div><div class="content"><p>Should I version my API? What's the best practice there?</p></div></div>
+<div class="message assistant" data-ts="1749222612000" data-ts-iso="2025-06-06T15:10:12.000000Z"><div class="role-label">Claude <span class="msg-time ts-display" data-ts="1749222612000" data-ts-iso="2025-06-06T15:10:12.000000Z">2025-06-06 15:10</span></div><div class="content"><p>API versioning is a good habit, especially if you'll have external clients (mobile apps, third-party integrations). The short answer: <strong>yes, version it — and do it in the URL path.</strong></p>
+<h2>The three common approaches</h2>
+<h3>1. URL path (recommended)</h3>
+<p><pre><code>/v1/todos /v2/todos </code></pre></p>
+<ul>
+<li>Explicit, easy to test in a browser or curl.</li>
+<li>Clients can migrate gradually: keep <code>/v1</code> running while <code>/v2</code> rolls out.</li>
+<li>Works everywhere (no special headers needed).</li>
+</ul>
+<h3>2. Query parameter</h3>
+<p><pre><code>/todos?version=1 </code></pre></p>
+<ul>
+<li>Less clean, easy to forget, harder to route in most frameworks.</li>
+</ul>
+<h3>3. Accept header</h3>
+<p><pre><code>Accept: application/vnd.myapp.v2+json </code></pre></p>
+<ul>
+<li>Technically "most RESTful" per purists.</li>
+<li>Hard to test manually, less transparent.</li>
+</ul>
+<h2>My recommendation for a new project</h2>
+<p><pre><code>https://api.yourapp.com/v1/todos </code></pre></p>
+<p>Start with <code>v1</code> from day one. It costs almost nothing upfront and saves you pain later.</p>
+<h2>When to bump versions</h2>
+<ul>
+<li><strong>Don't</strong> bump for additive changes (new optional fields, new endpoints) — these are backward-compatible.</li>
+<li><strong>Do</strong> bump for breaking changes:</li>
+</ul>
+<p>- Removing or renaming a field   - Changing a field's type   - Changing authentication requirements</p>
+<h2>Deprecation strategy</h2>
+<ol>
+<li>Announce the deprecation date.</li>
+<li>Add a <code>Deprecation</code> response header to the old version.</li>
+<li>Keep the old version alive for a reasonable period (3–6 months is common).</li>
+<li>Shut it down once traffic drops off.</li>
+</ol>
+<p>For a personal todo app you might never need <code>v2</code>, but the pattern costs nothing and is good muscle memory.</p></div></div>
+</div>
+</body>
+</html>

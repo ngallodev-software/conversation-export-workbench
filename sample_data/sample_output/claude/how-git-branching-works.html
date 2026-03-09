@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>How Git Branching Works</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: #0f1117;
+    color: #e0e0e0;
+    line-height: 1.7;
+    padding: 2rem 1rem;
+  }
+  .container { max-width: 860px; margin: 0 auto; }
+  h1 {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 0.3rem;
+  }
+  .meta {
+    font-size: 0.8rem;
+    color: #666;
+    margin-bottom: 2.5rem;
+  }
+  .message {
+    margin-bottom: 1.8rem;
+    border-radius: 10px;
+    padding: 1.2rem 1.5rem;
+    position: relative;
+  }
+  .message.user {
+    background: #1a1f2e;
+    border-left: 3px solid #4a90e2;
+  }
+  .message.assistant {
+    background: #141a14;
+    border-left: 3px solid #5cb85c;
+  }
+  .role-label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 0.6rem;
+    opacity: 0.6;
+  }
+  .message.user .role-label { color: #4a90e2; }
+  .message.assistant .role-label { color: #5cb85c; }
+  .msg-time {
+    font-size: 0.72rem;
+    color: #555;
+    float: right;
+    margin-top: 0.1rem;
+  }
+  .thinking {
+    background: #1a1a10;
+    border: 1px solid #3a3a20;
+    border-radius: 6px;
+    padding: 0.8rem 1.1rem;
+    margin-bottom: 1rem;
+    font-style: italic;
+    color: #999;
+    font-size: 0.88rem;
+  }
+  .thinking-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #6a6a40;
+    margin-bottom: 0.4rem;
+  }
+  .search-block {
+    background: #111820;
+    border: 1px dashed #2a3a50;
+    border-radius: 6px;
+    padding: 0.7rem 1rem;
+    margin-bottom: 0.8rem;
+    font-size: 0.82rem;
+    color: #7a9fc0;
+  }
+  .search-block .search-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #3a6a90;
+    margin-bottom: 0.4rem;
+  }
+  .search-result {
+    margin-top: 0.4rem;
+    padding-left: 0.8rem;
+    border-left: 2px solid #2a4a60;
+  }
+  .search-result a { color: #5a9fc0; text-decoration: none; }
+  .search-result a:hover { text-decoration: underline; }
+  .search-result .snippet { color: #668; font-size: 0.8rem; }
+  .read-link-block {
+    background: #11181a;
+    border: 1px dashed #2a4040;
+    border-radius: 6px;
+    padding: 0.5rem 0.9rem;
+    margin-bottom: 0.8rem;
+    font-size: 0.8rem;
+    color: #6ab;
+  }
+  .content p { margin-bottom: 0.8rem; }
+  .content pre {
+    background: #0a0a0a;
+    border: 1px solid #2a2a2a;
+    border-radius: 6px;
+    padding: 1rem;
+    overflow-x: auto;
+    font-size: 0.85rem;
+    margin-bottom: 0.8rem;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .content code {
+    background: #1a1a1a;
+    border-radius: 3px;
+    padding: 0.1em 0.35em;
+    font-size: 0.87em;
+    font-family: "JetBrains Mono", "Fira Code", monospace;
+  }
+  .content pre code { background: none; padding: 0; }
+  .content h1, .content h2, .content h3, .content h4 {
+    color: #d0d0d0;
+    margin: 1rem 0 0.5rem;
+  }
+  .content ul, .content ol {
+    padding-left: 1.5rem;
+    margin-bottom: 0.8rem;
+  }
+  .content li { margin-bottom: 0.3rem; }
+  .content blockquote {
+    border-left: 3px solid #444;
+    padding-left: 1rem;
+    color: #999;
+    margin-bottom: 0.8rem;
+  }
+  .content table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 0.8rem;
+    font-size: 0.88rem;
+  }
+  .content th, .content td {
+    border: 1px solid #2a2a2a;
+    padding: 0.4rem 0.7rem;
+  }
+  .content th { background: #1a1a1a; }
+  .content hr { border: none; border-top: 1px solid #2a2a2a; margin: 1rem 0; }
+  .content a { color: #4a90e2; }
+  .divider {
+    border: none;
+    border-top: 1px solid #1e1e1e;
+    margin: 2rem 0;
+  }
+  #index { margin-bottom: 2.5rem; }
+  #index h2 { font-size: 1rem; color: #888; margin-bottom: 0.8rem; }
+  #index ul { list-style: none; padding: 0; }
+  #index li { margin-bottom: 0.4rem; }
+  #index a { color: #4a90e2; text-decoration: none; font-size: 0.9rem; }
+  #index a:hover { text-decoration: underline; }
+  .conv-header { margin: 3rem 0 1rem; }
+  .conv-header h2 { font-size: 1.25rem; color: #ccc; }
+</style>
+</head>
+<body>
+<div class="container">
+<h1>How Git Branching Works</h1>
+<div class="meta" data-started-ts="1749117600000" data-updated-ts="1749118320000" data-started-iso="2025-06-05T10:00:00.000000Z" data-updated-iso="2025-06-05T10:12:00.000000Z">Started <span class="ts-display">2025-06-05 10:00</span> &nbsp;·&nbsp; Last updated <span class="ts-display">2025-06-05 10:12</span></div>
+<div class="message user" data-ts="1749117600000" data-ts-iso="2025-06-05T10:00:00.000000Z"><div class="role-label">You <span class="msg-time ts-display" data-ts="1749117600000" data-ts-iso="2025-06-05T10:00:00.000000Z">2025-06-05 10:00</span></div><div class="content"><p>Can you explain how Git branching works and why it's useful?</p></div></div>
+<div class="message assistant" data-ts="1749117610000" data-ts-iso="2025-06-05T10:00:10.000000Z"><div class="role-label">Claude <span class="msg-time ts-display" data-ts="1749117610000" data-ts-iso="2025-06-05T10:00:10.000000Z">2025-06-05 10:00</span></div><div class="thinking"><div class="thinking-label">Thinking</div>The user wants an explanation of Git branching. I should cover what a branch is (pointer to a commit), why you'd use branches (parallel development, features, fixes), common workflows, and key commands. Keep it practical.</div>
+<div class="content"><p>Git branches are one of Git's most powerful features. Here's how they work:</p>
+<h2>What is a branch?</h2>
+<p>A branch is simply a <strong>lightweight, movable pointer</strong> to a specific commit. The default branch is usually called <code>main</code> (or <code>master</code> in older repos). Every time you make a commit on a branch, the pointer automatically moves forward to the new commit.</p>
+<h2>Why use branches?</h2>
+<p>Branches let multiple lines of development exist <strong>in parallel</strong> without interfering with each other:</p>
+<ul>
+<li><strong>Feature development</strong> — build a new feature in isolation; only merge it when it's ready.</li>
+<li><strong>Bug fixes</strong> — patch a production bug without including half-finished feature work.</li>
+<li><strong>Experimentation</strong> — try a risky refactor; discard the branch if it doesn't work out.</li>
+<li><strong>Code review</strong> — reviewers can check out your branch and test it before it lands in <code>main</code>.</li>
+</ul>
+<h2>Basic workflow</h2>
+<p><pre><code class="language-bash"># Create and switch to a new branch git checkout -b feature/add-search</p>
+<h1>... do work, make commits ...</h1>
+<h1>Switch back to main</h1>
+<p>git checkout main</p>
+<h1>Merge your feature branch</h1>
+<p>git merge feature/add-search</p>
+<h1>Clean up</h1>
+<p>git branch -d feature/add-search </code></pre></p>
+<h2>How merging works</h2>
+<p>When you merge two branches, Git finds their <strong>common ancestor</strong> commit and combines the changes. If there are no conflicts, it's automatic. If two branches changed the same lines, Git flags a <strong>merge conflict</strong> for you to resolve manually.</p>
+<h2>A typical team workflow</h2>
+<table><thead><tr><th>Branch</th><th>Purpose</th></tr></thead><tbody>
+<tr><td><code>main</code></td><td>Stable, production-ready code</td></tr>
+<tr><td><code>develop</code></td><td>Integration branch for features</td></tr>
+<tr><td><code>feature/*</code></td><td>Individual feature work</td></tr>
+<tr><td><code>hotfix/*</code></td><td>Emergency production fixes</td></tr>
+</tbody></table>
+<p>This pattern (called <strong>Git Flow</strong>) keeps production code stable while allowing active development to happen in parallel.</p></div></div>
+<div class="message user" data-ts="1749118080000" data-ts-iso="2025-06-05T10:08:00.000000Z"><div class="role-label">You <span class="msg-time ts-display" data-ts="1749118080000" data-ts-iso="2025-06-05T10:08:00.000000Z">2025-06-05 10:08</span></div><div class="content"><p>What's the difference between merge and rebase?</p></div></div>
+<div class="message assistant" data-ts="1749118092000" data-ts-iso="2025-06-05T10:08:12.000000Z"><div class="role-label">Claude <span class="msg-time ts-display" data-ts="1749118092000" data-ts-iso="2025-06-05T10:08:12.000000Z">2025-06-05 10:08</span></div><div class="content"><p>Both integrate changes from one branch into another, but they do it differently and leave different history.</p>
+<h2>Merge</h2>
+<p><pre><code class="language-bash">git checkout main git merge feature/add-search </code></pre></p>
+<ul>
+<li>Creates a new <strong>merge commit</strong> that ties together the histories of both branches.</li>
+<li><strong>Preserves the full history</strong> — you can see exactly when and how branches diverged and converged.</li>
+<li>Non-destructive: existing commits are never changed.</li>
+</ul>
+<p><pre><code>o---o---o---M   ← main (M is the merge commit)      \     /       o---o     ← feature branch </code></pre></p>
+<h2>Rebase</h2>
+<p><pre><code class="language-bash">git checkout feature/add-search git rebase main </code></pre></p>
+<ul>
+<li><strong>Replays</strong> your feature commits on top of <code>main</code>, one by one, creating new commits.</li>
+<li>Results in a <strong>linear history</strong> — looks like the feature was always built on top of the latest <code>main</code>.</li>
+<li><strong>Rewrites commit history</strong> — the original commits are replaced with new ones (different SHA hashes).</li>
+</ul>
+<p><pre><code>o---o---o---o'---o'   ← main + rebased feature commits </code></pre></p>
+<h2>When to use which</h2>
+<table><thead><tr><th>Scenario</th><th>Use</th></tr></thead><tbody>
+<tr><td>Merging a completed feature into <code>main</code></td><td><strong>Merge</strong> — preserves context</td></tr>
+<tr><td>Keeping your feature branch up to date with <code>main</code></td><td><strong>Rebase</strong> — cleaner history</td></tr>
+<tr><td>Public/shared branches</td><td><strong>Merge</strong> — never rebase commits others have</td></tr>
+<tr><td>Personal, local branches</td><td>Either; rebase gives a cleaner log</td></tr>
+</tbody></table>
+<h2>The golden rule</h2>
+<blockquote><strong>Never rebase commits that have been pushed to a shared branch.</strong> Rewriting history forces other developers to reconcile diverged histories, which is messy.</blockquote>
+<p>A common pattern: rebase your private feature branch to keep it current, then do a final merge (or squash merge) into <code>main</code>.</p></div></div>
+</div>
+</body>
+</html>
