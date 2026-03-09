@@ -1,9 +1,9 @@
 # Personal / generated exports
 conversations.json
 user.json
-deepseek_data-*.zip
+*.zip
 output/
-*data*.zip
+*.zip
 
 # Sample data — tracked in git (screenshots for README)
 !sample_data/
