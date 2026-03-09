@@ -1,0 +1,218 @@
+[
+  {
+    "uuid": "cl-sample-001",
+    "name": "How Git Branching Works",
+    "created_at": "2025-06-05T10:00:00.000000Z",
+    "updated_at": "2025-06-05T10:12:00.000000Z",
+    "chat_messages": [
+      {
+        "uuid": "cl-msg-001",
+        "sender": "human",
+        "created_at": "2025-06-05T10:00:00.000000Z",
+        "updated_at": "2025-06-05T10:00:00.000000Z",
+        "text": "Can you explain how Git branching works and why it's useful?",
+        "content": [
+          {
+            "type": "text",
+            "text": "Can you explain how Git branching works and why it's useful?"
+          }
+        ],
+        "attachments": [],
+        "files": []
+      },
+      {
+        "uuid": "cl-msg-002",
+        "sender": "assistant",
+        "created_at": "2025-06-05T10:00:10.000000Z",
+        "updated_at": "2025-06-05T10:00:10.000000Z",
+        "text": "Git branches are lightweight, movable pointers to commits...",
+        "content": [
+          {
+            "type": "thinking",
+            "thinking": "The user wants an explanation of Git branching. I should cover what a branch is (pointer to a commit), why you'd use branches (parallel development, features, fixes), common workflows, and key commands. Keep it practical."
+          },
+          {
+            "type": "text",
+            "text": "Git branches are one of Git's most powerful features. Here's how they work:\n\n## What is a branch?\n\nA branch is simply a **lightweight, movable pointer** to a specific commit. The default branch is usually called `main` (or `master` in older repos). Every time you make a commit on a branch, the pointer automatically moves forward to the new commit.\n\n## Why use branches?\n\nBranches let multiple lines of development exist **in parallel** without interfering with each other:\n\n- **Feature development** — build a new feature in isolation; only merge it when it's ready.\n- **Bug fixes** — patch a production bug without including half-finished feature work.\n- **Experimentation** — try a risky refactor; discard the branch if it doesn't work out.\n- **Code review** — reviewers can check out your branch and test it before it lands in `main`.\n\n## Basic workflow\n\n```bash\n# Create and switch to a new branch\ngit checkout -b feature/add-search\n\n# ... do work, make commits ...\n\n# Switch back to main\ngit checkout main\n\n# Merge your feature branch\ngit merge feature/add-search\n\n# Clean up\ngit branch -d feature/add-search\n```\n\n## How merging works\n\nWhen you merge two branches, Git finds their **common ancestor** commit and combines the changes. If there are no conflicts, it's automatic. If two branches changed the same lines, Git flags a **merge conflict** for you to resolve manually.\n\n## A typical team workflow\n\n| Branch | Purpose |\n|---|---|\n| `main` | Stable, production-ready code |\n| `develop` | Integration branch for features |\n| `feature/*` | Individual feature work |\n| `hotfix/*` | Emergency production fixes |\n\nThis pattern (called **Git Flow**) keeps production code stable while allowing active development to happen in parallel."
+          }
+        ],
+        "attachments": [],
+        "files": []
+      },
+      {
+        "uuid": "cl-msg-003",
+        "sender": "human",
+        "created_at": "2025-06-05T10:08:00.000000Z",
+        "updated_at": "2025-06-05T10:08:00.000000Z",
+        "text": "What's the difference between merge and rebase?",
+        "content": [
+          {
+            "type": "text",
+            "text": "What's the difference between merge and rebase?"
+          }
+        ],
+        "attachments": [],
+        "files": []
+      },
+      {
+        "uuid": "cl-msg-004",
+        "sender": "assistant",
+        "created_at": "2025-06-05T10:08:12.000000Z",
+        "updated_at": "2025-06-05T10:08:12.000000Z",
+        "text": "Both merge and rebase integrate changes from one branch into another...",
+        "content": [
+          {
+            "type": "text",
+            "text": "Both integrate changes from one branch into another, but they do it differently and leave different history.\n\n## Merge\n\n```bash\ngit checkout main\ngit merge feature/add-search\n```\n\n- Creates a new **merge commit** that ties together the histories of both branches.\n- **Preserves the full history** — you can see exactly when and how branches diverged and converged.\n- Non-destructive: existing commits are never changed.\n\n```\no---o---o---M   ← main (M is the merge commit)\n     \\     /\n      o---o     ← feature branch\n```\n\n## Rebase\n\n```bash\ngit checkout feature/add-search\ngit rebase main\n```\n\n- **Replays** your feature commits on top of `main`, one by one, creating new commits.\n- Results in a **linear history** — looks like the feature was always built on top of the latest `main`.\n- **Rewrites commit history** — the original commits are replaced with new ones (different SHA hashes).\n\n```\no---o---o---o'---o'   ← main + rebased feature commits\n```\n\n## When to use which\n\n| Scenario | Use |\n|---|---|\n| Merging a completed feature into `main` | **Merge** — preserves context |\n| Keeping your feature branch up to date with `main` | **Rebase** — cleaner history |\n| Public/shared branches | **Merge** — never rebase commits others have |\n| Personal, local branches | Either; rebase gives a cleaner log |\n\n## The golden rule\n\n> **Never rebase commits that have been pushed to a shared branch.** Rewriting history forces other developers to reconcile diverged histories, which is messy.\n\nA common pattern: rebase your private feature branch to keep it current, then do a final merge (or squash merge) into `main`."
+          }
+        ],
+        "attachments": [],
+        "files": []
+      }
+    ]
+  },
+  {
+    "uuid": "cl-sample-002",
+    "name": "Designing a REST API for a Todo App",
+    "created_at": "2025-06-06T15:00:00.000000Z",
+    "updated_at": "2025-06-06T15:15:00.000000Z",
+    "chat_messages": [
+      {
+        "uuid": "cl-msg-010",
+        "sender": "human",
+        "created_at": "2025-06-06T15:00:00.000000Z",
+        "updated_at": "2025-06-06T15:00:00.000000Z",
+        "text": "I want to design a REST API for a simple todo app. What endpoints should I create?",
+        "content": [
+          {
+            "type": "text",
+            "text": "I want to design a REST API for a simple todo app. What endpoints should I create?"
+          }
+        ],
+        "attachments": [],
+        "files": []
+      },
+      {
+        "uuid": "cl-msg-011",
+        "sender": "assistant",
+        "created_at": "2025-06-06T15:00:15.000000Z",
+        "updated_at": "2025-06-06T15:00:15.000000Z",
+        "text": "Here's a clean REST API design for a todo app...",
+        "content": [
+          {
+            "type": "thinking",
+            "thinking": "The user wants to design REST API endpoints for a todo app. I should cover standard CRUD operations, good URL naming conventions, appropriate HTTP methods and status codes, and maybe touch on authentication. I'll keep it practical and show request/response examples."
+          },
+          {
+            "type": "text",
+            "text": "Here's a clean REST API design for a todo app. REST follows a resource-oriented approach, so everything revolves around your **todo items** (and optionally **lists**).\n\n## Core endpoints\n\n### Todo Items\n\n| Method | Path | Description |\n|---|---|---|\n| `GET` | `/todos` | List all todos |\n| `POST` | `/todos` | Create a new todo |\n| `GET` | `/todos/:id` | Get a specific todo |\n| `PATCH` | `/todos/:id` | Update a todo (partial) |\n| `DELETE` | `/todos/:id` | Delete a todo |\n\n## Example: Create a todo\n\n**Request:**\n```http\nPOST /todos\nContent-Type: application/json\n\n{\n  \"title\": \"Buy groceries\",\n  \"due_date\": \"2025-06-10\",\n  \"priority\": \"medium\"\n}\n```\n\n**Response (201 Created):**\n```json\n{\n  \"id\": \"todo-abc123\",\n  \"title\": \"Buy groceries\",\n  \"completed\": false,\n  \"due_date\": \"2025-06-10\",\n  \"priority\": \"medium\",\n  \"created_at\": \"2025-06-06T15:01:00Z\",\n  \"updated_at\": \"2025-06-06T15:01:00Z\"\n}\n```\n\n## Example: Mark as complete\n\n```http\nPATCH /todos/todo-abc123\nContent-Type: application/json\n\n{ \"completed\": true }\n```\n\n## Useful query parameters for listing\n\n```\nGET /todos?completed=false        # Only incomplete todos\nGET /todos?priority=high          # Filter by priority\nGET /todos?sort=due_date&order=asc # Sort by due date\nGET /todos?page=2&limit=20        # Pagination\n```\n\n## HTTP status codes to use\n\n| Code | When to use |\n|---|---|\n| 200 OK | Successful GET, PATCH |\n| 201 Created | Successful POST |\n| 204 No Content | Successful DELETE |\n| 400 Bad Request | Invalid input |\n| 404 Not Found | Todo doesn't exist |\n| 422 Unprocessable Entity | Validation errors |"
+          }
+        ],
+        "attachments": [],
+        "files": []
+      },
+      {
+        "uuid": "cl-msg-012",
+        "sender": "human",
+        "created_at": "2025-06-06T15:10:00.000000Z",
+        "updated_at": "2025-06-06T15:10:00.000000Z",
+        "text": "Should I version the API? What's the best practice there?",
+        "content": [
+          {
+            "type": "text",
+            "text": "Should I version my API? What's the best practice there?"
+          }
+        ],
+        "attachments": [],
+        "files": []
+      },
+      {
+        "uuid": "cl-msg-013",
+        "sender": "assistant",
+        "created_at": "2025-06-06T15:10:12.000000Z",
+        "updated_at": "2025-06-06T15:10:12.000000Z",
+        "text": "API versioning is a good habit to build from the start...",
+        "content": [
+          {
+            "type": "text",
+            "text": "API versioning is a good habit, especially if you'll have external clients (mobile apps, third-party integrations). The short answer: **yes, version it — and do it in the URL path.**\n\n## The three common approaches\n\n### 1. URL path (recommended)\n```\n/v1/todos\n/v2/todos\n```\n- Explicit, easy to test in a browser or curl.\n- Clients can migrate gradually: keep `/v1` running while `/v2` rolls out.\n- Works everywhere (no special headers needed).\n\n### 2. Query parameter\n```\n/todos?version=1\n```\n- Less clean, easy to forget, harder to route in most frameworks.\n\n### 3. Accept header\n```\nAccept: application/vnd.myapp.v2+json\n```\n- Technically \"most RESTful\" per purists.\n- Hard to test manually, less transparent.\n\n## My recommendation for a new project\n\n```\nhttps://api.yourapp.com/v1/todos\n```\n\nStart with `v1` from day one. It costs almost nothing upfront and saves you pain later.\n\n## When to bump versions\n\n- **Don't** bump for additive changes (new optional fields, new endpoints) — these are backward-compatible.\n- **Do** bump for breaking changes:\n  - Removing or renaming a field\n  - Changing a field's type\n  - Changing authentication requirements\n\n## Deprecation strategy\n\n1. Announce the deprecation date.\n2. Add a `Deprecation` response header to the old version.\n3. Keep the old version alive for a reasonable period (3–6 months is common).\n4. Shut it down once traffic drops off.\n\nFor a personal todo app you might never need `v2`, but the pattern costs nothing and is good muscle memory."
+          }
+        ],
+        "attachments": [],
+        "files": []
+      }
+    ]
+  },
+  {
+    "uuid": "cl-sample-003",
+    "name": "Debugging a Memory Leak in Node.js",
+    "created_at": "2025-06-08T08:00:00.000000Z",
+    "updated_at": "2025-06-08T08:20:00.000000Z",
+    "chat_messages": [
+      {
+        "uuid": "cl-msg-020",
+        "sender": "human",
+        "created_at": "2025-06-08T08:00:00.000000Z",
+        "updated_at": "2025-06-08T08:00:00.000000Z",
+        "text": "My Node.js server's memory usage keeps growing over time and eventually crashes. How do I find the memory leak?",
+        "content": [
+          {
+            "type": "text",
+            "text": "My Node.js server's memory usage keeps growing over time and eventually crashes. How do I find the memory leak?"
+          }
+        ],
+        "attachments": [],
+        "files": []
+      },
+      {
+        "uuid": "cl-msg-021",
+        "sender": "assistant",
+        "created_at": "2025-06-08T08:00:18.000000Z",
+        "updated_at": "2025-06-08T08:00:18.000000Z",
+        "text": "Memory leaks in Node.js are usually caused by unintentional references...",
+        "content": [
+          {
+            "type": "thinking",
+            "thinking": "The user has a Node.js memory leak. I should cover: how to detect and confirm a leak (heap snapshots, process.memoryUsage), common causes (event listener accumulation, closure references, caches without eviction, timers), and tools (Chrome DevTools heap profiler, node --inspect, clinic.js). Give actionable steps."
+          },
+          {
+            "type": "text",
+            "text": "Memory leaks in Node.js are almost always caused by **unintentional object references** that prevent the garbage collector from freeing memory. Here's how to find and fix them:\n\n## Step 1: Confirm it's actually a leak\n\nFirst, monitor heap usage over time:\n\n```javascript\n// Add this to your server and watch the output\nsetInterval(() => {\n  const { heapUsed, heapTotal } = process.memoryUsage();\n  console.log(`Heap: ${Math.round(heapUsed / 1024 / 1024)}MB used / ${Math.round(heapTotal / 1024 / 1024)}MB total`);\n}, 5000);\n```\n\nIf `heapUsed` grows steadily and never comes back down, you have a leak.\n\n## Step 2: Take heap snapshots\n\nRun your server with the inspector:\n\n```bash\nnode --inspect server.js\n```\n\nOpen Chrome → navigate to `chrome://inspect` → click **Open dedicated DevTools for Node**.\n\n1. Go to the **Memory** tab.\n2. Take a baseline heap snapshot.\n3. Trigger the leaky behavior (make requests, run the workflow).\n4. Take a second snapshot.\n5. Compare: look for objects that grew significantly.\n\n## Step 3: Common culprits\n\n### Event listener accumulation\n```javascript\n// BAD — adds a new listener every time this runs\nfunction handleRequest(req, res) {\n  someEmitter.on('data', (chunk) => { /* ... */ });\n}\n\n// GOOD — register once, or use .once()\nsomeEmitter.on('data', handleData); // outside the request handler\n```\n\n### Unbounded caches\n```javascript\n// BAD — grows forever\nconst cache = {};\napp.get('/user/:id', (req, res) => {\n  cache[req.params.id] = fetchUser(req.params.id); // never evicted\n});\n\n// GOOD — use a LRU cache with a size limit\nimport LRU from 'lru-cache';\nconst cache = new LRU({ max: 500 });\n```\n\n### Forgotten timers/intervals\n```javascript\n// BAD — interval keeps a reference alive\nconst timer = setInterval(doWork, 1000);\n// Missing: clearInterval(timer) when done\n\n// GOOD\nconst timer = setInterval(doWork, 1000);\nprocess.on('SIGTERM', () => clearInterval(timer));\n```\n\n### Closures holding large objects\n```javascript\n// The closure keeps 'largeData' alive even if only 'id' is needed\nfunction createHandler(largeData) {\n  const id = largeData.id; // extract only what you need\n  return () => console.log(id); // closure only holds 'id'\n}\n```\n\n## Useful tools\n\n- **`clinic.js`** (`npm i -g clinic`) — `clinic heap -- node server.js` generates a flame graph\n- **`node-memwatch`** — emits events when heap grows unexpectedly\n- **`heapdump`** — write heap snapshots from inside the process on demand"
+          }
+        ],
+        "attachments": [],
+        "files": []
+      },
+      {
+        "uuid": "cl-msg-022",
+        "sender": "human",
+        "created_at": "2025-06-08T08:15:00.000000Z",
+        "updated_at": "2025-06-08T08:15:00.000000Z",
+        "text": "I found it — I was adding an event listener inside a request handler without removing it. How do I fix it cleanly?",
+        "content": [
+          {
+            "type": "text",
+            "text": "I found it — I was adding an event listener inside a request handler without removing it. How do I fix it cleanly?"
+          }
+        ],
+        "attachments": [],
+        "files": []
+      },
+      {
+        "uuid": "cl-msg-023",
+        "sender": "assistant",
+        "created_at": "2025-06-08T08:15:20.000000Z",
+        "updated_at": "2025-06-08T08:15:20.000000Z",
+        "text": "Great find! Here are the clean patterns to fix event listener leaks:",
+        "content": [
+          {
+            "type": "text",
+            "text": "Great find! There are three clean patterns depending on your situation:\n\n## Pattern 1: Use `.once()` for one-shot listeners\n\nIf you only need the listener to fire one time per request:\n\n```javascript\n// Automatically removed after firing once\nsomeEmitter.once('data', (chunk) => {\n  res.send(chunk);\n});\n```\n\n## Pattern 2: Remove the listener when done\n\nIf the listener needs to fire multiple times but only for the lifetime of a request:\n\n```javascript\nconst handler = (chunk) => {\n  // process chunk\n};\n\nsomeEmitter.on('data', handler);\n\nres.on('finish', () => {\n  someEmitter.off('data', handler); // clean up when response is done\n});\n\nreq.on('close', () => {\n  someEmitter.off('data', handler); // clean up if client disconnects early\n});\n```\n\n## Pattern 3: Use AbortController (modern Node.js)\n\nFor complex scenarios with multiple listeners:\n\n```javascript\nconst ac = new AbortController();\nconst { signal } = ac;\n\n// The { signal } option auto-removes the listener when aborted\nsomeEmitter.on('data', handler, { signal });\nanotherEmitter.on('event', otherHandler, { signal });\n\nres.on('finish', () => ac.abort()); // removes ALL listeners at once\n```\n\n## Pattern 4: Move registration outside the handler\n\nIf the emitter and handler are both long-lived, register once at startup:\n\n```javascript\n// At startup — registered once\nsomeEmitter.on('data', globalDataHandler);\n\n// In your request handler — no listener registration here\napp.get('/stream', (req, res) => {\n  // just use the already-registered global handler\n});\n```\n\n## Quick sanity check\n\nAdd this temporarily to catch future violations:\n\n```javascript\n// Warns if any single emitter exceeds 10 listeners\nsomeEmitter.setMaxListeners(10);\n// Node.js will print a warning if you exceed this\n```\n\nPattern 2 or 3 is usually the right choice for per-request listeners tied to a response lifecycle."
+          }
+        ],
+        "attachments": [],
+        "files": []
+      }
+    ]
+  }
+]

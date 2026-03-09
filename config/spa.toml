@@ -1,0 +1,13 @@
+[spa]
+main_template = "config/spa_output_templates/main_spa.css"
+thread_template = "config/spa_output_templates/thread.css"
+
+[providers.deepseek]
+thread_template = "config/spa_output_templates/deepseek_thread.css"
+accent_color = "#4a90e2"
+label = "DeepSeek"
+
+[providers.claude]
+thread_template = "config/spa_output_templates/claude_thread.css"
+accent_color = "#a78bfa"
+label = "Claude"

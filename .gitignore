@@ -1,0 +1,20 @@
+# Personal / generated exports
+conversations.json
+user.json
+deepseek_data-*.zip
+output/
+*data*.zip
+
+# Sample data — tracked in git (screenshots for README)
+!sample_data/
+!sample_data/**
+
+# Python artifacts
+__pycache__/
+*.py[cod]
+
+# Environment
+*.env
+*.venv/
+Screenshot*
+

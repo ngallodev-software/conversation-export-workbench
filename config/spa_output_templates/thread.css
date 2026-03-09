@@ -1,0 +1,77 @@
+/* Thread content area — base styles for #conv-content */
+
+#conv-content h1 { font-size: 1.5rem; font-weight: 700; color: #fff; margin-bottom: .25rem; }
+#conv-content h2 { font-size: 1.15rem; font-weight: 600; color: #d1d5db; margin: 1.2rem 0 .5rem; }
+#conv-content h3 { font-size: 1rem; font-weight: 600; color: #c4cad3; margin: 1rem 0 .4rem; }
+#conv-content h4 { font-size: .9rem; font-weight: 600; color: #9ca3af; margin: .8rem 0 .3rem; }
+#conv-content p  { margin-bottom: .75rem; line-height: 1.75; color: #d1d5db; }
+#conv-content ul, #conv-content ol { padding-left: 1.4rem; margin-bottom: .75rem; color: #d1d5db; }
+#conv-content li { margin-bottom: .25rem; line-height: 1.7; }
+#conv-content a  { color: #4a90e2; text-decoration: underline; text-underline-offset: 2px; }
+#conv-content blockquote { border-left: 3px solid #374151; padding-left: 1rem; color: #9ca3af; margin-bottom: .75rem; }
+#conv-content hr { border: none; border-top: 1px solid #1f2937; margin: 1.5rem 0; }
+#conv-content table { width: 100%; border-collapse: collapse; margin-bottom: .75rem; font-size: .85rem; }
+#conv-content th, #conv-content td { border: 1px solid #1f2937; padding: .35rem .65rem; color: #d1d5db; }
+#conv-content th { background: #161922; color: #9ca3af; }
+
+#conv-content pre {
+  background: #0a0c10; border: 1px solid #1f2937; border-radius: .5rem;
+  padding: 1rem 1.2rem; overflow-x: auto; font-size: .82rem; margin-bottom: .75rem;
+  font-family: "JetBrains Mono","Fira Code",monospace;
+  white-space: pre-wrap; word-break: break-word; line-height: 1.6; color: #e2e8f0;
+}
+#conv-content code {
+  background: #161922; border-radius: 3px; padding: .1em .35em;
+  font-size: .85em; font-family: "JetBrains Mono","Fira Code",monospace; color: #93c5fd;
+}
+#conv-content pre code { background: none; padding: 0; color: inherit; }
+
+#conv-content .message { margin-bottom: 1.5rem; border-radius: .625rem; padding: 1.1rem 1.4rem; }
+#conv-content .role-label {
+  font-size: .68rem; font-weight: 700; letter-spacing: .08em;
+  text-transform: uppercase; opacity: .6; margin-bottom: .5rem;
+}
+#conv-content .msg-time { font-size: .68rem; color: #4b5563; float: right; margin-top: .1rem; }
+
+/* Timestamp visibility — controlled by body class */
+#conv-content .msg-time { display: none; }
+body.show-ts #conv-content .msg-time { display: inline; }
+#conv-content .meta .ts-display { opacity: 0.5; }
+body.show-ts #conv-content .meta .ts-display { opacity: 1; }
+
+#conv-content .thinking {
+  background: #111108; border: 1px solid #2a2a18; border-radius: .45rem;
+  padding: .75rem 1rem; margin-bottom: .85rem; font-style: italic;
+  color: #6b7040; font-size: .84rem; line-height: 1.7;
+}
+#conv-content .thinking-label {
+  font-size: .65rem; font-weight: 700; letter-spacing: .08em;
+  text-transform: uppercase; color: #4a4a28; margin-bottom: .35rem;
+}
+
+#conv-content .search-block {
+  background: #0a1018; border: 1px dashed #1e3048; border-radius: .45rem;
+  padding: .65rem .9rem; margin-bottom: .75rem; font-size: .8rem; color: #5a8aaa;
+}
+#conv-content .search-block .search-label {
+  font-size: .65rem; font-weight: 700; letter-spacing: .08em;
+  text-transform: uppercase; color: #2a5a7a; margin-bottom: .35rem;
+}
+#conv-content .search-result { margin-top: .35rem; padding-left: .7rem; border-left: 2px solid #1a3a52; }
+#conv-content .search-result a { color: #4a80aa; text-decoration: none; }
+#conv-content .search-result a:hover { text-decoration: underline; }
+#conv-content .search-result .snippet { color: #445566; font-size: .77rem; }
+
+#conv-content .read-link-block {
+  background: #0a1214; border: 1px dashed #1a3030; border-radius: .45rem;
+  padding: .45rem .8rem; margin-bottom: .75rem; font-size: .78rem; color: #4a8888;
+}
+
+#conv-content .meta { font-size: .75rem; color: #4b5563; margin-bottom: 2rem; }
+
+.thinking-toggle { cursor: pointer; }
+.thinking-toggle summary { list-style: none; }
+.thinking-toggle summary::-webkit-details-marker { display: none; }
+
+mark { background: #3b2a00; color: #fbbf24; border-radius: 2px; padding: 0 2px; }
+mark.search-active { background: #7a4a00; outline: 1px solid #f59e0b; }

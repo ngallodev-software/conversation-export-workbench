@@ -13,6 +13,7 @@ Options:
   --output DIR        Root output directory (default: output/)
   --provider NAME     Include only this provider: deepseek, claude
                       (default: all providers with exported files)
+  --config PATH       Path to spa.toml config (default: config/spa.toml)
   --yes               Overwrite index.html without prompting
 """
 
@@ -33,6 +34,8 @@ def main():
     parser.add_argument("--output", default="output", help="Root output directory")
     parser.add_argument("--provider", choices=PROVIDERS,
                         help="Include only one provider (default: all)")
+    parser.add_argument("--config", default="config/spa.toml",
+                        help="Path to spa.toml config (default: config/spa.toml)")
     parser.add_argument("--yes", "-y", action="store_true",
                         help="Overwrite index.html without prompting")
     args = parser.parse_args()
@@ -42,10 +45,11 @@ def main():
         print(f"Error: output directory '{out_dir}' does not exist.", file=sys.stderr)
         sys.exit(1)
 
+    config_path = Path(args.config)
     providers = [args.provider] if args.provider else None
 
     try:
-        html = build_spa(out_dir, providers)
+        html = build_spa(out_dir, config_path=config_path, providers=providers)
     except ValueError as e:
         print(f"Error: {e}", file=sys.stderr)
         sys.exit(1)
