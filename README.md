@@ -36,8 +36,8 @@ A zero-dependency Python CLI that converts **DeepSeek** and **Claude (Anthropic)
 ## Installation
 
 ```bash
-git clone <repo-url>
-cd deepseek_export_formatter
+git clone https://github.com/ngallodev-software/conversation-export-workbench.git
+cd conversation-export-workbench
 ```
 
 No virtual environment or package installation needed.
@@ -182,9 +182,13 @@ thread_template = "config/spa_output_templates/thread.css"
 
 [providers.deepseek]
 thread_template = "config/spa_output_templates/deepseek_thread.css"
+accent_color    = "#4a90e2"
+label           = "DeepSeek"
 
 [providers.claude]
 thread_template = "config/spa_output_templates/claude_thread.css"
+accent_color    = "#a78bfa"
+label           = "Claude"
 ```
 
 To use a custom config:
@@ -241,7 +245,7 @@ Detection logic: the top-level JSON must be an array; the first item must contai
 ## Project structure
 
 ```
-deepseek_export_formatter/
+conversation-export-workbench/
 ├── format_conversations.py   # Main CLI entry point
 ├── generate_spa.py            # SPA builder CLI
 ├── formatters/
