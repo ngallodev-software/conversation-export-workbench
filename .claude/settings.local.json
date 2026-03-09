@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__jcodemunch__index_folder",
+      "Bash(python3:*)",
+      "Bash(node:*)",
+      "Bash(ls:*)",
+      "Bash(curl:*)",
+      "Bash(head:*)"
+    ]
+  },
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": [
+    "jcodemunch",
+    "chrome-devtools"
+  ]
+}
