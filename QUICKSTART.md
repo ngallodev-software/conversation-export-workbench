@@ -16,7 +16,7 @@ Convert DeepSeek or Claude conversation exports into HTML, Markdown, or cleaned 
 ## Installation
 
 ```bash
-git clone https://github.com/ngallodev-software/conversation-export-workbench.git
+git clone <repo-url>
 cd conversation-export-workbench
 ```
 
@@ -79,11 +79,11 @@ After exporting HTML files, generate and browse an interactive single-page viewe
 python3 generate_spa.py --output output/ --yes
 
 # Serve locally (required — the SPA uses fetch())
-cd output && python3 -m http.server 8080
-# Then open: http://localhost:8080
+python3 serve_spa.py
+# Then open the printed URL
 
 # For LAN access from other devices
-cd output && python3 -m http.server 8080 --bind 0.0.0.0
+python3 serve_spa.py --host 0.0.0.0 --start-port 8080 --end-port 80890
 ```
 
 The viewer includes a provider filter (DeepSeek / Claude / All) in the settings menu, live search with full-text highlighting, collapsible thinking blocks, and jump navigation between turns.
