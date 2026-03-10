@@ -1,6 +1,6 @@
 # Chat Export Viewer
 
-A zero-dependency Python CLI that converts **DeepSeek**, **Claude (Anthropic)**, and **ChatGPT (OpenAI)** conversation exports into styled HTML, Markdown, or cleaned JSON — with a built-in interactive single-page viewer.
+A Python CLI with no Python package dependencies that converts **DeepSeek**, **Claude (Anthropic)**, and **ChatGPT (OpenAI)** conversation exports into styled HTML, Markdown, or cleaned JSON — with a built-in interactive single-page viewer.
 
 > **Quick start:** see [QUICKSTART.md](QUICKSTART.md)
 
@@ -21,7 +21,7 @@ A zero-dependency Python CLI that converts **DeepSeek**, **Claude (Anthropic)**,
 - **Interactive SPA viewer** — browse all exported conversations in one page with search, filtering, sort, and per-message jump navigation
 - **Thinking blocks** — DeepSeek `THINK` fragments and Claude extended thinking blocks rendered as collapsible sections
 - **Web search results** — DeepSeek `SEARCH` fragments displayed inline with titles, URLs, and snippets
-- **Zero dependencies** — pure Python 3.10+ stdlib; nothing to install
+- **No Python package dependencies** — pure Python 3.10+ stdlib; nothing to install
 - **Interactive mode** — run with no arguments to be guided through zip extraction, provider detection, and export step by step
 - **Extensible** — drop a new template into `provider_templates/` to add support for additional providers
 
@@ -40,7 +40,7 @@ git clone <repo-url>
 cd conversation-export-workbench
 ```
 
-No virtual environment or package installation needed.
+No virtual environment or Python package installation needed.
 
 ---
 
