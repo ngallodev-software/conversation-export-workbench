@@ -31,6 +31,14 @@ A Python CLI with no Python package dependencies that converts **DeepSeek**, **C
 
 - Python **3.10 or newer** (uses `match`-free type hints; no third-party packages)
 
+## Quick verification
+
+Run the repository smoke test (all three providers + SPA generation):
+
+```bash
+./scripts/smoke_test.sh
+```
+
 ---
 
 ## Installation
@@ -267,12 +275,16 @@ conversation-export-workbench/
 │   ├── claude.conversations-template.json
 │   └── deepseek.conversations-template.json
 ├── sample_data/
+│   ├── chatgpt-convo.json     # Sample ChatGPT export (2 conversations)
 │   ├── claude-convo.json      # Sample Claude export (3 conversations)
 │   ├── deepseek-convo.json    # Sample DeepSeek export (3 conversations)
 │   └── sample_output/         # Pre-rendered HTML + SPA from sample data
 │       ├── index.html
+│       ├── chatgpt/
 │       ├── claude/
 │       └── deepseek/
+├── scripts/
+│   └── smoke_test.sh          # Fast regression check for exports + SPA build
 ├── output/                    # Your personal exports (git-ignored)
 ├── QUICKSTART.md
 └── README.md

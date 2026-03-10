@@ -1,0 +1,217 @@
+[
+  {
+    "id": "cgpt-sample-001",
+    "title": "Planning a Weekend Trip to Yosemite",
+    "create_time": 1748851200.241,
+    "update_time": 1748851815.842,
+    "current_node": "cgpt-001-a2",
+    "mapping": {
+      "root": {
+        "id": "root",
+        "parent": null,
+        "children": ["cgpt-001-sys"],
+        "message": null
+      },
+      "cgpt-001-sys": {
+        "id": "cgpt-001-sys",
+        "parent": "root",
+        "children": ["cgpt-001-u1"],
+        "message": {
+          "id": "cgpt-001-sys",
+          "author": {"role": "system", "name": null, "metadata": {}},
+          "content": {"content_type": "text", "parts": [""]},
+          "create_time": null,
+          "update_time": null,
+          "weight": 0.0,
+          "status": "finished_successfully",
+          "metadata": {}
+        }
+      },
+      "cgpt-001-u1": {
+        "id": "cgpt-001-u1",
+        "parent": "cgpt-001-sys",
+        "children": ["cgpt-001-a1-old", "cgpt-001-a1"],
+        "message": {
+          "id": "cgpt-001-u1",
+          "author": {"role": "user", "name": null, "metadata": {}},
+          "content": {
+            "content_type": "text",
+            "parts": ["Can you help me plan a 2-day Yosemite trip from San Francisco?"]
+          },
+          "create_time": 1748851200.241,
+          "update_time": null,
+          "weight": 1.0,
+          "status": "finished_successfully",
+          "metadata": {}
+        }
+      },
+      "cgpt-001-a1-old": {
+        "id": "cgpt-001-a1-old",
+        "parent": "cgpt-001-u1",
+        "children": [],
+        "message": {
+          "id": "cgpt-001-a1-old",
+          "author": {"role": "assistant", "name": null, "metadata": {}},
+          "content": {
+            "content_type": "text",
+            "parts": ["Old regenerated draft that should not show because it is not on current_node path."]
+          },
+          "create_time": 1748851260.0,
+          "update_time": null,
+          "weight": 0.0,
+          "status": "finished_successfully",
+          "metadata": {"model_slug": "gpt-4o-mini"}
+        }
+      },
+      "cgpt-001-a1": {
+        "id": "cgpt-001-a1",
+        "parent": "cgpt-001-u1",
+        "children": ["cgpt-001-u2"],
+        "message": {
+          "id": "cgpt-001-a1",
+          "author": {"role": "assistant", "name": null, "metadata": {}},
+          "content": {
+            "content_type": "text",
+            "parts": [
+              "Absolutely. For a 2-day trip from SF, I suggest:\n\n1. Leave before 6 AM.\n2. Day 1: Tunnel View, Lower Yosemite Fall, Valley Loop.\n3. Day 2: Glacier Point (if open), Mariposa Grove, drive back after sunset."
+            ]
+          },
+          "create_time": 1748851290.11,
+          "update_time": null,
+          "weight": 1.0,
+          "status": "finished_successfully",
+          "metadata": {"model_slug": "gpt-4o"}
+        }
+      },
+      "cgpt-001-u2": {
+        "id": "cgpt-001-u2",
+        "parent": "cgpt-001-a1",
+        "children": ["cgpt-001-a2"],
+        "message": {
+          "id": "cgpt-001-u2",
+          "author": {"role": "user", "name": null, "metadata": {}},
+          "content": {
+            "content_type": "multimodal_text",
+            "parts": ["Can you turn that into a budget-friendly itinerary with food stops?"]
+          },
+          "create_time": 1748851685.0,
+          "update_time": null,
+          "weight": 1.0,
+          "status": "finished_successfully",
+          "metadata": {}
+        }
+      },
+      "cgpt-001-a2": {
+        "id": "cgpt-001-a2",
+        "parent": "cgpt-001-u2",
+        "children": [],
+        "message": {
+          "id": "cgpt-001-a2",
+          "author": {"role": "assistant", "name": null, "metadata": {}},
+          "content": {
+            "content_type": "text",
+            "parts": [
+              "Sure. Budget version:\n\n- Pack lunch/snacks from SF.\n- Groveland grocery stop on entry day.\n- Use picnic areas in the Valley instead of sit-down restaurants.\n- Overnight in Oakhurst/Mariposa for cheaper rates than inside the park."
+            ]
+          },
+          "create_time": 1748851815.842,
+          "update_time": null,
+          "weight": 1.0,
+          "status": "finished_successfully",
+          "metadata": {"model_slug": "gpt-4o"}
+        }
+      }
+    }
+  },
+  {
+    "id": "cgpt-sample-002",
+    "title": "Debugging a Slow SQL Query",
+    "create_time": 1748937600.0,
+    "update_time": 1748938201.5,
+    "current_node": "cgpt-002-a2",
+    "mapping": {
+      "root": {
+        "id": "root",
+        "parent": null,
+        "children": ["cgpt-002-u1"],
+        "message": null
+      },
+      "cgpt-002-u1": {
+        "id": "cgpt-002-u1",
+        "parent": "root",
+        "children": ["cgpt-002-a1"],
+        "message": {
+          "id": "cgpt-002-u1",
+          "author": {"role": "user", "name": null, "metadata": {}},
+          "content": {
+            "content_type": "text",
+            "parts": ["My Postgres query takes 8 seconds. How should I debug it?"]
+          },
+          "create_time": 1748937600.0,
+          "update_time": null,
+          "weight": 1.0,
+          "status": "finished_successfully",
+          "metadata": {}
+        }
+      },
+      "cgpt-002-a1": {
+        "id": "cgpt-002-a1",
+        "parent": "cgpt-002-u1",
+        "children": ["cgpt-002-u2"],
+        "message": {
+          "id": "cgpt-002-a1",
+          "author": {"role": "assistant", "name": null, "metadata": {}},
+          "content": {
+            "content_type": "text",
+            "parts": [
+              "Start with `EXPLAIN (ANALYZE, BUFFERS)` and check for sequential scans, row estimate mismatch, and missing indexes."
+            ]
+          },
+          "create_time": 1748937645.2,
+          "update_time": null,
+          "weight": 1.0,
+          "status": "finished_successfully",
+          "metadata": {"model_slug": "gpt-4o"}
+        }
+      },
+      "cgpt-002-u2": {
+        "id": "cgpt-002-u2",
+        "parent": "cgpt-002-a1",
+        "children": ["cgpt-002-a2"],
+        "message": {
+          "id": "cgpt-002-u2",
+          "author": {"role": "user", "name": null, "metadata": {}},
+          "content": {
+            "content_type": "text",
+            "parts": ["Can you give me a checklist for production-safe tuning?"]
+          },
+          "create_time": 1748938120.9,
+          "update_time": null,
+          "weight": 1.0,
+          "status": "finished_successfully",
+          "metadata": {}
+        }
+      },
+      "cgpt-002-a2": {
+        "id": "cgpt-002-a2",
+        "parent": "cgpt-002-u2",
+        "children": [],
+        "message": {
+          "id": "cgpt-002-a2",
+          "author": {"role": "assistant", "name": null, "metadata": {}},
+          "content": {
+            "content_type": "text",
+            "parts": [
+              "Production-safe checklist:\n\n1. Capture baseline latency and plan hash.\n2. Add index in staging first, verify write overhead.\n3. Use `EXPLAIN (ANALYZE, BUFFERS)` before/after.\n4. Roll out with feature flag and query timeout guard.\n5. Monitor p95/p99 and lock wait time for 24h."
+            ]
+          },
+          "create_time": 1748938201.5,
+          "update_time": null,
+          "weight": 1.0,
+          "status": "finished_successfully",
+          "metadata": {"model_slug": "gpt-4o"}
+        }
+      }
+    }
+  }
+]

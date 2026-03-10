@@ -209,7 +209,7 @@ _HTML_TEMPLATE = """\
           <path d="M2 5a2 2 0 012-2h12a2 2 0 012 2v10a2 2 0 01-2 2H4a2 2 0 01-2-2V5z"/>
         </svg>
       </div>
-      <span id="header-title" class="text-sm font-semibold text-gray-200 tracking-tight">Chat Export Viewer</span>
+      <span id="header-title" class="text-sm font-semibold text-gray-200 tracking-tight">Conversations</span>
       <svg class="w-3 h-3 text-gray-600 ml-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
       </svg>
