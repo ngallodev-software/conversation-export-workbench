@@ -8,12 +8,13 @@
       "Bash(curl:*)",
       "Bash(head:*)",
       "Bash(git:*)",
-      "Bash(GIT_EDITOR=true git rebase:*)"
+      "mcp__jcodemunch__get_file_outline",
+      "Bash(python:*)",
+      "Bash(gh pr:*)"
     ]
   },
   "enableAllProjectMcpServers": true,
   "enabledMcpjsonServers": [
-    "jcodemunch",
-    "chrome-devtools"
+    "jcodemunch"
   ]
 }
