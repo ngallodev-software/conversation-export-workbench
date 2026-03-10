@@ -1,0 +1,98 @@
+{
+  "_template_meta": {
+    "provider": "chatgpt",
+    "file_type": "conversations",
+    "description": "Template for ChatGPT (OpenAI) chat export (conversations.json). Used for provider auto-detection.",
+    "required_root": "array",
+    "notes": [
+      "Top-level value is a JSON array of conversation objects.",
+      "Each conversation has a 'mapping' field (tree of message nodes) and 'current_node' (leaf of active branch).",
+      "create_time and update_time are float unix timestamps (seconds), not ISO strings.",
+      "Each node: { id, parent, children, message }",
+      "Each message: { id, author, content, create_time, update_time, weight, metadata, ... }",
+      "author.role: 'user' | 'assistant' | 'system' | 'tool'",
+      "content.content_type: 'text' | 'multimodal_text' | 'tether_browse_display' | ...",
+      "content.parts: array of strings (for text content_type)",
+      "Walk active branch backwards from current_node via parent links, then reverse.",
+      "Skip nodes where message is None, author.role == 'system', or weight == 0."
+    ]
+  },
+  "_required_conversation_fields": ["id", "title", "create_time", "update_time", "current_node", "mapping"],
+  "_required_mapping_node_fields": ["id", "children", "message", "parent"],
+  "_required_message_fields": ["author", "content", "create_time", "weight"],
+  "_message_roles": ["user", "assistant", "system", "tool"],
+  "_content_types": {
+    "text": { "parts": "array of strings" },
+    "multimodal_text": { "parts": "array of strings or image refs" },
+    "tether_browse_display": { "skip": true },
+    "tether_quote": { "skip": true }
+  },
+  "_detection_signature": {
+    "root_type": "array",
+    "item_must_contain": ["mapping", "current_node"],
+    "item_must_not_contain": ["chat_messages", "inserted_at"]
+  },
+  "example_conversation": {
+    "id": "aabbccdd-1111-2222-3333-eeff00112233",
+    "title": "Example ChatGPT Conversation",
+    "create_time": 1707911089.734385,
+    "update_time": 1707911221.99916,
+    "current_node": "node-003",
+    "mapping": {
+      "node-root": {
+        "id": "node-root",
+        "parent": null,
+        "children": ["node-001"],
+        "message": null
+      },
+      "node-001": {
+        "id": "node-001",
+        "parent": "node-root",
+        "children": ["node-002"],
+        "message": {
+          "id": "node-001",
+          "author": { "role": "system", "name": null, "metadata": {} },
+          "content": { "content_type": "text", "parts": [""] },
+          "create_time": null,
+          "update_time": null,
+          "weight": 0.0,
+          "status": "finished_successfully",
+          "end_turn": true,
+          "metadata": {}
+        }
+      },
+      "node-002": {
+        "id": "node-002",
+        "parent": "node-001",
+        "children": ["node-003"],
+        "message": {
+          "id": "node-002",
+          "author": { "role": "user", "name": null, "metadata": {} },
+          "content": { "content_type": "text", "parts": ["Hello, can you help me?"] },
+          "create_time": 1707911089.734385,
+          "update_time": null,
+          "weight": 1.0,
+          "status": "finished_successfully",
+          "end_turn": null,
+          "metadata": {}
+        }
+      },
+      "node-003": {
+        "id": "node-003",
+        "parent": "node-002",
+        "children": [],
+        "message": {
+          "id": "node-003",
+          "author": { "role": "assistant", "name": null, "metadata": {} },
+          "content": { "content_type": "text", "parts": ["Of course! How can I help you today?"] },
+          "create_time": 1707911095.123456,
+          "update_time": null,
+          "weight": 1.0,
+          "status": "finished_successfully",
+          "end_turn": true,
+          "metadata": { "model_slug": "gpt-4" }
+        }
+      }
+    }
+  }
+}

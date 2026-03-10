@@ -24,11 +24,12 @@ except ImportError:
 # Config
 # ---------------------------------------------------------------------------
 
-PROVIDERS = ["deepseek", "claude"]
+PROVIDERS = ["deepseek", "claude", "chatgpt"]
 
 PROVIDER_LABELS = {
     "deepseek": "DeepSeek",
     "claude":   "Claude",
+    "chatgpt":  "ChatGPT",
     "all":      "All",
 }
 
@@ -47,6 +48,11 @@ _DEFAULT_CONFIG = {
             "thread_template": "config/spa_output_templates/claude_thread.css",
             "accent_color": "#c57d3d",
             "label": "Claude",
+        },
+        "chatgpt": {
+            "thread_template": "config/spa_output_templates/chatgpt_thread.css",
+            "accent_color": "#10a37f",
+            "label": "ChatGPT",
         },
     },
 }
@@ -162,7 +168,7 @@ _HTML_TEMPLATE = """\
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Chat Export Viewer</title>
+<title>Chats</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
   tailwind.config = {
@@ -367,7 +373,7 @@ const PROVIDER_LABELS = %%PROVIDER_LABELS%%;
 const headerTitle = document.getElementById('header-title');
 
 function updateHeaderTitle(p) {
-  headerTitle.textContent = p === 'all' ? 'Chat Export Viewer' : (PROVIDER_LABELS[p] || p) + ' Chats';
+  headerTitle.textContent = p === 'all' ? 'Chats' : (PROVIDER_LABELS[p] || p) + ' Chats';
 }
 
 function escHtml(s) {

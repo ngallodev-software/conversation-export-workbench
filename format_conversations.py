@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Conversation export formatter — supports DeepSeek and Claude (Anthropic) exports.
+Conversation export formatter — supports DeepSeek, Claude (Anthropic), and ChatGPT (OpenAI) exports.
 
 Usage:
   python format_conversations.py [options]
@@ -11,7 +11,7 @@ Usage:
 Options:
   --input FILE        Path to conversations.json (default: conversations.json)
   --output DIR        Output directory (default: output/<provider>/)
-  --provider NAME     Force provider: deepseek, claude  (auto-detected if omitted)
+  --provider NAME     Force provider: deepseek, claude, chatgpt  (auto-detected if omitted)
   --format FORMAT     Output format: html, md, json (default: html)
   --id ID             Export only the conversation with this ID
   --list              List all conversations and exit
@@ -25,11 +25,11 @@ import sys
 import zipfile
 from pathlib import Path
 
-from formatters import claude, deepseek
+from formatters import claude, deepseek, chatgpt
 from formatters.shared import safe_write, slugify
 
-# Registry: ordered list of formatter modules; first match wins
-_FORMATTERS = [deepseek, claude]
+# Registry of formatter modules
+_FORMATTERS = [deepseek, claude, chatgpt]
 
 # Directory containing provider detection templates
 _TEMPLATES_DIR = Path(__file__).parent / "provider_templates"
@@ -81,8 +81,7 @@ def _detect_provider_from_templates(data: list) -> str | None:
 def detect_provider(data: list):
     """
     Return the matching formatter module, or None.
-    Uses provider_templates/ for detection; falls back to each formatter's
-    built-in detect() for backwards compatibility.
+    Uses provider_templates/ for deterministic detection only.
     """
     provider_name = _detect_provider_from_templates(data)
     if provider_name:
@@ -91,10 +90,6 @@ def detect_provider(data: list):
         if mod:
             return mod
 
-    # Fallback: use each formatter's own detect() method
-    for mod in _FORMATTERS:
-        if mod.detect(data):
-            return mod
     return None
 
 
@@ -143,8 +138,8 @@ def _process_json(json_path: Path, fmt: str, yes: bool):
     fmt_mod = detect_provider(data)
     if not fmt_mod:
         print(f"  Could not auto-detect provider.")
-        ans = input("  Enter provider [deepseek/claude]: ").strip().lower()
-        fmt_mod = {"deepseek": deepseek, "claude": claude}.get(ans)
+        ans = input("  Enter provider [deepseek/claude/chatgpt]: ").strip().lower()
+        fmt_mod = {"deepseek": deepseek, "claude": claude, "chatgpt": chatgpt}.get(ans)
         if not fmt_mod:
             print("  Unknown provider — skipping.")
             return
@@ -260,14 +255,14 @@ def main():
         return
 
     parser = argparse.ArgumentParser(
-        description="Format DeepSeek / Claude conversation exports.",
+        description="Format DeepSeek / Claude / ChatGPT conversation exports.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=__doc__,
     )
     parser.add_argument("--input", default="conversations.json", help="Input JSON file")
     parser.add_argument("--output", default=None,
                         help="Output directory (default: output/<provider>/)")
-    parser.add_argument("--provider", choices=["deepseek", "claude"],
+    parser.add_argument("--provider", choices=["deepseek", "claude", "chatgpt"],
                         help="Force provider (auto-detected if omitted)")
     parser.add_argument("--format", default="html", choices=["html", "md", "json"],
                         help="Output format")
@@ -282,7 +277,7 @@ def main():
     data = load_conversations(args.input)
 
     # --- Resolve formatter module ---
-    forced_mod = {"deepseek": deepseek, "claude": claude}.get(args.provider)
+    forced_mod = {"deepseek": deepseek, "claude": claude, "chatgpt": chatgpt}.get(args.provider)
     detected_mod = detect_provider(data)
 
     if forced_mod:
@@ -295,8 +290,8 @@ def main():
         print(f"Detected provider: {fmt_mod.PROVIDER}")
     else:
         print("Could not auto-detect provider from file structure.")
-        ans = input("Enter provider [deepseek/claude]: ").strip().lower()
-        fmt_mod = {"deepseek": deepseek, "claude": claude}.get(ans)
+        ans = input("Enter provider [deepseek/claude/chatgpt]: ").strip().lower()
+        fmt_mod = {"deepseek": deepseek, "claude": claude, "chatgpt": chatgpt}.get(ans)
         if not fmt_mod:
             print("Unknown provider. Aborting.", file=sys.stderr)
             sys.exit(1)

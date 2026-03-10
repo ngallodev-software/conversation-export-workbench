@@ -1,0 +1,7 @@
+/* ChatGPT provider — thread accent colour overrides */
+/* User: warm sand (#e8c97e) / Assistant: OpenAI green (#10a37f) */
+
+#conv-content.provider-chatgpt .message.user      { background: #1a1708; border-left: 3px solid #e8c97e; }
+#conv-content.provider-chatgpt .message.assistant { background: #08140f; border-left: 3px solid #10a37f; }
+#conv-content.provider-chatgpt .message.user .role-label      { color: #e8c97e; }
+#conv-content.provider-chatgpt .message.assistant .role-label { color: #10a37f; }

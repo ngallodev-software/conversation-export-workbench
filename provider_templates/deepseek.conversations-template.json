@@ -25,7 +25,7 @@
   "_detection_signature": {
     "root_type": "array",
     "item_must_contain": ["mapping"],
-    "item_must_not_contain": ["chat_messages", "uuid"]
+    "item_must_not_contain": ["chat_messages", "uuid", "current_node"]
   },
   "example_conversation": {
     "id": "aabbccdd-1111-2222-3333-eeff00112233",
