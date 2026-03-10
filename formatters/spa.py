@@ -9,6 +9,8 @@ CSS is loaded from template files referenced in config/spa.toml.
 
 import re
 import sys
+import json
+import html
 from pathlib import Path
 
 try:
@@ -121,7 +123,7 @@ def _extract_meta(html_path: Path) -> dict:
     """Return {file, title, ts} from a generated conversation HTML file."""
     text = html_path.read_text(encoding="utf-8")
     m_title = re.search(r"<h1>(.*?)</h1>", text)
-    title = m_title.group(1) if m_title else html_path.stem.replace("-", " ").title()
+    title = html.unescape(m_title.group(1)) if m_title else html_path.stem.replace("-", " ").title()
     m_ts = re.search(r'data-started-ts="(\d+)"', text)
     ts = int(m_ts.group(1)) if m_ts else 0
     return {"file": html_path.name, "title": title, "ts": ts}
@@ -149,13 +151,17 @@ def scan_provider(output_dir: Path, provider: str) -> list[dict]:
 
 def _js_conv_list(convs: list[dict]) -> str:
     """Render a JS array literal from a list of conv dicts."""
-    items = []
-    for c in convs:
-        title_esc = c["title"].replace("\\", "\\\\").replace('"', '\\"').replace("\n", " ")
-        items.append(
-            f'  {{ file:"{c["file"]}", title:"{title_esc}", ts:{c["ts"]}, provider:"{c["provider"]}" }}'
-        )
-    return "[\n" + ",\n".join(items) + "\n]"
+    payload = [
+        {
+            "file": str(c.get("file", "")),
+            "title": str(c.get("title", "")).replace("\n", " "),
+            "ts": int(c.get("ts", 0) or 0),
+            "provider": str(c.get("provider", "")),
+        }
+        for c in convs
+    ]
+    data = json.dumps(payload, ensure_ascii=False)
+    return data.replace("<", "\\u003c").replace(">", "\\u003e").replace("&", "\\u0026")
 
 
 # ---------------------------------------------------------------------------
@@ -968,7 +974,9 @@ def build_spa(
         btns = []
         for p in found_providers:
             label = config["providers"].get(p, {}).get("label") or PROVIDER_LABELS.get(p, p.title())
-            btns.append(f'          <button class="provider-filter-btn" data-p="{p}">{label}</button>')
+            p_attr = html.escape(p, quote=True)
+            label_html = html.escape(str(label), quote=False)
+            btns.append(f'          <button class="provider-filter-btn" data-p="{p_attr}">{label_html}</button>')
         btns.append(f'          <button class="provider-filter-btn" data-p="all">All</button>')
         provider_section = (
             '      <div class="menu-section">\n'
@@ -987,11 +995,12 @@ def build_spa(
     js_data = _js_conv_list(all_convs)
 
     # Build JS provider labels object: { deepseek: "DeepSeek", claude: "Claude", ... }
-    label_pairs = []
+    labels = {}
     for p in found_providers:
         label = config["providers"].get(p, {}).get("label") or PROVIDER_LABELS.get(p, p.title())
-        label_pairs.append(f'"{p}":"{label}"')
-    js_provider_labels = "{" + ",".join(label_pairs) + "}"
+        labels[str(p)] = str(label)
+    js_provider_labels = json.dumps(labels, ensure_ascii=False)
+    js_provider_labels = js_provider_labels.replace("<", "\\u003c").replace(">", "\\u003e").replace("&", "\\u0026")
 
     html = _HTML_TEMPLATE
     html = html.replace("%%CSS%%", css)

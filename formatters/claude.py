@@ -1,5 +1,6 @@
 """Claude (Anthropic) conversation export formatter."""
 
+import html
 import json
 
 from .shared import (
@@ -28,20 +29,23 @@ def detect(data: list) -> bool:
 
 def conv_to_html_body(conv: dict) -> str:
     """Return the inner HTML body for a single conversation (no full-page wrapper)."""
-    title = conv.get("name", "Untitled")
-    created_iso = conv.get("created_at", "")
-    updated_iso = conv.get("updated_at", "")
+    title = str(conv.get("name", "Untitled"))
+    title_html = html.escape(title, quote=False)
+    created_iso = str(conv.get("created_at", ""))
+    updated_iso = str(conv.get("updated_at", ""))
+    created_iso_attr = html.escape(created_iso, quote=True)
+    updated_iso_attr = html.escape(updated_iso, quote=True)
     created_epoch = iso_to_epoch_ms(created_iso)
     updated_epoch = iso_to_epoch_ms(updated_iso)
     messages = conv.get("chat_messages", [])
 
     parts = [
-        f'<h1>{title}</h1>',
+        f'<h1>{title_html}</h1>',
         f'<div class="meta"'
         f' data-started-ts="{created_epoch}"'
         f' data-updated-ts="{updated_epoch}"'
-        f' data-started-iso="{created_iso}"'
-        f' data-updated-iso="{updated_iso}">'
+        f' data-started-iso="{created_iso_attr}"'
+        f' data-updated-iso="{updated_iso_attr}">'
         f'Started <span class="ts-display">{fmt_date(created_iso)}</span>'
         f' &nbsp;·&nbsp; '
         f'Last updated <span class="ts-display">{fmt_date(updated_iso)}</span>'
@@ -50,7 +54,8 @@ def conv_to_html_body(conv: dict) -> str:
 
     for msg in messages:
         sender = msg.get("sender", "")
-        msg_iso   = msg.get("created_at", "")
+        msg_iso   = str(msg.get("created_at", ""))
+        msg_iso_attr = html.escape(msg_iso, quote=True)
         msg_epoch = iso_to_epoch_ms(msg_iso)
         timestamp = fmt_date(msg_iso)
         content_blocks = _get_content_blocks(msg)
@@ -62,9 +67,9 @@ def conv_to_html_body(conv: dict) -> str:
                     html_parts.append(markdown_to_html(block.get("text", "")))
             html_content = "\n".join(html_parts) or "<em>(empty)</em>"
             parts.append(
-                f'<div class="message user" data-ts="{msg_epoch}" data-ts-iso="{msg_iso}">'
+                f'<div class="message user" data-ts="{msg_epoch}" data-ts-iso="{msg_iso_attr}">'
                 f'<div class="role-label">You'
-                f' <span class="msg-time ts-display" data-ts="{msg_epoch}" data-ts-iso="{msg_iso}">{timestamp}</span>'
+                f' <span class="msg-time ts-display" data-ts="{msg_epoch}" data-ts-iso="{msg_iso_attr}">{timestamp}</span>'
                 f'</div>'
                 f'<div class="content">{html_content}</div>'
                 f"</div>"
@@ -91,9 +96,9 @@ def conv_to_html_body(conv: dict) -> str:
                 # tool_use / tool_result blocks silently skipped
             inner = "\n".join(inner_parts) or "<em>(empty)</em>"
             parts.append(
-                f'<div class="message assistant" data-ts="{msg_epoch}" data-ts-iso="{msg_iso}">'
+                f'<div class="message assistant" data-ts="{msg_epoch}" data-ts-iso="{msg_iso_attr}">'
                 f'<div class="role-label">Claude'
-                f' <span class="msg-time ts-display" data-ts="{msg_epoch}" data-ts-iso="{msg_iso}">{timestamp}</span>'
+                f' <span class="msg-time ts-display" data-ts="{msg_epoch}" data-ts-iso="{msg_iso_attr}">{timestamp}</span>'
                 f'</div>'
                 f"{inner}"
                 f"</div>"
@@ -108,10 +113,12 @@ def build_html_single(conv: dict) -> str:
 
 
 def build_html_all(convs: list) -> str:
-    index_items = "".join(
-        f'<li><a href="#conv-{c["uuid"]}">{c.get("name","Untitled")}</a></li>'
-        for c in convs
-    )
+    index_rows = []
+    for c in convs:
+        conv_id = html.escape(str(c.get("uuid", "")), quote=True)
+        conv_title = html.escape(str(c.get("name", "Untitled")), quote=False)
+        index_rows.append(f'<li><a href="#conv-{conv_id}">{conv_title}</a></li>')
+    index_items = "".join(index_rows)
     index_html = (
         '<div id="index"><h2>Conversations</h2><ul>'
         f"{index_items}"
@@ -119,7 +126,8 @@ def build_html_all(convs: list) -> str:
     )
     sections = []
     for conv in convs:
-        anchor = f'<div id="conv-{conv["uuid"]}" class="conv-header"></div>'
+        anchor_id = html.escape(str(conv.get("uuid", "")), quote=True)
+        anchor = f'<div id="conv-{anchor_id}" class="conv-header"></div>'
         sections.append(anchor + conv_to_html_body(conv))
         sections.append('<hr class="divider">')
     body = index_html + "\n".join(sections)

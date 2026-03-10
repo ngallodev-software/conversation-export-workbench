@@ -1,5 +1,6 @@
 """ChatGPT (OpenAI) conversation export formatter."""
 
+import html
 import json
 from datetime import datetime, timezone
 
@@ -137,23 +138,26 @@ def _message_to_html(msg: dict) -> str:
 
 def conv_to_html_body(conv: dict) -> str:
     """Return the inner HTML body for a single conversation (no full-page wrapper)."""
-    title         = conv.get("title", "Untitled")
+    title         = str(conv.get("title", "Untitled"))
+    title_html    = html.escape(title, quote=False)
     create_float  = conv.get("create_time")
     update_float  = conv.get("update_time")
-    created_iso   = _epoch_to_iso(create_float)
-    updated_iso   = _epoch_to_iso(update_float)
+    created_iso   = str(_epoch_to_iso(create_float))
+    updated_iso   = str(_epoch_to_iso(update_float))
+    created_iso_attr = html.escape(created_iso, quote=True)
+    updated_iso_attr = html.escape(updated_iso, quote=True)
     created_epoch = _epoch_to_epoch_ms(create_float)
     updated_epoch = _epoch_to_epoch_ms(update_float)
 
     messages = walk_tree(conv["mapping"], conv["current_node"])
 
     parts = [
-        f'<h1>{title}</h1>',
+        f'<h1>{title_html}</h1>',
         f'<div class="meta"'
         f' data-started-ts="{created_epoch}"'
         f' data-updated-ts="{updated_epoch}"'
-        f' data-started-iso="{created_iso}"'
-        f' data-updated-iso="{updated_iso}">'
+        f' data-started-iso="{created_iso_attr}"'
+        f' data-updated-iso="{updated_iso_attr}">'
         f'Started <span class="ts-display">{_fmt_epoch(create_float)}</span>'
         f' &nbsp;·&nbsp; '
         f'Last updated <span class="ts-display">{_fmt_epoch(update_float)}</span>'
@@ -174,10 +178,12 @@ def build_html_single(conv: dict) -> str:
 
 
 def build_html_all(convs: list) -> str:
-    index_items = "".join(
-        f'<li><a href="#conv-{c["id"]}">{c.get("title", "Untitled")}</a></li>'
-        for c in convs
-    )
+    index_rows = []
+    for c in convs:
+        conv_id = html.escape(str(c.get("id", "")), quote=True)
+        conv_title = html.escape(str(c.get("title", "Untitled")), quote=False)
+        index_rows.append(f'<li><a href="#conv-{conv_id}">{conv_title}</a></li>')
+    index_items = "".join(index_rows)
     index_html = (
         '<div id="index"><h2>Conversations</h2><ul>'
         f"{index_items}"
@@ -185,7 +191,8 @@ def build_html_all(convs: list) -> str:
     )
     sections = []
     for conv in convs:
-        anchor = f'<div id="conv-{conv["id"]}" class="conv-header"></div>'
+        anchor_id = html.escape(str(conv.get("id", "")), quote=True)
+        anchor = f'<div id="conv-{anchor_id}" class="conv-header"></div>'
         sections.append(anchor + conv_to_html_body(conv))
         sections.append('<hr class="divider">')
     body = index_html + "\n".join(sections)
