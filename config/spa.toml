@@ -11,3 +11,8 @@ label = "DeepSeek"
 thread_template = "config/spa_output_templates/claude_thread.css"
 accent_color = "#a78bfa"
 label = "Claude"
+
+[providers.chatgpt]
+thread_template = "config/spa_output_templates/chatgpt_thread.css"
+accent_color = "#10a37f"
+label = "ChatGPT"
