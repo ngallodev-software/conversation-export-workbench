@@ -1,6 +1,6 @@
 # Chat Export Viewer
 
-A zero-dependency Python CLI that converts **DeepSeek** and **Claude (Anthropic)** conversation exports into styled HTML, Markdown, or cleaned JSON — with a built-in interactive single-page viewer.
+A zero-dependency Python CLI that converts **DeepSeek**, **Claude (Anthropic)**, and **ChatGPT (OpenAI)** conversation exports into styled HTML, Markdown, or cleaned JSON — with a built-in interactive single-page viewer.
 
 > **Quick start:** see [QUICKSTART.md](QUICKSTART.md)
 
@@ -15,8 +15,8 @@ A zero-dependency Python CLI that converts **DeepSeek** and **Claude (Anthropic)
 
 ## Features
 
-- **Multi-provider support** — handles both DeepSeek and Claude export formats out of the box
-- **Auto-detection** — identifies the provider automatically from the file structure using pluggable JSON templates; no flags required for known formats
+- **Multi-provider support** — handles DeepSeek, Claude, and ChatGPT export formats out of the box
+- **Template-based auto-detection** — identifies the provider from JSON templates; if no template matches, the tool asks for explicit provider confirmation
 - **Three output formats** — styled dark-theme HTML, plain Markdown, and normalized JSON
 - **Interactive SPA viewer** — browse all exported conversations in one page with search, filtering, sort, and per-message jump navigation
 - **Thinking blocks** — DeepSeek `THINK` fragments and Claude extended thinking blocks rendered as collapsible sections
@@ -78,7 +78,7 @@ python3 format_conversations.py [options]
 |---|---|---|
 | `--input FILE` | `conversations.json` | Path to input JSON |
 | `--output DIR` | `output/<provider>/` | Where to write output files |
-| `--provider NAME` | auto-detected | Force provider: `deepseek` \| `claude` |
+| `--provider NAME` | auto-detected | Force provider: `deepseek` \| `claude` \| `chatgpt` |
 | `--format FORMAT` | `html` | Output format: `html` \| `md` \| `json` |
 | `--id ID` | all | Export only the conversation with this ID |
 | `--list` | — | Print all conversations with IDs and exit |
@@ -185,6 +185,9 @@ thread_template = "config/spa_output_templates/deepseek_thread.css"
 
 [providers.claude]
 thread_template = "config/spa_output_templates/claude_thread.css"
+
+[providers.chatgpt]
+thread_template = "config/spa_output_templates/chatgpt_thread.css"
 ```
 
 To use a custom config:
@@ -197,7 +200,7 @@ python3 generate_spa.py --config path/to/custom.toml --output output/ --yes
 
 | Feature | Details |
 |---|---|
-| **Provider filter** | Settings menu lets you narrow to DeepSeek, Claude, or All |
+| **Provider filter** | Settings menu lets you narrow to DeepSeek, Claude, ChatGPT, or All |
 | **Live search** | Filters sidebar list and highlights matches inside the open conversation; full-text search across loaded conversations |
 | **Sort** | Newest first, oldest first, A→Z, Z→A |
 | **Jump navigation** | Sidebar panel lists every user turn and assistant heading; scrolls to it on click; active entry tracks scroll position via IntersectionObserver |
@@ -206,7 +209,7 @@ python3 generate_spa.py --config path/to/custom.toml --output output/ --yes
 | **Scroll memory** | Returns to your scroll position when switching back to a conversation |
 | **Lazy loading** | Conversations are fetched on demand and cached in memory |
 | **Collapsible thinking** | `<thinking>` blocks converted to `<details>` on load |
-| **Provider colour theming** | DeepSeek (blue/green) and Claude (violet/teal) accents applied automatically |
+| **Provider colour theming** | DeepSeek (blue/green), Claude (violet/teal), and ChatGPT (OpenAI green/warm sand) accents applied automatically |
 
 **Settings menu** — provider filter, sort, timestamp toggle, conversation visibility
 
@@ -228,12 +231,12 @@ The tool loads detection templates from `provider_templates/` at startup. Each t
 }
 ```
 
-Detection logic: the top-level JSON must be an array; the first item must contain all keys in `item_must_contain` and none in `item_must_not_contain`. The first matching template wins.
+Detection logic: the top-level JSON must be an array; the first item must contain all keys in `item_must_contain` and none in `item_must_not_contain`. The first matching template wins. If no template matches, the tool does not guess from formatter heuristics and asks you to choose `--provider` (or prompts interactively).
 
 ### Adding a custom provider
 
 1. Create `provider_templates/myprovider.conversations-template.json` with a `_detection_signature` and `_template_meta.provider` set to your provider name.
-2. Add a formatter module at `formatters/myprovider.py` implementing `PROVIDER`, `ID_FIELD`, `TITLE_FIELD`, `detect()`, `build_html_single()`, `conv_to_md()`, and `build_json_single()`.
+2. Add a formatter module at `formatters/myprovider.py` implementing `PROVIDER`, `ID_FIELD`, `TITLE_FIELD`, `build_html_single()`, `conv_to_md()`, and `build_json_single()`.
 3. Register the module in `_FORMATTERS` in `format_conversations.py`.
 
 ---
@@ -246,8 +249,9 @@ conversation-export-workbench/
 ├── generate_spa.py            # SPA builder CLI
 ├── formatters/
 │   ├── __init__.py
-│   ├── claude.py              # Claude formatter + detect()
-│   ├── deepseek.py            # DeepSeek formatter + detect()
+│   ├── chatgpt.py             # ChatGPT formatter + active-branch tree walk
+│   ├── claude.py              # Claude formatter
+│   ├── deepseek.py            # DeepSeek formatter
 │   ├── shared.py              # Shared utils: dates, slugify, markdown→HTML, HTML template
 │   └── spa.py                 # SPA generator (CSS loader + metadata scanner)
 ├── config/
@@ -256,8 +260,10 @@ conversation-export-workbench/
 │       ├── main_spa.css       # SPA chrome: header, sidebar, menus, search
 │       ├── thread.css         # Thread content area base styles
 │       ├── deepseek_thread.css# DeepSeek accent colour overrides
-│       └── claude_thread.css  # Claude accent colour overrides
+│       ├── claude_thread.css  # Claude accent colour overrides
+│       └── chatgpt_thread.css # ChatGPT accent colour overrides
 ├── provider_templates/
+│   ├── chatgpt.conversations-template.json
 │   ├── claude.conversations-template.json
 │   └── deepseek.conversations-template.json
 ├── sample_data/
