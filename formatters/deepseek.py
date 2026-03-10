@@ -1,5 +1,6 @@
 """DeepSeek conversation export formatter."""
 
+import html
 import json
 
 from .shared import (
@@ -62,13 +63,16 @@ def _render_fragment_html(frag: dict) -> str:
         results = frag.get("results", [])
         items = ""
         for r in results[:5]:
-            url = r.get("url", "")
-            title = r.get("title", url)
-            snippet = r.get("snippet", "")
+            url = str(r.get("url", ""))
+            title = str(r.get("title", url))
+            snippet = str(r.get("snippet", ""))
+            url_attr = html.escape(url, quote=True)
+            title_html = html.escape(title, quote=False)
+            snippet_html = html.escape(snippet[:160], quote=False)
             items += (
                 f'<div class="search-result">'
-                f'<a href="{url}" target="_blank">{title}</a>'
-                + (f'<div class="snippet">{snippet[:160]}</div>' if snippet else "")
+                f'<a href="{url_attr}" target="_blank">{title_html}</a>'
+                + (f'<div class="snippet">{snippet_html}</div>' if snippet else "")
                 + "</div>"
             )
         return (
@@ -79,8 +83,10 @@ def _render_fragment_html(frag: dict) -> str:
         )
 
     if ftype == "READ_LINK":
-        url = frag.get("url", "")
-        return f'<div class="read-link-block">Read page: <a href="{url}" target="_blank">{url}</a></div>'
+        url = str(frag.get("url", ""))
+        url_attr = html.escape(url, quote=True)
+        url_html = html.escape(url, quote=False)
+        return f'<div class="read-link-block">Read page: <a href="{url_attr}" target="_blank">{url_html}</a></div>'
 
     if ftype == "RESPONSE":
         content = frag.get("content", "")
@@ -92,20 +98,23 @@ def _render_fragment_html(frag: dict) -> str:
 
 def conv_to_html_body(conv: dict) -> str:
     """Return the inner HTML body for a single conversation (no full-page wrapper)."""
-    title = conv.get("title", "Untitled")
-    inserted_iso = conv.get("inserted_at", "")
-    updated_iso  = conv.get("updated_at", "")
+    title = str(conv.get("title", "Untitled"))
+    title_html = html.escape(title, quote=False)
+    inserted_iso = str(conv.get("inserted_at", ""))
+    updated_iso  = str(conv.get("updated_at", ""))
+    inserted_iso_attr = html.escape(inserted_iso, quote=True)
+    updated_iso_attr = html.escape(updated_iso, quote=True)
     inserted_epoch = iso_to_epoch_ms(inserted_iso)
     updated_epoch  = iso_to_epoch_ms(updated_iso)
     messages = walk_tree(conv["mapping"])
 
     parts = [
-        f'<h1>{title}</h1>',
+        f'<h1>{title_html}</h1>',
         f'<div class="meta"'
         f' data-started-ts="{inserted_epoch}"'
         f' data-updated-ts="{updated_epoch}"'
-        f' data-started-iso="{inserted_iso}"'
-        f' data-updated-iso="{updated_iso}">'
+        f' data-started-iso="{inserted_iso_attr}"'
+        f' data-updated-iso="{updated_iso_attr}">'
         f'Started <span class="ts-display">{fmt_date(inserted_iso)}</span>'
         f' &nbsp;·&nbsp; '
         f'Last updated <span class="ts-display">{fmt_date(updated_iso)}</span>'
@@ -117,7 +126,8 @@ def conv_to_html_body(conv: dict) -> str:
         if not frags:
             continue
         role = frags[0]["type"]
-        msg_iso   = msg.get("inserted_at", "")
+        msg_iso   = str(msg.get("inserted_at", ""))
+        msg_iso_attr = html.escape(msg_iso, quote=True)
         msg_epoch = iso_to_epoch_ms(msg_iso)
         timestamp = fmt_date(msg_iso)
 
@@ -125,9 +135,9 @@ def conv_to_html_body(conv: dict) -> str:
             content = frags[0].get("content", "")
             html_content = markdown_to_html(content)
             parts.append(
-                f'<div class="message user" data-ts="{msg_epoch}" data-ts-iso="{msg_iso}">'
+                f'<div class="message user" data-ts="{msg_epoch}" data-ts-iso="{msg_iso_attr}">'
                 f'<div class="role-label">You'
-                f' <span class="msg-time ts-display" data-ts="{msg_epoch}" data-ts-iso="{msg_iso}">{timestamp}</span>'
+                f' <span class="msg-time ts-display" data-ts="{msg_epoch}" data-ts-iso="{msg_iso_attr}">{timestamp}</span>'
                 f'</div>'
                 f'<div class="content">{html_content}</div>'
                 f"</div>"
@@ -135,9 +145,9 @@ def conv_to_html_body(conv: dict) -> str:
         else:
             inner = "".join(_render_fragment_html(f) for f in frags)
             parts.append(
-                f'<div class="message assistant" data-ts="{msg_epoch}" data-ts-iso="{msg_iso}">'
+                f'<div class="message assistant" data-ts="{msg_epoch}" data-ts-iso="{msg_iso_attr}">'
                 f'<div class="role-label">DeepSeek'
-                f' <span class="msg-time ts-display" data-ts="{msg_epoch}" data-ts-iso="{msg_iso}">{timestamp}</span>'
+                f' <span class="msg-time ts-display" data-ts="{msg_epoch}" data-ts-iso="{msg_iso_attr}">{timestamp}</span>'
                 f'</div>'
                 f"{inner}"
                 f"</div>"
@@ -152,10 +162,12 @@ def build_html_single(conv: dict) -> str:
 
 
 def build_html_all(convs: list) -> str:
-    index_items = "".join(
-        f'<li><a href="#conv-{c["id"]}">{c.get("title","Untitled")}</a></li>'
-        for c in convs
-    )
+    index_rows = []
+    for c in convs:
+        conv_id = html.escape(str(c.get("id", "")), quote=True)
+        conv_title = html.escape(str(c.get("title", "Untitled")), quote=False)
+        index_rows.append(f'<li><a href="#conv-{conv_id}">{conv_title}</a></li>')
+    index_items = "".join(index_rows)
     index_html = (
         '<div id="index"><h2>Conversations</h2><ul>'
         f"{index_items}"
@@ -163,7 +175,8 @@ def build_html_all(convs: list) -> str:
     )
     sections = []
     for conv in convs:
-        anchor = f'<div id="conv-{conv["id"]}" class="conv-header"></div>'
+        anchor_id = html.escape(str(conv.get("id", "")), quote=True)
+        anchor = f'<div id="conv-{anchor_id}" class="conv-header"></div>'
         sections.append(anchor + conv_to_html_body(conv))
         sections.append('<hr class="divider">')
     body = index_html + "\n".join(sections)

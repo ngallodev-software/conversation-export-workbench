@@ -1,5 +1,6 @@
 """Shared utilities: date helpers, slugify, markdown→HTML, HTML template."""
 
+import html
 import re
 from datetime import datetime
 from pathlib import Path
@@ -243,7 +244,8 @@ HTML_TEMPLATE = """\
 
 
 def render_template(title: str, body: str) -> str:
-    return HTML_TEMPLATE.replace("%%TITLE%%", title).replace("%%BODY%%", body)
+    safe_title = html.escape(str(title), quote=False)
+    return HTML_TEMPLATE.replace("%%TITLE%%", safe_title).replace("%%BODY%%", body)
 
 
 # ---------------------------------------------------------------------------

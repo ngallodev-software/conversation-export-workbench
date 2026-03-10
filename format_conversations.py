@@ -120,11 +120,20 @@ def _extract_zip(zip_path: Path, cwd: Path) -> list[Path]:
         if not json_names:
             print(f"  No conversations.json found inside {zip_path.name}")
             return []
+        used_stems: set[str] = set()
         for name in json_names:
             # Extract to a sibling path named after the zip (without extension)
             dest_dir = cwd / zip_path.stem
             dest_dir.mkdir(exist_ok=True)
-            dest_path = dest_dir / "conversations.json"
+            parent_slug = slugify(Path(name).parent.name)
+            stem = f"conversations-{parent_slug}" if parent_slug else "conversations"
+            if stem in used_stems:
+                n = 2
+                while f"{stem}-{n}" in used_stems:
+                    n += 1
+                stem = f"{stem}-{n}"
+            used_stems.add(stem)
+            dest_path = dest_dir / f"{stem}.json"
             dest_path.write_bytes(zf.read(name))
             print(f"  Extracted → {dest_path}")
             found.append(dest_path)

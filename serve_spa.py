@@ -4,7 +4,7 @@ Serve the generated SPA from output/ on the first free port in a range.
 
 Defaults:
   start-port: 8080
-  end-port:   80890 (clamped to 65535; max valid TCP port)
+  end-port:   8090
 
 Examples:
   python3 serve_spa.py
@@ -46,8 +46,8 @@ def main() -> int:
     parser.add_argument("--host", default="127.0.0.1", help="Bind host (default: 127.0.0.1)")
     parser.add_argument("--start-port", type=int, default=8080,
                         help="First port to check (default: 8080)")
-    parser.add_argument("--end-port", type=int, default=80890,
-                        help="Last port to check (default: 80890, clamped to 65535)")
+    parser.add_argument("--end-port", type=int, default=8090,
+                        help="Last port to check (default: 8090, clamped to 65535)")
     args = parser.parse_args()
 
     output_dir = Path(args.output)
