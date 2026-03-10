@@ -100,6 +100,14 @@ python3 generate_spa.py --config path/to/custom.toml --output output/ --yes
 
 The tool auto-detects whether an input file is a DeepSeek, Claude, or ChatGPT export by matching it against JSON templates in `provider_templates/`. If no template matches, it asks you to confirm provider explicitly (or pass `--provider`). Custom templates for other providers can be added there — see the existing templates for the expected format.
 
+## Smoke test
+
+Run a quick regression check for all providers and SPA generation:
+
+```bash
+./scripts/smoke_test.sh
+```
+
 ## Privacy
 
 Your `conversations.json`, zip exports, and `output/` directory are git-ignored by default to prevent accidental data leaks. Only source code and templates are tracked.
