@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Remote senior .NET backend role with AI focus</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: #0f1117;
+    color: #e0e0e0;
+    line-height: 1.7;
+    padding: 2rem 1rem;
+  }
+  .container { max-width: 860px; margin: 0 auto; }
+  h1 {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 0.3rem;
+  }
+  .meta {
+    font-size: 0.8rem;
+    color: #666;
+    margin-bottom: 2.5rem;
+  }
+  .message {
+    margin-bottom: 1.8rem;
+    border-radius: 10px;
+    padding: 1.2rem 1.5rem;
+    position: relative;
+  }
+  .message.user {
+    background: #1a1f2e;
+    border-left: 3px solid #4a90e2;
+  }
+  .message.assistant {
+    background: #141a14;
+    border-left: 3px solid #5cb85c;
+  }
+  .role-label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 0.6rem;
+    opacity: 0.6;
+  }
+  .message.user .role-label { color: #4a90e2; }
+  .message.assistant .role-label { color: #5cb85c; }
+  .msg-time {
+    font-size: 0.72rem;
+    color: #555;
+    float: right;
+    margin-top: 0.1rem;
+  }
+  .thinking {
+    background: #1a1a10;
+    border: 1px solid #3a3a20;
+    border-radius: 6px;
+    padding: 0.8rem 1.1rem;
+    margin-bottom: 1rem;
+    font-style: italic;
+    color: #999;
+    font-size: 0.88rem;
+  }
+  .thinking-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #6a6a40;
+    margin-bottom: 0.4rem;
+  }
+  .search-block {
+    background: #111820;
+    border: 1px dashed #2a3a50;
+    border-radius: 6px;
+    padding: 0.7rem 1rem;
+    margin-bottom: 0.8rem;
+    font-size: 0.82rem;
+    color: #7a9fc0;
+  }
+  .search-block .search-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #3a6a90;
+    margin-bottom: 0.4rem;
+  }
+  .search-result {
+    margin-top: 0.4rem;
+    padding-left: 0.8rem;
+    border-left: 2px solid #2a4a60;
+  }
+  .search-result a { color: #5a9fc0; text-decoration: none; }
+  .search-result a:hover { text-decoration: underline; }
+  .search-result .snippet { color: #668; font-size: 0.8rem; }
+  .read-link-block {
+    background: #11181a;
+    border: 1px dashed #2a4040;
+    border-radius: 6px;
+    padding: 0.5rem 0.9rem;
+    margin-bottom: 0.8rem;
+    font-size: 0.8rem;
+    color: #6ab;
+  }
+  .content p { margin-bottom: 0.8rem; }
+  .content pre {
+    background: #0a0a0a;
+    border: 1px solid #2a2a2a;
+    border-radius: 6px;
+    padding: 1rem;
+    overflow-x: auto;
+    font-size: 0.85rem;
+    margin-bottom: 0.8rem;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .content code {
+    background: #1a1a1a;
+    border-radius: 3px;
+    padding: 0.1em 0.35em;
+    font-size: 0.87em;
+    font-family: "JetBrains Mono", "Fira Code", monospace;
+  }
+  .content pre code { background: none; padding: 0; }
+  .content h1, .content h2, .content h3, .content h4 {
+    color: #d0d0d0;
+    margin: 1rem 0 0.5rem;
+  }
+  .content ul, .content ol {
+    padding-left: 1.5rem;
+    margin-bottom: 0.8rem;
+  }
+  .content li { margin-bottom: 0.3rem; }
+  .content blockquote {
+    border-left: 3px solid #444;
+    padding-left: 1rem;
+    color: #999;
+    margin-bottom: 0.8rem;
+  }
+  .content table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 0.8rem;
+    font-size: 0.88rem;
+  }
+  .content th, .content td {
+    border: 1px solid #2a2a2a;
+    padding: 0.4rem 0.7rem;
+  }
+  .content th { background: #1a1a1a; }
+  .content hr { border: none; border-top: 1px solid #2a2a2a; margin: 1rem 0; }
+  .content a { color: #4a90e2; }
+  .divider {
+    border: none;
+    border-top: 1px solid #1e1e1e;
+    margin: 2rem 0;
+  }
+  #index { margin-bottom: 2.5rem; }
+  #index h2 { font-size: 1rem; color: #888; margin-bottom: 0.8rem; }
+  #index ul { list-style: none; padding: 0; }
+  #index li { margin-bottom: 0.4rem; }
+  #index a { color: #4a90e2; text-decoration: none; font-size: 0.9rem; }
+  #index a:hover { text-decoration: underline; }
+  .conv-header { margin: 3rem 0 1rem; }
+  .conv-header h2 { font-size: 1.25rem; color: #ccc; }
+</style>
+</head>
+<body>
+<div class="container">
+<h1>Remote senior .NET backend role with AI focus</h1>
+<div class="meta" data-started-ts="1768598516817" data-updated-ts="1769056572531" data-started-iso="2026-01-16T21:21:56.817928Z" data-updated-iso="2026-01-22T04:36:12.531497Z">Started <span class="ts-display">2026-01-16 21:21</span> &nbsp;·&nbsp; Last updated <span class="ts-display">2026-01-22 04:36</span></div>
+<div class="message user" data-ts="1768598517752" data-ts-iso="2026-01-16T21:21:57.752190Z"><div class="role-label">You <span class="msg-time ts-display" data-ts="1768598517752" data-ts-iso="2026-01-16T21:21:57.752190Z">2026-01-16 21:21</span></div><div class="content"><p>New mission:  Find me a mid to senior level software engineering position.  Must be remote.  Must have a salary of $140,000/year or higher.  Must be back-end or full stack back end leaning.  Must include AI in the jb description or be  assumed because of the company itself.  Must be modern .NET backend.  AWS or AZURE.  Any platform engineering requirements are a bonus.  flexibility and open pto are a bonus.  We can do this iteratively, you do not have to be perfect the first try.  Include anything vital i havent listed.  And it should roughly match my experience. attaching my current resume.</p></div></div>
+<div class="message assistant" data-ts="1768598578760" data-ts-iso="2026-01-16T21:22:58.760931Z"><div class="role-label">Claude <span class="msg-time ts-display" data-ts="1768598578760" data-ts-iso="2026-01-16T21:22:58.760931Z">2026-01-16 21:22</span></div><div class="content"></div>
+<div class="thinking"><div class="thinking-label">Thinking</div>The user is asking me to find them software engineering positions with specific criteria. Let me parse out their requirements:<br><br>Required:<br>- Mid to senior level<br>- Remote<br>- $140k+ salary<br>- Back-end or full-stack back-end leaning<br>- Must include AI in job description or be assumed because of the company<br>- Modern .NET backend<br>- AWS or Azure<br>- Roughly matches their experience<br><br>Bonus:<br>- Platform engineering requirements<br>- Flexibility and open PTO<br><br>They've attached their resume. I should view it to understand their background better before launching the search.<br><br>The user has said "We can do this iteratively" which suggests they're okay with me doing this in phases. They also said "you do not have to be perfect the first try" and "Include anything vital I haven't listed."<br><br>Based on the research instructions, I need to determine if I should:<br>1. Ask clarifying questions (max 3) if the query is ambiguous<br>2. Use launch_extended_search_task immediately if the query is clear<br><br>Let me think about what's clear vs unclear:<br>- Clear: Remote, salary requirement, tech stack (modern .NET, AWS/Azure), seniority level<br>- Somewhat clear but could use clarification: <br>  - Contract vs permanent (from memory, he's doing both)<br>  - Geographic restrictions (is he US-only? He's in Vancouver, WA)<br>  - Company size preferences<br>  - Timeline/urgency (memory says 2 months runway)<br><br>I should first view the resume to understand his full background, then I could either:<br>1. Ask 1-2 clarifying questions about contract vs permanent and any other critical details<br>2. Just launch the search since the requirements are fairly specific<br><br>Given that the user said "we can do this iteratively" and "you do not have to be perfect the first try", I think they're comfortable with me just launching the search. However, let me view the resume first to make sure I understand their background properly.<br><br>Actually, looking at the research instructions more carefully:<br>- If the query is very detailed, long, and/or unambiguous: launch immediately<br><br><br>- Only ask clarifying questions when genuinely needed<br><br>The requirements are quite specific and detailed. While there are some potential ambiguities around employment type and geography, I can search broadly across both contract and permanent roles since they mentioned doing this iteratively. Let me check their resume first to validate their background aligns with what they're looking for.</div>
+<div class="content"><p>I'll help you find positions that match your criteria. Let me first take a look at your resume to understand your full background, then I'll launch a comprehensive search.</p></div>
+<div class="thinking"><div class="thinking-label">Thinking</div>The file appears to be a docx file and it's showing me the binary content rather than the text content. This is because the view tool is showing the raw file structure. For .docx files (which are actually ZIP archives containing XML), I should use bash to extract and view the content properly.<br><br>Let me try a different approach - I'll use bash to extract the text from the docx file.</div>
+<div class="content"><p>I can see the resume file, but it's in binary format. Let me extract the text content properly:</p></div>
+<div class="thinking"><div class="thinking-label">Thinking</div>Perfect! Now I have a clear view of Nate's resume. Let me summarize his key qualifications:<br><br>**Technical Skills:**<br>- .NET Core, .NET 8/9, ASP.NET Core, C# (10+ years)<br>- AWS (3+ years): EC2, S3, Lambda, API Gateway<br>- Docker/Kubernetes<br>- Vue.js 2/3, TypeScript, JavaScript, React<br>- SQL Server, MySQL, Elasticsearch<br>- AI-assisted development: GitHub Copilot, Claude Code, OpenAI Codex<br>- Microservices architecture<br><br>**Recent Experience:**<br>- Doxo Inc (April 2022 - January 2025) - Senior Full-Stack<br>- RexelUSA (Jan 2020 - April 2022) - Senior Full-Stack<br>- Both remote positions<br><br>**Education:**<br>- MBA (MIS) from CSU Chico<br>- BS in Computer Information Systems<br><br>Now, based on the user's requirements, I need to search for:<br>- Mid to senior level positions<br>- Remote<br>- $140k+ salary<br>- Backend or full-stack backend-leaning<br>- AI in job description or company<br>- Modern .NET backend<br>- AWS or Azure<br>- Platform engineering is a bonus<br>- Flexibility and open PTO are bonuses<br><br>From my memory, I know:<br>- Nate is in Vancouver, WA<br>- He's open to W2, contract, and C2C<br>- He has ~2 months of runway<br>- He's interested in both contract (3-6 months) and permanent positions<br><br>The user said we can do this iteratively and I don't have to be perfect the first try. They also said "Include anything vital I haven't listed."<br><br>Based on the research instructions, I should determine if I need to ask clarifying questions or launch the search immediately. The query is quite detailed with specific requirements. The main potential ambiguities are:<br>1. Contract vs permanent vs both? (Memory suggests both, but user didn't specify)<br><br><br>2. Geographic restrictions? (Memory says Vancouver, WA, but all remote so doesn't matter much)<br>3. Is there a preference for company size?<br><br>Given the user's explicit statement that we can iterate and they don't expect perfection on the first pass, I should move forward with the search rather than asking follow-up questions. They seem to prefer action over clarification.</div>
+<div class="content"><p>Perfect! I can see your background clearly now. You have strong .NET/C# experience, AWS expertise, microservices architecture, and hands-on AI development tools experience - exactly what many companies are looking for.</p>
+<p>Let me launch a comprehensive search for positions that match your criteria. I'll focus on remote senior-level roles with modern .NET, AWS/Azure, $140k+, and AI focus:</p></div>
+<div class="content"></div>
+<div class="content"><p>Your remote .NET/C# job market report is ready. It covers 15+ opportunities across permanent and contract positions, with salaries ranging from $140K-$284K and contract rates of $65-95/hour. The report includes AI-focused roles at companies like Green Dot, S&P Global, and GEICO, along with market trends showing 20-40% salary premiums for combined .NET and AI skills. I've included my top 5 recommendations based on your AWS, microservices, and AI development tools experience.</p></div></div>
+<div class="message user" data-ts="1768617216848" data-ts-iso="2026-01-17T02:33:36.848885Z"><div class="role-label">You <span class="msg-time ts-display" data-ts="1768617216848" data-ts-iso="2026-01-17T02:33:36.848885Z">2026-01-17 02:33</span></div><div class="content"><p>how about a second short term path.  Find me something immediate, short-term contract position.  Hourly wage is not as important as matching the modern .net stack.</p></div></div>
+<div class="message assistant" data-ts="1768617338047" data-ts-iso="2026-01-17T02:35:38.047181Z"><div class="role-label">Claude <span class="msg-time ts-display" data-ts="1768617338047" data-ts-iso="2026-01-17T02:35:38.047181Z">2026-01-17 02:35</span></div><div class="thinking"><div class="thinking-label">Thinking</div>The user is now asking for a different search - they want immediate, short-term contract positions. They're prioritizing:<br>1. Immediate availability (can start soon)<br>2. Short-term contract (not long-term commitments)<br>3. Modern .NET stack is the priority (not hourly wage)<br><br>This is a shift from the previous search which was looking for $140K+ permanent positions. Now they're looking for contract work to bridge their financial gap while continuing the job search.<br><br>I should search for:<br>- Contract positions<br>- .NET Core, .NET 6+, .NET 8/9<br>- Short-term (3-6 months)<br>- Available to start immediately or soon<br>- Focus on modern stack over compensation<br><br>Let me search for immediate contract opportunities.</div>
+<div class="content"><p>Let me search for immediate short-term contract positions with modern .NET stacks:</p></div>
+<div class="thinking"><div class="thinking-label">Thinking</div>Good, I found some immediate contract opportunities. Let me search more specifically for modern .NET stack (Core, 6, 8, 9) and immediate/urgent positions.</div>
+<div class="thinking"><div class="thinking-label">Thinking</div>Good, I'm finding some immediate contract opportunities. Let me search for more specific platforms that specialize in contract work with modern .NET.</div>
+<div class="thinking"><div class="thinking-label">Thinking</div>The search results aren't giving me exactly what I need - I'm getting a lot of .NET update news and unrelated DICE Summit gaming conference info. Let me try a more direct search for contract .NET positions that are available now.</div>
+<div class="thinking"><div class="thinking-label">Thinking</div>Dice doesn't allow fetching. Let me search for contract-specific platforms and immediate opportunities.</div>
+<div class="thinking"><div class="thinking-label">Thinking</div>Good - I found that Genesis10 is a staffing firm that places contractors. Let me now compile the best immediate short-term contract opportunities I found from my searches. I should focus on:<br><br>1. Modern .NET stack (.NET Core, .NET 6+, .NET 8/9)<br>2. Immediate start or very soon<br>3. Short-term (3-6 months ideally)<br>4. Less focus on pay (though I should include it)<br><br>From the search results, I found:<br>- Genesis10 has .NET positions at $65-72/hour, 6-month contracts<br>- Data Focused .NET Developer - Nashville, started Jan 5, 2026, 6 months, $65/hr<br>- Senior Backend .NET Developer - AI Agent project, AWS, Fort Mill SC remote<br>- C# Developer with Azure &amp; AI - Remote, FTE or Contract, $75-95/hr<br>- Full Stack .NET/React Developer - EST, 6+ months contract to hire<br>- Mid-Level .NET Engineer - 3 month contract-to-hire, Schaumburg IL (hybrid)<br>- C# Developer - Cincinnati remote preferred, 12-month contract to hire, $52-64/hr<br>- Colorado .NET Developer - 6 months with extension option<br><br>Let me create a focused list of immediate opportunities.</div>
+<div class="content"><p>Perfect! Let me compile the <strong>immediate short-term contract</strong> opportunities with modern .NET stacks for you:</p></div>
+<div class="thinking"><div class="thinking-label">Thinking</div>Good, I've created the file. Now let me move it to the outputs directory and present it to the user.</div>
+<div class="thinking"><div class="thinking-label">Thinking</div>Perfect. Now let me present the file to the user.</div>
+<div class="thinking"><div class="thinking-label">Thinking</div>Great! Now I should provide a concise summary of the best immediate options for the user.</div>
+<div class="content"><p>I've compiled <strong>9 immediate short-term contract positions</strong> prioritizing modern .NET stacks. Here are your <strong>top 3 action items for this week</strong>:</p>
+<h2><strong>Apply Immediately:</strong></h2>
+<ol>
+<li><strong>Genesis10 - .NET 8.0 Rewrite</strong> ($65-72/hr, 6 months, W2)</li>
+</ol>
+<p>- Most modern stack (.NET 8.0)    - Can start this week    - Reliable large staffing firm    - Apply: genesis10.jobs.net</p>
+<ol>
+<li><strong>AI Agent Project</strong> ($70-85/hr, .NET Core + AWS)</li>
+</ol>
+<p>- Perfect match for your AI tools experience    - AWS + .NET Core    - Building actual AI agents    - Your GitHub Copilot/Claude experience is the differentiator</p>
+<ol>
+<li><strong>Azure OpenAI Integration</strong> ($75-95/hr, contract or FTE)</li>
+</ol>
+<p>- Highest pay rate    - Cutting-edge: RAG, OpenAI API, Azure Functions    - Modern tech stack</p>
+<h2><strong>Key Advantages You Have:</strong></h2>
+<ul>
+<li><strong>Can start immediately</strong> (huge for contract roles)</li>
+<li><strong>Modern .NET Core + AWS</strong> (high demand combo)</li>
+<li><strong>AI development tools experience</strong> (rare for traditional .NET devs)</li>
+</ul>
+<h2><strong>Quick Wins:</strong></h2>
+<p>Also <strong>register today</strong> with Genesis10, Motion Recruitment, and TEKsystems - they'll actively market you to clients with immediate needs.</p>
+<p>Expected timeline: <strong>2-3 weeks from application to first paycheck</strong>, so acting this week ensures income by early February given your 2-month runway.</p></div></div>
+<div class="message user" data-ts="1769056431948" data-ts-iso="2026-01-22T04:33:51.948436Z"><div class="role-label">You <span class="msg-time ts-display" data-ts="1769056431948" data-ts-iso="2026-01-22T04:33:51.948436Z">2026-01-22 04:33</span></div><div class="content"><p>let's find contract opportunities again, and for each opportunity present me with a summary as well as a link to the job description.</p></div></div>
+<div class="message assistant" data-ts="1769056572531" data-ts-iso="2026-01-22T04:36:12.531497Z"><div class="role-label">Claude <span class="msg-time ts-display" data-ts="1769056572531" data-ts-iso="2026-01-22T04:36:12.531497Z">2026-01-22 04:36</span></div><div class="thinking"><div class="thinking-label">Thinking</div>The user wants me to search for contract opportunities again and provide:<br>1. A summary for each opportunity<br>2. A direct link to the job description<br><br>I should search for .NET contract positions, modern stack, immediate start, and provide actual clickable links to the job postings.<br><br>Let me search for current contract opportunities on various platforms and get the actual job posting URLs.</div>
+<div class="content"><p>Let me search for current .NET contract opportunities and get you direct links to each job posting:</p></div>
+<div class="thinking"><div class="thinking-label">Thinking</div>Good, I'm finding contract positions. Now let me search for more specific opportunities and try to get direct URLs to job postings. Let me search for more opportunities on different platforms and with specific job IDs.</div>
+<div class="thinking"><div class="thinking-label">Thinking</div>The LinkedIn searches aren't giving me actual job postings. Let me try searching for specific contract jobs with direct URLs from job boards like Indeed, Dice, and others.</div>
+<div class="thinking"><div class="thinking-label">Thinking</div>I'm getting search results but not specific job URLs. Let me try a different approach - searching for specific job board URLs with job IDs.</div>
+<div class="content"><p>Let me create a comprehensive list with actual job links. I'll compile the best contract opportunities I've found with direct links:</p></div>
+<div class="thinking"><div class="thinking-label">Thinking</div>Good, now I should copy this to the outputs directory and present it to the user.</div>
+<div class="thinking"><div class="thinking-label">Thinking</div>Now let me present the file to the user.</div>
+<div class="thinking"><div class="thinking-label">Thinking</div>Perfect! I've created a comprehensive document with contract opportunities. Now let me provide a summary response to the user highlighting the key opportunities with direct links.</div>
+<div class="content"><p>I've compiled <strong>12 .NET contract opportunities</strong> with summaries and direct links. Here are the <strong>top 3 you should apply to immediately</strong>:</p>
+<h2>🎯 Apply Today:</h2>
+<h3>1. <strong>Lead Microsoft .NET Developer - Vector Consulting</strong></h3>
+<p><strong>Remote | 12+ Months | Government Project</strong></p>
+<p>Modernizing legacy systems to ASP.NET MVC/CORE for government client. Your legacy modernization experience is a perfect match.</p>
+<p><strong>Stack:</strong> ASP.NET MVC/CORE, C#, Visual Studio   <strong>Rate:</strong> $70-90/hr estimated   <strong>Link:</strong> https://www.dice.com/job-detail/4ce7706c-fd37-4551-995e-d6a03eace4ff</p>
+<hr>
+<h3>2. <strong>Senior .NET Developer with MuleSoft - Everest Technologies</strong></h3>
+<p><strong>Remote | 12 Months | C2C/W2/1099</strong></p>
+<p>Integration-focused combining .NET Core with cloud services. Accepts multiple contract types.</p>
+<p><strong>Stack:</strong> .NET Core, ASP.NET Web API, REST APIs, Cloud (Azure/AWS/GCP), Microservices   <strong>Contract:</strong> W2, C2C, or 1099   <strong>Link:</strong> https://www.dice.com/job-detail/676fdfd8-9163-4f1a-84d2-055f3b1094f3</p>
+<hr>
+<h3>3. <strong>.NET Solution Architect - Parmesoft</strong> </h3>
+<p><strong>Remote (Dallas) | 6 Months | URGENT - Posted 1/9/2026</strong></p>
+<p>Heavy AWS focus - your 3+ years AWS experience with Lambda, API Gateway, S3 is exactly what they need.</p>
+<p><strong>Stack:</strong> .NET Core, Angular, AWS (Lambda, API Gateway, RDS, DynamoDB, S3)   <strong>Rate:</strong> $100-140/hr (architect level)   <strong>Link:</strong> https://www.dice.com/job-detail/b11142db-926d-49f1-8ed1-d1bf953c7223</p>
+<hr>
+<h2>📋 Additional Opportunities in Document:</h2>
+<p>The full document includes <strong>9 more contract positions</strong> covering:</p>
+<ul>
+<li>Full Stack .NET/Angular roles</li>
+<li>Azure-focused contracts  </li>
+<li>Government/Federal projects</li>
+<li>Microservices architecture positions</li>
+<li>3-12+ month contracts</li>
+<li>Rates ranging from $65-140/hr</li>
+</ul>
+<h2>⚡ Quick Action Plan:</h2>
+<p><strong>Today:</strong> Apply to the 3 links above   <strong>This Week:</strong> Register with Genesis10 (866-436-3746), Motion Recruitment, TEKsystems   <strong>Ongoing:</strong> Search Dice.com daily for new ".NET Core contract remote" postings</p>
+<p><strong>Expected timeline: 2-3 weeks from application to first paycheck</strong></p></div></div>
+</div>
+</body>
+</html>

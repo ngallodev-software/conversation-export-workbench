@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Evaluating a spec against Claude's multi-agent planning</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: #0f1117;
+    color: #e0e0e0;
+    line-height: 1.7;
+    padding: 2rem 1rem;
+  }
+  .container { max-width: 860px; margin: 0 auto; }
+  h1 {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 0.3rem;
+  }
+  .meta {
+    font-size: 0.8rem;
+    color: #666;
+    margin-bottom: 2.5rem;
+  }
+  .message {
+    margin-bottom: 1.8rem;
+    border-radius: 10px;
+    padding: 1.2rem 1.5rem;
+    position: relative;
+  }
+  .message.user {
+    background: #1a1f2e;
+    border-left: 3px solid #4a90e2;
+  }
+  .message.assistant {
+    background: #141a14;
+    border-left: 3px solid #5cb85c;
+  }
+  .role-label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 0.6rem;
+    opacity: 0.6;
+  }
+  .message.user .role-label { color: #4a90e2; }
+  .message.assistant .role-label { color: #5cb85c; }
+  .msg-time {
+    font-size: 0.72rem;
+    color: #555;
+    float: right;
+    margin-top: 0.1rem;
+  }
+  .thinking {
+    background: #1a1a10;
+    border: 1px solid #3a3a20;
+    border-radius: 6px;
+    padding: 0.8rem 1.1rem;
+    margin-bottom: 1rem;
+    font-style: italic;
+    color: #999;
+    font-size: 0.88rem;
+  }
+  .thinking-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #6a6a40;
+    margin-bottom: 0.4rem;
+  }
+  .search-block {
+    background: #111820;
+    border: 1px dashed #2a3a50;
+    border-radius: 6px;
+    padding: 0.7rem 1rem;
+    margin-bottom: 0.8rem;
+    font-size: 0.82rem;
+    color: #7a9fc0;
+  }
+  .search-block .search-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #3a6a90;
+    margin-bottom: 0.4rem;
+  }
+  .search-result {
+    margin-top: 0.4rem;
+    padding-left: 0.8rem;
+    border-left: 2px solid #2a4a60;
+  }
+  .search-result a { color: #5a9fc0; text-decoration: none; }
+  .search-result a:hover { text-decoration: underline; }
+  .search-result .snippet { color: #668; font-size: 0.8rem; }
+  .read-link-block {
+    background: #11181a;
+    border: 1px dashed #2a4040;
+    border-radius: 6px;
+    padding: 0.5rem 0.9rem;
+    margin-bottom: 0.8rem;
+    font-size: 0.8rem;
+    color: #6ab;
+  }
+  .content p { margin-bottom: 0.8rem; }
+  .content pre {
+    background: #0a0a0a;
+    border: 1px solid #2a2a2a;
+    border-radius: 6px;
+    padding: 1rem;
+    overflow-x: auto;
+    font-size: 0.85rem;
+    margin-bottom: 0.8rem;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .content code {
+    background: #1a1a1a;
+    border-radius: 3px;
+    padding: 0.1em 0.35em;
+    font-size: 0.87em;
+    font-family: "JetBrains Mono", "Fira Code", monospace;
+  }
+  .content pre code { background: none; padding: 0; }
+  .content h1, .content h2, .content h3, .content h4 {
+    color: #d0d0d0;
+    margin: 1rem 0 0.5rem;
+  }
+  .content ul, .content ol {
+    padding-left: 1.5rem;
+    margin-bottom: 0.8rem;
+  }
+  .content li { margin-bottom: 0.3rem; }
+  .content blockquote {
+    border-left: 3px solid #444;
+    padding-left: 1rem;
+    color: #999;
+    margin-bottom: 0.8rem;
+  }
+  .content table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 0.8rem;
+    font-size: 0.88rem;
+  }
+  .content th, .content td {
+    border: 1px solid #2a2a2a;
+    padding: 0.4rem 0.7rem;
+  }
+  .content th { background: #1a1a1a; }
+  .content hr { border: none; border-top: 1px solid #2a2a2a; margin: 1rem 0; }
+  .content a { color: #4a90e2; }
+  .divider {
+    border: none;
+    border-top: 1px solid #1e1e1e;
+    margin: 2rem 0;
+  }
+  #index { margin-bottom: 2.5rem; }
+  #index h2 { font-size: 1rem; color: #888; margin-bottom: 0.8rem; }
+  #index ul { list-style: none; padding: 0; }
+  #index li { margin-bottom: 0.4rem; }
+  #index a { color: #4a90e2; text-decoration: none; font-size: 0.9rem; }
+  #index a:hover { text-decoration: underline; }
+  .conv-header { margin: 3rem 0 1rem; }
+  .conv-header h2 { font-size: 1.25rem; color: #ccc; }
+</style>
+</head>
+<body>
+<div class="container">
+<h1>Evaluating a spec against Claude's multi-agent planning</h1>
+<div class="meta" data-started-ts="1770866018191" data-updated-ts="1770866600988" data-started-iso="2026-02-12T03:13:38.191990Z" data-updated-iso="2026-02-12T03:23:20.988749Z">Started <span class="ts-display">2026-02-12 03:13</span> &nbsp;·&nbsp; Last updated <span class="ts-display">2026-02-12 03:23</span></div>
+<div class="message user" data-ts="1770866020948" data-ts-iso="2026-02-12T03:13:40.948729Z"><div class="role-label">You <span class="msg-time ts-display" data-ts="1770866020948" data-ts-iso="2026-02-12T03:13:40.948729Z">2026-02-12 03:13</span></div><div class="content"><p>Analyze this spec critically, how is it an improvement on claude codes multi agent planning mode?  Is it worthwhile as a project to deal with my last year plus of resume gap?  are there improvements you can suggest?  Or maybe you have a better idea completely?</p></div></div>
+<div class="message assistant" data-ts="1770866050436" data-ts-iso="2026-02-12T03:14:10.436363Z"><div class="role-label">Claude <span class="msg-time ts-display" data-ts="1770866050436" data-ts-iso="2026-02-12T03:14:10.436363Z">2026-02-12 03:14</span></div><div class="content"><p>This is a genuinely interesting spec to think through critically. Let me give you an honest assessment.</p>
+<p><strong>What Forge actually is vs. Claude Code's multi-agent mode</strong></p>
+<p>Claude Code's orchestration already does most of what this spec describes — it plans, implements, runs tests, attempts repairs, and can spawn subagents. The honest difference Forge offers is narrower than the spec implies:</p>
+<ul>
+<li><strong>Deterministic branching convention</strong> (<code>forge/&lt;runId&gt;-&lt;slug&gt;</code>) — Claude Code doesn't enforce this</li>
+<li><strong>Structured run artifacts</strong> persisted to <code>.forge/runs/</code> — Claude Code's session history isn't designed for this</li>
+<li><strong>Provider agnosticism</strong> — the <code>IAgentProvider</code> abstraction is the most genuinely novel piece; Claude Code is obviously locked to Claude</li>
+<li><strong>Whitelist-constrained command execution</strong> — Claude Code is more permissive by default</li>
+</ul>
+<p>So the real value proposition is: <em>reproducible, auditable, provider-agnostic runs with structured artifacts</em>. That's a coherent thesis, but the spec doesn't lean into it hard enough. It reads more like "Claude Code but in .NET" than a tool with a distinct identity.</p>
+<p><strong>On the resume gap question — be direct with yourself</strong></p>
+<p>It helps, but only if you execute it with enough depth to talk about it for 20 minutes in an interview. A spec-only project doesn't move the needle. What would actually help:</p>
+<ul>
+<li>Working CLI with at least the Claude provider implemented</li>
+<li>Real artifact output you can show in a demo</li>
+<li>Ideally, you've <em>used it on itself</em> — dogfooding is a great interview story</li>
+</ul>
+<p>The risk is building just enough to list it on a resume but not enough to defend it confidently. Interviewers at senior level will probe hard on architectural decisions, tradeoffs you faced, and what you'd do differently.</p>
+<p><strong>Critical weaknesses in the current spec</strong></p>
+<p>The <code>IAgentProvider</code> interface is too thin. <code>AgentTask</code> and <code>WorkspaceContext</code> are doing enormous amounts of undeclared work — the interesting design is entirely in those types, and the spec handwaves them. Before writing code you'd want to nail down what a <code>AgentTask</code> actually contains for the planning step vs. the repair step, since those are very different payloads.</p>
+<p>The repair loop is naive. One repair attempt with no loop limit, no strategy variation, no fallback — in practice this either succeeds trivially or fails permanently. A more interesting design would track <em>why</em> each repair failed and adjust the prompt strategy accordingly, which is where real value over "just ask Claude again" emerges.</p>
+<p>The planning output is underspecified. A "strict JSON plan" that includes branch name, files to edit, and implementation steps sounds concrete, but implementation steps for an AI agent are just... more natural language. The spec doesn't address how structured the steps actually need to be to be actionable, or how to validate the plan before committing to implementation.</p>
+<p>There's no context management strategy. Sending "relevant file contents + plan to provider" is the hardest part of the whole system — what's relevant, how do you stay within context limits, how do you handle large repos? This is entirely glossed over and it's where real implementations fall apart.</p>
+<p><strong>A sharper alternative angle</strong></p>
+<p>Rather than competing with Claude Code on its own turf, you could pivot the core identity to: <strong>a structured diff-review and commit pipeline that wraps any AI agent output into a human-auditable PR workflow</strong>. The value isn't in the AI planning — it's in what happens <em>after</em> the AI writes code.</p>
+<p>Concretely: Forge's job is to take AI-generated changes (from any source — Claude Code, Copilot, raw API), validate them against a checklist (tests pass, no main branch modifications, diff size within bounds, no secrets committed), produce a structured review artifact, and stage a clean PR. You'd be building the <em>guardrails and audit layer</em> rather than reimplementing the agent loop.</p>
+<p>This would be more defensible technically, more useful in enterprise contexts (which aligns with your .NET background), and more differentiated. It also maps naturally to things senior engineers care about: reproducibility, auditability, and safe integration of AI into existing workflows.</p>
+<p>That framing also gives you a much better interview story: "I built a tool that treats AI-generated code changes as untrusted inputs and applies the same rigor we'd apply to any external contribution."</p>
+<p><strong>Bottom line</strong></p>
+<p>Worth building, but only if you commit to a working implementation that you've actually run against a real repo. The pivot toward an audit/guardrail layer is worth considering — it's more novel, more enterprise-relevant, and plays to your experience rather than trying to out-feature a tool Anthropic is actively investing in.</p></div></div>
+<div class="message user" data-ts="1770866434442" data-ts-iso="2026-02-12T03:20:34.442930Z"><div class="role-label">You <span class="msg-time ts-display" data-ts="1770866434442" data-ts-iso="2026-02-12T03:20:34.442930Z">2026-02-12 03:20</span></div><div class="content"><p>leDo you have suggestions for a better alternative</p></div></div>
+<div class="message assistant" data-ts="1770866458924" data-ts-iso="2026-02-12T03:20:58.924106Z"><div class="role-label">Claude <span class="msg-time ts-display" data-ts="1770866458924" data-ts-iso="2026-02-12T03:20:58.924106Z">2026-02-12 03:20</span></div><div class="content"><p>Yeah, a few directions come to mind — let me think through what would actually differentiate well given your background.</p>
+<p><strong>The core problem with Forge as specified</strong></p>
+<p>You'd be building in the shadow of tools that are better-resourced and moving fast. Claude Code, Copilot Workspace, Devin — they're all attacking the same "issue to PR" loop. Winning there requires either a very specific niche or resources you don't have solo.</p>
+<p>The more interesting question is: what problems do <em>senior .NET engineers at mid-to-large companies</em> actually have with AI-assisted development right now?</p>
+<hr>
+<p><strong>Three alternatives worth considering</strong></p>
+<p><strong>1. AI Change Auditor / "Trust Gate"</strong></p>
+<p>The real anxiety in enterprise .NET shops isn't "can AI write code" — it's "how do I know what the AI actually changed and whether it's safe to ship." Build a tool that sits between any AI agent's output and your repo:</p>
+<ul>
+<li>Analyzes diffs for common AI failure patterns (hallucinated dependencies, removed error handling, test deletions, hardcoded values)</li>
+<li>Produces a structured risk report per change</li>
+<li>Enforces configurable rules before a commit is allowed</li>
+</ul>
+<p>This is greenfield, it's language-agnostic at the diff layer but you'd specialize it for .NET/C# first, and it solves a real pain that enterprises will actually pay for. The interview story is also crisp: "AI writes code but someone still has to be responsible for it — I built the tool that makes that review tractable."</p>
+<p><strong>2. Prompt Regression Suite for .NET Teams</strong></p>
+<p>Teams using GitHub Copilot or Claude Code in their .NET repos have no way to know if updating their AI tooling or prompts broke their typical workflows. Think of it like a test suite, but for AI behavior:</p>
+<ul>
+<li>You define expected behaviors ("when I ask to add a repository method, it should follow our naming conventions and include XML docs")</li>
+<li>The tool runs these against your actual codebase as fixtures</li>
+<li>You get a pass/fail report when you upgrade models or change prompts</li>
+</ul>
+<p>This is genuinely novel, it maps directly to your testing background, and it addresses something that's going to become a real problem as teams mature their AI usage. The tooling space here is almost empty right now.</p>
+<p><strong>3. <code>.NET Architecture Linter</code> with AI Explanation Layer</strong></p>
+<p>This is the most pragmatic option for resume purposes because the core is achievable solo in a few weeks. Build a Roslyn-based analyzer that enforces architectural rules (no direct DbContext in controllers, no cross-layer dependencies, CQRS handler conventions, etc.) and then uses an AI layer to <em>explain violations in plain English with suggested fixes</em> rather than just flagging them.</p>
+<p>The differentiator isn't the linting — Roslyn analyzers exist. It's the AI explanation layer that contextualizes violations against <em>your team's specific architecture</em>, not generic best practices. You'd configure it with your architecture description and it uses that as context when explaining why something is wrong.</p>
+<hr>
+<p><strong>My honest recommendation for your situation</strong></p>
+<p>Option 3 gets you to a working demo fastest and lets you talk about Roslyn, static analysis, AI integration, and .NET architecture patterns all in one project — which is exactly the surface area a senior .NET role will probe. It's also genuinely useful to any .NET team, which matters for the "would you use this yourself" credibility test in interviews.</p>
+<p>Option 1 is the most commercially interesting long-term but takes longer to get to something demonstrable.</p>
+<p>Option 2 is the most novel idea but harder to explain quickly in an interview without a lot of setup.</p>
+<p>What's your gut reaction to these? I can go deep on any one of them — spec it out, think through the architecture, or map it to specific resume talking points.</p></div></div>
+<div class="message user" data-ts="1770866553891" data-ts-iso="2026-02-12T03:22:33.891199Z"><div class="role-label">You <span class="msg-time ts-display" data-ts="1770866553891" data-ts-iso="2026-02-12T03:22:33.891199Z">2026-02-12 03:22</span></div><div class="content"><p>Dive into option 2, lets see what an mvp looks like</p></div></div>
+<div class="message assistant" data-ts="1770866600988" data-ts-iso="2026-02-12T03:23:20.988749Z"><div class="role-label">Claude <span class="msg-time ts-display" data-ts="1770866600988" data-ts-iso="2026-02-12T03:23:20.988749Z">2026-02-12 03:23</span></div><div class="content"><p>Great choice — this one is genuinely novel. Let me think through what an MVP actually looks like.</p>
+<hr>
+<h2>The Core Concept</h2>
+<p>You're building a <strong>behavioral test suite for AI coding assistants</strong>. Just like unit tests assert that your code behaves correctly, these "prompt tests" assert that your AI tooling behaves correctly given your codebase's conventions.</p>
+<p>The key insight: as teams adopt AI tools, they're accumulating implicit expectations about AI behavior with zero way to verify them. You're making those expectations explicit and executable.</p>
+<hr>
+<h2>What a "Prompt Test" Actually Is</h2>
+<p>This is the most important design decision to nail. A prompt test has four parts:</p>
+<p><strong>Fixture</strong> — a snapshot of real code from your repo that provides context (a class, a file, a directory)</p>
+<p><strong>Prompt</strong> — the instruction as a developer would naturally type it</p>
+<p><strong>Assertions</strong> — what the response must contain, structurally or semantically</p>
+<p><strong>Metadata</strong> — which model, which tool, what conventions file it depends on</p>
+<p>A concrete example in a hypothetical test file format:</p>
+<p><pre><code class="language-yaml">name: "Repository method follows naming conventions" fixture: src/Data/UserRepository.cs prompt: "Add a method to get all active users by role" assertions:   - type: contains_method     name_pattern: "Get<em>By</em>Async"   - type: has<em>xml</em>docs   - type: no<em>direct</em>sql   - type: uses_type: "IQueryable"   - type: semantic     description: "Method should filter by IsActive = true" model: claude-sonnet-4-5 tags: [repository-pattern, naming, async] </code></pre></p>
+<p>The <code>semantic</code> assertion type is the interesting one — it uses a second AI call to evaluate whether the first response satisfied a natural-language expectation. Meta, but it works.</p>
+<hr>
+<h2>MVP Architecture</h2>
+<p><pre><code>/src   /Core     PromptTest.cs          -- test definition model     TestResult.cs          -- pass/fail + details     AssertionResult.cs   /Assertions     IAssertion.cs     ContainsMethodAssertion.cs     HasXmlDocsAssertion.cs     SemanticAssertion.cs   -- AI-evaluated assertion     RegexAssertion.cs     NoPatternAssertion.cs   /Providers     ILlmProvider.cs     ClaudeProvider.cs     OpenAiProvider.cs   /Runner     TestRunner.cs          -- loads, executes, collects results     FixtureLoader.cs       -- resolves fixture paths   /Reporting     IReporter.cs     ConsoleReporter.cs     JsonReporter.cs   /Cli     Program.cs             -- top-level CLI entry     RunCommand.cs     InitCommand.cs </code></pre></p>
+<p>The CLI surface for MVP is just two commands:</p>
+<p><pre><code class="language-bash">dotnet-prompt-test run ./tests/         # run all tests dotnet-prompt-test run ./tests/ --tags repository-pattern dotnet-prompt-test init                 # scaffold a sample test file </code></pre></p>
+<hr>
+<h2>The Runner Flow</h2>
+<p><pre><code>Load .ptest.yaml files     ↓ Resolve fixtures (read actual source files)     ↓ Build prompt context (fixture + prompt + conventions if configured)     ↓ Call LLM provider     ↓ Run each assertion against the response     ↓ For semantic assertions → second LLM call to evaluate     ↓ Aggregate results → reporter </code></pre></p>
+<p>The key thing the runner does that makes this non-trivial: it builds a <strong>repeatable prompt context</strong>. Every run sends the same fixture content, same conventions, same system prompt scaffold. That reproducibility is what makes the results comparable across model versions.</p>
+<hr>
+<h2>Assertion Types for MVP</h2>
+<p>Start with five, in order of implementation difficulty:</p>
+<p><strong><code>contains_pattern</code></strong> — regex match against response. Simplest, covers a lot of ground.</p>
+<p><strong><code>no_pattern</code></strong> — negative regex. Catches things like "don't use <code>Thread.Sleep</code>" or "don't omit async."</p>
+<p><strong><code>contains_method</code></strong> — parses the response for a method signature matching a pattern. You can do this with regex for MVP rather than full Roslyn parsing.</p>
+<p><strong><code>compiles</code></strong> — extracts code blocks from the response, attempts <code>dotnet build</code> against a temp project. This is hard but high value. Save it for post-MVP or make it optional.</p>
+<p><strong><code>semantic</code></strong> — the crown jewel. System prompt is something like: <em>"You are evaluating whether an AI coding assistant response satisfies the following requirement. Respond with PASS or FAIL and a one-sentence reason."</em> Then feed it the requirement and the response. Surprisingly reliable.</p>
+<hr>
+<h2>The Conventions File</h2>
+<p>This is a feature that makes the tool feel real rather than toy. Teams can provide a conventions file that gets injected into every prompt context:</p>
+<p><pre><code class="language-markdown"># MyProject Coding Conventions</p>
+<ul>
+<li>All repository methods must be async and return Task&lt;T&gt;</li>
+<li>Use IQueryable for filterable queries, IEnumerable for finalized results  </li>
+<li>XML documentation required on all public methods</li>
+<li>Never reference DbContext directly outside of Repository classes</li>
+<li>Follow the naming pattern: Verb + Entity + Qualifier + Async</li>
+</ul>
+<p></code></pre></p>
+<p>You load this once at runner startup and prepend it to every fixture prompt. Now your tests are asserting against <em>your</em> conventions, not generic .NET style — which is the whole point.</p>
+<hr>
+<h2>The Interesting Technical Problems</h2>
+<p><strong>Fixture isolation</strong> — how much context is enough? Sending a single file is often insufficient; the AI needs to understand interfaces, base classes, related types. For MVP, support a <code>fixture_includes</code> list of additional files. Long-term this becomes a dependency graph problem.</p>
+<p><strong>Response extraction</strong> — LLM responses contain markdown, explanation prose, and code blocks mixed together. You need a reliable code block extractor before any code-targeted assertions run. Use a simple fence parser for MVP, it handles 95% of cases.</p>
+<p><strong>Result stability</strong> — LLMs are non-deterministic, so a test might pass 9/10 runs. For MVP, just document this and run each test once. Post-MVP you add a <code>runs: 3</code> option that requires N of M to pass.</p>
+<p><strong>Baseline capture</strong> — a killer feature you can add early: <code>dotnet-prompt-test baseline ./tests/</code> runs everything and saves the raw responses. Future runs can diff against the baseline, showing you exactly how behavior changed when you upgraded your model. This is the feature that would make a team actually depend on this tool.</p>
+<hr>
+<h2>What Makes This a Great Resume Project</h2>
+<p>You can talk about it across multiple dimensions in an interview:</p>
+<p><strong>System design</strong> — provider abstraction, assertion pipeline, fixture resolution, context assembly. There are real architectural decisions here.</p>
+<p><strong>Testing philosophy</strong> — you understand what makes a good test (deterministic, isolated, meaningful failure messages). You applied that to a novel domain.</p>
+<p><strong>AI integration</strong> — you used AI to evaluate AI, you thought carefully about prompt engineering, you dealt with non-deterministic outputs in a test harness context.</p>
+<p><strong>Practical value</strong> — you can demo it against a real .NET repo in under 2 minutes. That's the difference between a project you list and a project you show.</p>
+<hr>
+<h2>Suggested Build Order</h2>
+<p>First week: CLI scaffold, YAML test file loader, Claude provider, regex assertions, console reporter. Get one test running end-to-end.</p>
+<p>Second week: semantic assertion, conventions file support, JSON reporter, baseline capture command.</p>
+<p>Third week: polish, a real test suite for the tool itself (dogfooding), README with examples, a recorded demo.</p>
+<p>That's a defensible, demonstrable project in three weeks of focused work. Want to go deeper on any specific piece — the semantic assertion design, the CLI structure, or how to frame it on the resume?</p></div></div>
+</div>
+</body>
+</html>

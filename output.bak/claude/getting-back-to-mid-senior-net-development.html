@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Getting back to mid-senior .NET development</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: #0f1117;
+    color: #e0e0e0;
+    line-height: 1.7;
+    padding: 2rem 1rem;
+  }
+  .container { max-width: 860px; margin: 0 auto; }
+  h1 {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 0.3rem;
+  }
+  .meta {
+    font-size: 0.8rem;
+    color: #666;
+    margin-bottom: 2.5rem;
+  }
+  .message {
+    margin-bottom: 1.8rem;
+    border-radius: 10px;
+    padding: 1.2rem 1.5rem;
+    position: relative;
+  }
+  .message.user {
+    background: #1a1f2e;
+    border-left: 3px solid #4a90e2;
+  }
+  .message.assistant {
+    background: #141a14;
+    border-left: 3px solid #5cb85c;
+  }
+  .role-label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 0.6rem;
+    opacity: 0.6;
+  }
+  .message.user .role-label { color: #4a90e2; }
+  .message.assistant .role-label { color: #5cb85c; }
+  .msg-time {
+    font-size: 0.72rem;
+    color: #555;
+    float: right;
+    margin-top: 0.1rem;
+  }
+  .thinking {
+    background: #1a1a10;
+    border: 1px solid #3a3a20;
+    border-radius: 6px;
+    padding: 0.8rem 1.1rem;
+    margin-bottom: 1rem;
+    font-style: italic;
+    color: #999;
+    font-size: 0.88rem;
+  }
+  .thinking-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #6a6a40;
+    margin-bottom: 0.4rem;
+  }
+  .search-block {
+    background: #111820;
+    border: 1px dashed #2a3a50;
+    border-radius: 6px;
+    padding: 0.7rem 1rem;
+    margin-bottom: 0.8rem;
+    font-size: 0.82rem;
+    color: #7a9fc0;
+  }
+  .search-block .search-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #3a6a90;
+    margin-bottom: 0.4rem;
+  }
+  .search-result {
+    margin-top: 0.4rem;
+    padding-left: 0.8rem;
+    border-left: 2px solid #2a4a60;
+  }
+  .search-result a { color: #5a9fc0; text-decoration: none; }
+  .search-result a:hover { text-decoration: underline; }
+  .search-result .snippet { color: #668; font-size: 0.8rem; }
+  .read-link-block {
+    background: #11181a;
+    border: 1px dashed #2a4040;
+    border-radius: 6px;
+    padding: 0.5rem 0.9rem;
+    margin-bottom: 0.8rem;
+    font-size: 0.8rem;
+    color: #6ab;
+  }
+  .content p { margin-bottom: 0.8rem; }
+  .content pre {
+    background: #0a0a0a;
+    border: 1px solid #2a2a2a;
+    border-radius: 6px;
+    padding: 1rem;
+    overflow-x: auto;
+    font-size: 0.85rem;
+    margin-bottom: 0.8rem;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .content code {
+    background: #1a1a1a;
+    border-radius: 3px;
+    padding: 0.1em 0.35em;
+    font-size: 0.87em;
+    font-family: "JetBrains Mono", "Fira Code", monospace;
+  }
+  .content pre code { background: none; padding: 0; }
+  .content h1, .content h2, .content h3, .content h4 {
+    color: #d0d0d0;
+    margin: 1rem 0 0.5rem;
+  }
+  .content ul, .content ol {
+    padding-left: 1.5rem;
+    margin-bottom: 0.8rem;
+  }
+  .content li { margin-bottom: 0.3rem; }
+  .content blockquote {
+    border-left: 3px solid #444;
+    padding-left: 1rem;
+    color: #999;
+    margin-bottom: 0.8rem;
+  }
+  .content table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 0.8rem;
+    font-size: 0.88rem;
+  }
+  .content th, .content td {
+    border: 1px solid #2a2a2a;
+    padding: 0.4rem 0.7rem;
+  }
+  .content th { background: #1a1a1a; }
+  .content hr { border: none; border-top: 1px solid #2a2a2a; margin: 1rem 0; }
+  .content a { color: #4a90e2; }
+  .divider {
+    border: none;
+    border-top: 1px solid #1e1e1e;
+    margin: 2rem 0;
+  }
+  #index { margin-bottom: 2.5rem; }
+  #index h2 { font-size: 1rem; color: #888; margin-bottom: 0.8rem; }
+  #index ul { list-style: none; padding: 0; }
+  #index li { margin-bottom: 0.4rem; }
+  #index a { color: #4a90e2; text-decoration: none; font-size: 0.9rem; }
+  #index a:hover { text-decoration: underline; }
+  .conv-header { margin: 3rem 0 1rem; }
+  .conv-header h2 { font-size: 1.25rem; color: #ccc; }
+</style>
+</head>
+<body>
+<div class="container">
+<h1>Getting back to mid-senior .NET development</h1>
+<div class="meta" data-started-ts="1769844340718" data-updated-ts="1769844390128" data-started-iso="2026-01-31T07:25:40.718748Z" data-updated-iso="2026-01-31T07:26:30.128136Z">Started <span class="ts-display">2026-01-31 07:25</span> &nbsp;·&nbsp; Last updated <span class="ts-display">2026-01-31 07:26</span></div>
+<div class="message user" data-ts="1769844341740" data-ts-iso="2026-01-31T07:25:41.740380Z"><div class="role-label">You <span class="msg-time ts-display" data-ts="1769844341740" data-ts-iso="2026-01-31T07:25:41.740380Z">2026-01-31 07:25</span></div><div class="content"><p>lets discuss a plan for my job prep.  I need to get re-immersed in .net development, whats the latest tech, what should i build to get back to mid-senior level and familiarity - think backend web api something, integrate message queieng , mysqldb, start there and then tack on a front end for part 2 - not sure what for front end, familiar with vuejs, but whats thee thing in 2026, and i'd like to tie inrequests to local ollama/claude/some commercial ai api endpoint</p></div></div>
+<div class="message assistant" data-ts="1769844390128" data-ts-iso="2026-01-31T07:26:30.128136Z"><div class="role-label">Claude <span class="msg-time ts-display" data-ts="1769844390128" data-ts-iso="2026-01-31T07:26:30.128136Z">2026-01-31 07:26</span></div><div class="thinking"><div class="thinking-label">Thinking</div>Nate wants to build a project to:<br>1. Get re-immersed in .NET development<br>2. Build backend web API<br>3. Integrate message queuing<br>4. Use MySQL database<br>5. Eventually add a frontend (Part 2) - he knows Vue.js but wants to know what's current in 2026<br>6. Integrate AI API calls (Ollama/Claude/commercial APIs)<br><br>He's looking for latest tech and wants to get back to mid-senior level familiarity. Given his memory, he's positioned as an "AI-Native .NET Developer" so this AI integration piece is actually quite strategic for his job search.<br><br>Let me think about what's current in 2026 (I'm in January 2025 knowledge, so 2026 would be the immediate future):<br><br>For .NET:<br>- .NET 9 is the latest (released Nov 2024)<br>- .NET 8 LTS (Long Term Support, released Nov 2023)<br>- ASP.NET Core for web APIs<br>- Minimal APIs vs Controller-based APIs<br>- Entity Framework Core for ORM<br><br>For message queuing:<br>- RabbitMQ (classic, still popular)<br>- Azure Service Bus<br>- AWS SQS<br>- Redis Streams<br>- MassTransit (abstraction library over RabbitMQ, Azure Service Bus, etc.)<br><br>For MySQL:<br>- Pomelo.EntityFrameworkCore.MySql (popular EF Core provider)<br>- Dapper for micro-ORM alternative<br><br>For frontend (2026 context):<br>- React still dominant<br>- Vue 3 with Composition API is current<br>- Svelte/SvelteKit gaining traction<br>- Blazor (Server/WASM) for .NET-centric shops<br>- htmx for simpler interactivity<br><br>For AI integration:<br>- Semantic Kernel (Microsoft's framework for AI integration in .NET)<br>- LangChain .NET port<br>- Direct OpenAI SDK<br><br><br>- Anthropic .NET SDK<br>- Ollama has a REST API<br><br>For his positioning, I'd recommend .NET 8 or 9 with ASP.NET Core, RabbitMQ or MassTransit for message queuing since both carry weight in job searches, and MySQL with EF Core. On the frontend, Vue 3 aligns with his existing skills, though React might broaden his market appeal. Semantic Kernel would be the standout choice for AI integration—it directly supports his "AI-Native Developer" brand and works with Ollama, Claude, and commercial APIs. The project should demonstrate modern .NET patterns and clean architecture principles.<br><br>Async/await handling, Docker containerization, and meaningful AI features rather than superficial ones would round out the technical showcase. I need to frame this as a concrete roadmap with specific milestones rather than just presenting a menu of technologies.</div>
+<div class="content"><p>Great timing on this - building a solid portfolio piece will give you real talking points for interviews and demonstrate your AI-Native positioning with actual code. Let me lay out a practical plan:</p>
+<h2>Backend Foundation (.NET 9 recommended)</h2>
+<p><strong>Core Stack:</strong></p>
+<ul>
+<li><strong>.NET 9</strong> (latest) or <strong>.NET 8 LTS</strong> if you want long-term support stability</li>
+<li><strong>ASP.NET Core Web API</strong> - use Minimal APIs for cleaner code, or Controller-based if you want something more familiar/enterprise-standard</li>
+<li><strong>Entity Framework Core</strong> with <strong>Pomelo.EntityFrameworkCore.MySql</strong> for MySQL</li>
+<li><strong>MassTransit</strong> over RabbitMQ for message queuing - it's an abstraction layer that's widely used in enterprise and makes patterns like sagas, retries, and outbox easier</li>
+</ul>
+<p><strong>Project Idea - "AI-Powered Support Ticket System":</strong></p>
+<ul>
+<li>Users submit support tickets via API</li>
+<li>Messages get queued for processing</li>
+<li>Background workers pull from queue to:</li>
+</ul>
+<p>- Categorize tickets using AI (sentiment analysis, urgency scoring, routing)   - Generate suggested responses   - Extract key entities (product names, error codes, etc.)</p>
+<ul>
+<li>Store everything in MySQL with proper async patterns</li>
+</ul>
+<p>This hits multiple job market requirements: message queuing, background processing, AI integration, and real-world applicability.</p>
+<h2>AI Integration Layer</h2>
+<p>Use <strong>Semantic Kernel</strong> - Microsoft's orchestration framework for .NET + AI. It's positioned as the standard for enterprise .NET AI work and shows you're current on the Microsoft ecosystem:</p>
+<p><pre><code class="language-csharp">// Clean abstraction over multiple AI providers</p>
+<ul>
+<li>Ollama for local development/testing</li>
+<li>Claude API for production quality</li>
+<li>OpenAI as fallback</li>
+</ul>
+<p></code></pre></p>
+<p>This demonstrates vendor flexibility (huge for enterprise) and gives you talking points about cost optimization, privacy considerations, and deployment strategies.</p>
+<h2>Message Queuing Architecture</h2>
+<p><strong>RabbitMQ + MassTransit</strong> gives you:</p>
+<ul>
+<li>Publisher/consumer patterns</li>
+<li>Retry policies and error queues</li>
+<li>Saga orchestration (if you want to go deeper)</li>
+<li>Docker-composable for local dev</li>
+</ul>
+<p>Alternative if you want cloud-native: <strong>Azure Service Bus</strong> (since you have AWS experience, showing Azure breadth helps).</p>
+<h2>Frontend (Part 2)</h2>
+<p><strong>2026 reality check:</strong></p>
+<ul>
+<li><strong>React</strong> still dominates job postings (unfortunate but true)</li>
+<li><strong>Vue 3 + Composition API</strong> is modern and you know it - totally viable</li>
+<li><strong>Blazor WebAssembly</strong> could be a differentiator for .NET-focused shops</li>
+<li><strong>htmx</strong> is gaining enterprise traction for "just enough" interactivity</li>
+</ul>
+<p><strong>My recommendation:</strong> Start with <strong>Vue 3</strong> since you know it - speed to market matters for your timeline. If you want maximum job market coverage, you could do a simple <strong>React</strong> version later, but honestly a clean Vue implementation shows you can work with modern frameworks.</p>
+<p>For the UI:</p>
+<ul>
+<li>Ticket submission form</li>
+<li>Real-time status updates (SignalR from backend)</li>
+<li>Display AI-generated suggestions</li>
+<li>Admin dashboard for ticket management</li>
+</ul>
+<h2>Architecture Wins to Showcase</h2>
+<p>Structure this to demonstrate senior-level thinking:</p>
+<ul>
+<li><strong>Clean Architecture</strong> layers (API, Application, Domain, Infrastructure)</li>
+<li><strong>CQRS pattern</strong> if you want to flex (separating reads/writes)</li>
+<li><strong>Repository pattern</strong> + Unit of Work</li>
+<li><strong>Docker Compose</strong> for local stack (API, MySQL, RabbitMQ, Ollama)</li>
+<li><strong>Health checks</strong> and observability hooks</li>
+<li><strong>API versioning</strong> and proper error handling</li>
+</ul>
+<h2>Tactical Build Sequence</h2>
+<p><strong>Week 1 - Core Backend:</strong></p>
+<ul>
+<li>.NET 9 Web API project with EF Core + MySQL</li>
+<li>Basic CRUD for tickets</li>
+<li>Docker Compose setup</li>
+<li>Get comfortable with async/await patterns again</li>
+</ul>
+<p><strong>Week 2 - Message Queue + Workers:</strong></p>
+<ul>
+<li>Add RabbitMQ + MassTransit</li>
+<li>Create background consumers</li>
+<li>Implement retry/error handling</li>
+<li>Add logging (Serilog)</li>
+</ul>
+<p><strong>Week 3 - AI Integration:</strong></p>
+<ul>
+<li>Semantic Kernel setup</li>
+<li>Ollama local integration first (faster iteration)</li>
+<li>Claude API integration</li>
+<li>Prompt engineering for ticket classification</li>
+</ul>
+<p><strong>Week 4 - Frontend:</strong></p>
+<ul>
+<li>Vue 3 app (or React if you pivot)</li>
+<li>SignalR for real-time updates</li>
+<li>Polish and deployment documentation</li>
+</ul>
+<h2>What's Hot in 2026 .NET</h2>
+<ul>
+<li><strong>.NET Aspire</strong> - Microsoft's new opinionated stack for cloud-native apps (includes observability, service discovery). Worth looking at but maybe overkill for this project.</li>
+<li><strong>Minimal APIs</strong> over controllers (lighter, more functional style)</li>
+<li><strong>Native AOT</strong> compilation for faster cold starts</li>
+<li><strong>Source generators</strong> for reduced reflection/startup time</li>
+<li><strong>OpenTelemetry</strong> for observability (becoming standard)</li>
+</ul>
+<h2>Quick Win for Job Search</h2>
+<p>This project becomes a GitHub repo you can drop in every application with:</p>
+<ul>
+<li>Clear README showing architecture decisions</li>
+<li>Docker Compose one-liner to run it</li>
+<li>Screenshots/demo of AI features working</li>
+<li>"Highlights" section calling out the AI tooling you used to build it (Claude Code, Copilot)</li>
+</ul>
+<p>This addresses your runway urgency - you're building something portfolio-worthy while re-sharpening skills, and it directly supports your AI-Native positioning.</p>
+<p>Want to drill into any specific piece first, or should we start with the docker-compose + initial project structure?</p></div></div>
+</div>
+</body>
+</html>

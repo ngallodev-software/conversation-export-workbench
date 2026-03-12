@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Git Hook Naming Validity</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: #0f1117;
+    color: #e0e0e0;
+    line-height: 1.7;
+    padding: 2rem 1rem;
+  }
+  .container { max-width: 860px; margin: 0 auto; }
+  h1 {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 0.3rem;
+  }
+  .meta {
+    font-size: 0.8rem;
+    color: #666;
+    margin-bottom: 2.5rem;
+  }
+  .message {
+    margin-bottom: 1.8rem;
+    border-radius: 10px;
+    padding: 1.2rem 1.5rem;
+    position: relative;
+  }
+  .message.user {
+    background: #1a1f2e;
+    border-left: 3px solid #4a90e2;
+  }
+  .message.assistant {
+    background: #141a14;
+    border-left: 3px solid #5cb85c;
+  }
+  .role-label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 0.6rem;
+    opacity: 0.6;
+  }
+  .message.user .role-label { color: #4a90e2; }
+  .message.assistant .role-label { color: #5cb85c; }
+  .msg-time {
+    font-size: 0.72rem;
+    color: #555;
+    float: right;
+    margin-top: 0.1rem;
+  }
+  .thinking {
+    background: #1a1a10;
+    border: 1px solid #3a3a20;
+    border-radius: 6px;
+    padding: 0.8rem 1.1rem;
+    margin-bottom: 1rem;
+    font-style: italic;
+    color: #999;
+    font-size: 0.88rem;
+  }
+  .thinking-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #6a6a40;
+    margin-bottom: 0.4rem;
+  }
+  .search-block {
+    background: #111820;
+    border: 1px dashed #2a3a50;
+    border-radius: 6px;
+    padding: 0.7rem 1rem;
+    margin-bottom: 0.8rem;
+    font-size: 0.82rem;
+    color: #7a9fc0;
+  }
+  .search-block .search-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #3a6a90;
+    margin-bottom: 0.4rem;
+  }
+  .search-result {
+    margin-top: 0.4rem;
+    padding-left: 0.8rem;
+    border-left: 2px solid #2a4a60;
+  }
+  .search-result a { color: #5a9fc0; text-decoration: none; }
+  .search-result a:hover { text-decoration: underline; }
+  .search-result .snippet { color: #668; font-size: 0.8rem; }
+  .read-link-block {
+    background: #11181a;
+    border: 1px dashed #2a4040;
+    border-radius: 6px;
+    padding: 0.5rem 0.9rem;
+    margin-bottom: 0.8rem;
+    font-size: 0.8rem;
+    color: #6ab;
+  }
+  .content p { margin-bottom: 0.8rem; }
+  .content pre {
+    background: #0a0a0a;
+    border: 1px solid #2a2a2a;
+    border-radius: 6px;
+    padding: 1rem;
+    overflow-x: auto;
+    font-size: 0.85rem;
+    margin-bottom: 0.8rem;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .content code {
+    background: #1a1a1a;
+    border-radius: 3px;
+    padding: 0.1em 0.35em;
+    font-size: 0.87em;
+    font-family: "JetBrains Mono", "Fira Code", monospace;
+  }
+  .content pre code { background: none; padding: 0; }
+  .content h1, .content h2, .content h3, .content h4 {
+    color: #d0d0d0;
+    margin: 1rem 0 0.5rem;
+  }
+  .content ul, .content ol {
+    padding-left: 1.5rem;
+    margin-bottom: 0.8rem;
+  }
+  .content li { margin-bottom: 0.3rem; }
+  .content blockquote {
+    border-left: 3px solid #444;
+    padding-left: 1rem;
+    color: #999;
+    margin-bottom: 0.8rem;
+  }
+  .content table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 0.8rem;
+    font-size: 0.88rem;
+  }
+  .content th, .content td {
+    border: 1px solid #2a2a2a;
+    padding: 0.4rem 0.7rem;
+  }
+  .content th { background: #1a1a1a; }
+  .content hr { border: none; border-top: 1px solid #2a2a2a; margin: 1rem 0; }
+  .content a { color: #4a90e2; }
+  .divider {
+    border: none;
+    border-top: 1px solid #1e1e1e;
+    margin: 2rem 0;
+  }
+  #index { margin-bottom: 2.5rem; }
+  #index h2 { font-size: 1rem; color: #888; margin-bottom: 0.8rem; }
+  #index ul { list-style: none; padding: 0; }
+  #index li { margin-bottom: 0.4rem; }
+  #index a { color: #4a90e2; text-decoration: none; font-size: 0.9rem; }
+  #index a:hover { text-decoration: underline; }
+  .conv-header { margin: 3rem 0 1rem; }
+  .conv-header h2 { font-size: 1.25rem; color: #ccc; }
+</style>
+</head>
+<body>
+<div class="container">
+<h1>Git Hook Naming Validity</h1>
+<div class="meta" data-started-ts="1772319195321" data-updated-ts="1772384088408" data-started-iso="2026-02-28T22:53:15Z" data-updated-iso="2026-03-01T16:54:48Z">Started <span class="ts-display">2026-02-28 22:53</span> &nbsp;·&nbsp; Last updated <span class="ts-display">2026-03-01 16:54</span></div>
+<div class="message user" data-ts="1772319193661" data-ts-iso="2026-02-28T22:53:13Z"><div class="role-label">You <span class="msg-time ts-display" data-ts="1772319193661" data-ts-iso="2026-02-28T22:53:13Z">2026-02-28 22:53</span></div><div class="content"><p>is post-push a valid name for a .git/hooks file</p></div></div>
+<div class="message assistant" data-ts="1772319195152" data-ts-iso="2026-02-28T22:53:15Z"><div class="role-label">ChatGPT <span class="msg-time ts-display" data-ts="1772319195152" data-ts-iso="2026-02-28T22:53:15Z">2026-02-28 22:53</span></div><div class="content"><p>No — <strong><code>post-push</code> is <em>not</em> a valid Git hook name</strong>, so Git will ignore a file with that name in <code>.git/hooks</code>.</p>
+<p>Git only recognizes a <strong>fixed set of hook filenames</strong>. There is <strong>no native hook that runs after <code>git push</code> completes locally</strong>.</p>
+<hr>
+<h2>✅ Hooks related to pushing (what actually exists)</h2>
+<h3>1. <code>pre-push</code> ✅ (client-side)</h3>
+<p><strong>This is the closest thing you want.</strong></p>
+<p>Runs <strong>before</strong> objects are pushed to the remote.</p>
+<p>Location: <pre><code>.git/hooks/pre-push </code></pre></p>
+<p>Typical uses:</p>
+<ul>
+<li>Run tests before allowing push</li>
+<li>Linting</li>
+<li>Prevent pushing secrets</li>
+<li>Block pushes to protected branches</li>
+</ul>
+<p>Example: <pre><code class="language-bash">#!/bin/sh echo "Running tests before push..." npm test || exit 1 </code></pre></p>
+<p>If this script exits non-zero → push is cancelled.</p>
+<hr>
+<h3>2. Server-side push hooks (on the remote repo)</h3>
+<p>These run <strong>after or during push</strong>, but only on the <strong>remote server</strong>, not your local repo:</p>
+<table><thead><tr><th>Hook</th><th>When it runs</th></tr></thead><tbody>
+<tr><td><code>pre-receive</code></td><td>Before refs updated</td></tr>
+<tr><td><code>update</code></td><td>Per branch update</td></tr>
+<tr><td><code>post-receive</code></td><td>After push accepted ✅ closest to “post-push”</td></tr>
+<tr><td><code>post-update</code></td><td>After refs updated</td></tr>
+</tbody></table>
+<p>These live on the <strong>Git server</strong>, not your local <code>.git/hooks</code>.</p>
+<hr>
+<h2>❌ Why <code>post-push</code> doesn’t exist</h2>
+<p>Git’s design assumes:</p>
+<ul>
+<li>Client validates <strong>before push</strong> (<code>pre-push</code>)</li>
+<li>Server reacts <strong>after push</strong> (<code>post-receive</code>)</li>
+</ul>
+<p>A local <em>post-push</em> hook would be unreliable because:</p>
+<ul>
+<li>The client doesn’t fully control what the server accepts</li>
+<li>Network failures could occur after local completion</li>
+</ul>
+<p>So Git never added one.</p>
+<hr>
+<h2>✅ If you <em>need</em> post-push behavior locally</h2>
+<p>You have three practical options:</p>
+<h3>Option A — Wrap <code>git push</code> (most common workaround)</h3>
+<p>Create an alias:</p>
+<p><pre><code class="language-bash">git config --global alias.pushx '!f() { git push "$@" &amp;&amp; ./after-push.sh; }; f' </code></pre></p>
+<p>Then use:</p>
+<p><pre><code>git pushx </code></pre></p>
+<p>Runs script only if push succeeds.</p>
+<hr>
+<h3>Option B — Use <code>pre-push</code> + background task</h3>
+<p>Start something asynchronously:</p>
+<p><pre><code class="language-bash">#!/bin/sh ( ./after-push.sh &amp; ) </code></pre></p>
+<p>(Not perfect — runs before confirmation.)</p>
+<hr>
+<h3>Option C — Use server <code>post-receive</code> (best for CI/CD)</h3>
+<p>If this is automation or deployment related, this is usually the <strong>correct architectural place</strong>.</p>
+<hr>
+<h2>✅ Quick summary</h2>
+<table><thead><tr><th>Hook name</th><th>Valid?</th><th>Runs where</th></tr></thead><tbody>
+<tr><td><code>pre-push</code></td><td>✅</td><td>local machine</td></tr>
+<tr><td><code>post-push</code></td><td>❌</td><td>(ignored)</td></tr>
+<tr><td><code>post-receive</code></td><td>✅</td><td>remote server</td></tr>
+</tbody></table>
+<hr>
+<p>If you tell me <strong>what you’re trying to accomplish after push</strong> (CI trigger, metrics capture, artifact build, resume metrics logging, etc.), I can suggest the cleanest setup — especially since you’re setting up local CI/CD with Jenkins right now.</p></div></div>
+<div class="message user" data-ts="1772319606734" data-ts-iso="2026-02-28T23:00:06Z"><div class="role-label">You <span class="msg-time ts-display" data-ts="1772319606734" data-ts-iso="2026-02-28T23:00:06Z">2026-02-28 23:00</span></div><div class="content"><p>im trying to trigger a jenkins build of the repo after a user pushes a branch. the jenkins server is local to my development server and I don't want to expose it's ports to the internet, so hooks from github.com can't be received. but i want automated build triggered</p></div></div>
+<div class="message user" data-ts="1772319649873" data-ts-iso="2026-02-28T23:00:49Z"><div class="role-label">You <span class="msg-time ts-display" data-ts="1772319649873" data-ts-iso="2026-02-28T23:00:49Z">2026-02-28 23:00</span></div><div class="content"><p>its a build/ test/ proof of life of server and working ui run</p></div></div>
+<div class="message assistant" data-ts="1772319652304" data-ts-iso="2026-02-28T23:00:52Z"><div class="role-label">ChatGPT <span class="msg-time ts-display" data-ts="1772319652304" data-ts-iso="2026-02-28T23:00:52Z">2026-02-28 23:00</span></div><div class="content"><p>Yep — you can get <strong>automatic Jenkins builds after a push</strong> without opening Jenkins to the internet. Since GitHub can’t hit your dev server, you have three solid patterns (pick based on what “push” means in your workflow).</p>
+<h2>Option A (best if you can): Jenkins polls GitHub (no inbound ports)</h2>
+<p>Jenkins doesn’t need webhooks; it can <strong>pull</strong> from GitHub on a schedule and build when it sees new commits.</p>
+<p><strong>How:</strong></p>
+<ol>
+<li>Configure the job to build from your GitHub repo (normal Git SCM / Multibranch Pipeline).</li>
+<li>Enable <strong>Poll SCM</strong> (or for multibranch: <strong>Scan Multibranch Pipeline Triggers</strong>).</li>
+<li>Use a short cron like every minute for “proof of life”:</li>
+</ol>
+<p><strong>Freestyle / Pipeline Poll SCM:</strong> <pre><code><em> </em> <em> </em> * </code></pre></p>
+<p><strong>Multibranch scan trigger:</strong></p>
+<ul>
+<li>“Periodically if not otherwise run” → every 1 minute (or <code>&lt;em&gt; &lt;/em&gt; &lt;em&gt; &lt;/em&gt; *</code> depending on UI/plugin)</li>
+</ul>
+<p><strong>Pros:</strong> No exposure, no extra infra, works from anywhere.   <strong>Cons:</strong> Not truly “instant” (it’s as fast as your poll interval). GitHub rate limits can matter if you scan tons of branches very frequently.</p>
+<p>This is usually the simplest answer for your “build/test/proof-of-life” goal.</p>
+<hr>
+<h2>Option B (instant, no GitHub inbound): trigger Jenkins from a local push hook</h2>
+<p>If the developer machine can reach the dev server (LAN/VPN/SSH), you can trigger Jenkins <strong>right after a successful push</strong> using <code>pre-push</code> (Git has no <code>post-push</code>).</p>
+<h3>Approach</h3>
+<ol>
+<li>Put a <code>pre-push</code> hook in each dev clone: <code>.git/hooks/pre-push</code></li>
+<li>Let it:</li>
+</ol>
+<p>- run the push    - then trigger Jenkins <strong>only if push succeeds</strong></p>
+<p>But <code>pre-push</code> runs <em>before</em> the push, so the hook itself can’t “know” success unless you wrap <code>git push</code>.</p>
+<h3>Best way: wrap <code>git push</code> with an alias (acts like “post-push”)</h3>
+<p>Create a Git alias on each dev machine:</p>
+<p><pre><code class="language-bash">git config --global alias.pushb '!f(){ git push "$@" &amp;&amp; ssh devserver "curl -s -X POST http://localhost:8080/job/YOURJOB/build?token=YOURTOKEN &gt;/dev/null"; }; f' </code></pre></p>
+<p>Then devs use: <pre><code class="language-bash">git pushb </code></pre></p>
+<p><strong>Why this is nice:</strong> Jenkins stays bound to <code>localhost</code> on the dev server; only <strong>SSH</strong> needs to be reachable.</p>
+<h4>Notes (Jenkins auth)</h4>
+<ul>
+<li>In Jenkins job config, enable <strong>“Trigger builds remotely”</strong> and set a token.</li>
+<li>Some Jenkins setups require a <strong>crumb</strong> (CSRF). If so, you can:</li>
+</ul>
+<p>- use an API token + crumb fetch, or   - enable/build with a token endpoint approach depending on your Jenkins config. If you tell me your Jenkins auth settings, I can give the exact curl command that works in your instance.</p>
+<p><strong>Pros:</strong> Instant, no inbound Jenkins port, very reliable.   <strong>Cons:</strong> Devs must use <code>pushb</code> (or a wrapper script), not plain <code>git push</code>.</p>
+<hr>
+<h2>Option C (most “correct” server-side): push to a bare repo on the dev server + <code>post-receive</code> hook triggers Jenkins</h2>
+<p>If you’re willing to make the dev server the <strong>Git remote you push to</strong> (even if GitHub remains canonical), then you get a real server-side trigger:</p>
+<ul>
+<li>Create a <strong>bare repo</strong> on the dev server (acts like “origin” for CI)</li>
+<li>Add a <code>post-receive</code> hook in that bare repo</li>
+<li>Hook triggers Jenkins locally (curl to localhost)</li>
+</ul>
+<p>This is exactly what Git server-side hooks are for.</p>
+<p><strong>Pros:</strong> True “after push” hook, no polling, no dev behavior change (they push to that remote).   <strong>Cons:</strong> Requires pushing to that dev-server remote (maybe in addition to GitHub).</p>
+<hr>
+<h1>What I’d do for your “proof of life UI run”</h1>
+<ul>
+<li>If “within 60 seconds is fine”: <strong>Option A polling</strong> (easy, zero workflow change).</li>
+<li>If you want “immediate” and you can SSH to the dev server: <strong>Option B alias wrapper</strong> (fastest to set up, Jenkins stays private).</li>
+</ul>
+<p>If you tell me: 1) is this a <strong>multibranch pipeline</strong> or a single job?   2) can your workstation <strong>SSH into</strong> the dev server (and is that acceptable)?   …I’ll give you the exact Jenkins job settings + the exact trigger command (crumb-safe if needed).</p></div></div>
+<div class="message user" data-ts="1772320090213" data-ts-iso="2026-02-28T23:08:10Z"><div class="role-label">You <span class="msg-time ts-display" data-ts="1772320090213" data-ts-iso="2026-02-28T23:08:10Z">2026-02-28 23:08</span></div><div class="content"><p>this is a simple pipeline, jenkins has access to pull from github.  development happens ON the development server, a debian 12 os via ssh through vscode remote connection- jenkins is running on the development server as well. disk space is not an issue on the server, so duplicating the repo doesn't matter, that is what jenkins does anyway - pulls the wholre repo from github usually</p></div></div>
+<div class="message assistant" data-ts="1772320091992" data-ts-iso="2026-02-28T23:08:11Z"><div class="role-label">ChatGPT <span class="msg-time ts-display" data-ts="1772320091992" data-ts-iso="2026-02-28T23:08:11Z">2026-02-28 23:08</span></div><div class="content"><p>Given your setup (dev + Jenkins on the same Debian server, Jenkins pulls from GitHub, no inbound webhooks), you’ve got two clean solutions. One is “good enough and simple,” the other is “instant and exact.”</p>
+<h2>1) Easiest: Jenkins polls GitHub (recommended for proof-of-life)</h2>
+<p>This requires <strong>zero change</strong> to how you push. Jenkins just checks GitHub periodically and builds if there’s a new commit.</p>
+<h3>Jenkins job config</h3>
+<p>For a <strong>Pipeline</strong> job (single pipeline, not multibranch):</p>
+<ul>
+<li><strong>Pipeline → Definition:</strong> “Pipeline script from SCM”</li>
+<li><strong>SCM:</strong> Git</li>
+<li><strong>Repository URL:</strong> your GitHub repo</li>
+<li><strong>Branches to build:</strong>  </li>
+</ul>
+<p>- <code>*/main</code> if only main     - <code>&lt;em&gt;/feature-&lt;/em&gt;</code> etc if you want more     - or parameterize (see below)</p>
+<ul>
+<li><strong>Build Triggers:</strong> ✅ <strong>Poll SCM</strong></li>
+</ul>
+<p>- Schedule:       <pre><code>    <em> </em> <em> </em> *     </code></pre>     (every minute)</p>
+<p>That’s it. For “proof of life UI run,” a 1-minute delay is usually fine, and you avoid any webhook/network exposure.</p>
+<p><strong>Why this fits your constraints:</strong> Jenkins initiates outbound pulls only; nothing needs to reach Jenkins.</p>
+<hr>
+<h2>2) Instant builds on every push: local “post-push” wrapper (best if you want immediate)</h2>
+<p>Because development (and pushing) happens <strong>on the same server</strong>, you can trigger Jenkins <strong>immediately after <code>git push</code> succeeds</strong>, with no ports exposed.</p>
+<h3>Approach</h3>
+<p>Create a tiny wrapper script (or git alias) that: 1) runs <code>git push</code> 2) if it succeeded, hits <code>http://localhost:8080/...</code> to start the Jenkins build</p>
+<h3>Step A — enable remote trigger token in Jenkins</h3>
+<p>In the Jenkins job:</p>
+<ul>
+<li><strong>Configure → Build Triggers:</strong> ✅ <em>Trigger builds remotely</em></li>
+<li>Set a token, e.g. <code>localtrigger123</code></li>
+</ul>
+<h3>Step B — add a push wrapper script in your repo</h3>
+<p>Create <code>scripts/push-and-build.sh</code>:</p>
+<p><pre><code class="language-bash">#!/usr/bin/env bash set -euo pipefail</p>
+<h1>Push whatever the user asked to push</h1>
+<p>git push "$@"</p>
+<h1>Trigger Jenkins <em>after</em> successful push</h1>
+<p>JENKINS_URL="http://localhost:8080" JOB="YOUR<em>PIPELINE</em>JOB_NAME" TOKEN="localtrigger123"</p>
+<p>curl -fsS -X POST "${JENKINS_URL}/job/${JOB}/build?token=${TOKEN}" &gt;/dev/null</p>
+<p>echo "✅ Jenkins build triggered for ${JOB}" </code></pre></p>
+<p>Make it executable: <pre><code class="language-bash">chmod +x scripts/push-and-build.sh </code></pre></p>
+<p>Use it instead of <code>git push</code>: <pre><code class="language-bash">scripts/push-and-build.sh origin HEAD </code></pre></p>
+<h3>Optional: make it feel like <code>git push</code></h3>
+<p>Add a global alias on the dev server: <pre><code class="language-bash">git config --global alias.pushb '!f(){ scripts/push-and-build.sh "$@"; }; f' </code></pre> Then: <pre><code class="language-bash">git pushb origin HEAD </code></pre></p>
+<p><strong>Notes:</strong></p>
+<ul>
+<li>This avoids the CSRF “crumb” problem most of the time because “Trigger builds remotely” is designed for token triggering. If your Jenkins still requires a crumb, tell me and I’ll give you a crumb-safe curl variant.</li>
+</ul>
+<hr>
+<h2>Which should you choose?</h2>
+<ul>
+<li>If “within 60s” is fine: <strong>Polling</strong> (lowest friction, most robust)</li>
+<li>If you want <strong>immediate</strong> builds on every push: <strong>push wrapper</strong> (still private; uses localhost)</li>
+</ul>
+<p>If you tell me one detail—<strong>do you want Jenkins to build the exact branch you just pushed</strong> (feature branches), or only build when changes reach a specific branch (like main)? I’ll give you the cleanest branch selection setup (parameters vs branch spec) for your pipeline.</p></div></div>
+<div class="message user" data-ts="1772320832707" data-ts-iso="2026-02-28T23:20:32Z"><div class="role-label">You <span class="msg-time ts-display" data-ts="1772320832707" data-ts-iso="2026-02-28T23:20:32Z">2026-02-28 23:20</span></div><div class="content"><p>I would like every push to any branch to trigger a build. polling seems like wasted cycles, and waiting for a pr to be approved and merged to main misses the point of the proof that everything is working when the dev decides its working and pushes. can i set up git push to push to a local "github" and tee to real github simultaneously? i would be fine with jenkins pulling from a local github for branches and then an additional run if a pr is merged into main on github to spot check main hasnt been broken</p></div></div>
+<div class="message assistant" data-ts="1772320834552" data-ts-iso="2026-02-28T23:20:34Z"><div class="role-label">ChatGPT <span class="msg-time ts-display" data-ts="1772320834552" data-ts-iso="2026-02-28T23:20:34Z">2026-02-28 23:20</span></div><div class="content"><p>Yes — you can do this cleanly, and it’s a great fit for “build on every push” without polling.</p>
+<p>There are two good architectures. Both keep Jenkins private and give you <strong>instant builds per push on any branch</strong>.</p>
+<h2>Option 1 (recommended): Push to a local “origin” on the dev server, and mirror to GitHub</h2>
+<p>You create a <strong>bare repo</strong> on the dev server (acts like a local “GitHub”). Your push goes there first. A <strong>server-side <code>post-receive</code> hook</strong> triggers Jenkins immediately. That same hook (or a separate job) mirrors the branch to GitHub.</p>
+<h3>1) Create a bare repo on the dev server</h3>
+<p><pre><code class="language-bash">sudo mkdir -p /srv/git sudo chown -R $USER:$USER /srv/git</p>
+<p>cd /srv/git git init --bare yourrepo.git </code></pre></p>
+<h3>2) In your working repo, add this local remote and push to it</h3>
+<p><pre><code class="language-bash">cd /path/to/your/working/repo git remote add local /srv/git/yourrepo.git git push -u local --all git push local --tags </code></pre></p>
+<h3>3) Make Jenkins build from the local repo (instant, no network)</h3>
+<p>In Jenkins Pipeline job SCM:</p>
+<ul>
+<li>Repo URL: <code>/srv/git/yourrepo.git</code></li>
+<li>Branch specifier: <code>&lt;strong&gt;</code> (or <code>*/&lt;/strong&gt;</code> depending on UI) so it can build any branch</li>
+<li>Jenkinsfile path: <code>Jenkinsfile</code></li>
+</ul>
+<blockquote>If you want “build whichever branch was pushed” automatically, the trigger should pass the branch ref (see below).</blockquote>
+<h3>4) Add a server-side hook to trigger Jenkins on every push</h3>
+<p>Create <code>/srv/git/yourrepo.git/hooks/post-receive</code>:</p>
+<p><pre><code class="language-bash">#!/usr/bin/env bash set -euo pipefail</p>
+<p>JENKINS_URL="http://localhost:8080" JOB="YourPipelineJobName" TOKEN="localtrigger123"</p>
+<h1>For each updated ref, trigger a build and tell Jenkins which branch/ref changed</h1>
+<p>while read -r oldrev newrev refname; do   # Only build branches (skip tags unless you want them)   case "$refname" in     refs/heads/*)       branch="${refname#refs/heads/}"       curl -fsS -X POST \         "${JENKINS<em>URL}/job/${JOB}/buildWithParameters?token=${TOKEN}&amp;GIT</em>REF=${refname}&amp;BRANCH_NAME=${branch}" \         &gt;/dev/null       ;;   esac done </code></pre></p>
+<p>Then: <pre><code class="language-bash">chmod +x /srv/git/yourrepo.git/hooks/post-receive </code></pre></p>
+<h3>5) Mirror pushes to GitHub (so GitHub stays “real” origin)</h3>
+<p>Easiest: have the bare repo know about GitHub and push refs out.</p>
+<p>In the bare repo: <pre><code class="language-bash">cd /srv/git/yourrepo.git git remote add github git@github.com:YOURORG/YOURREPO.git </code></pre></p>
+<p>Then add to the end of <code>post-receive</code> (after triggering Jenkins), mirror only the updated refs:</p>
+<p><pre><code class="language-bash"># Push the updated branches to GitHub</p>
+<h1>(push --mirror is also possible, but this is safer)</h1>
+<p>while read -r oldrev newrev refname; do   case "$refname" in     refs/heads/*)       git push github "${refname}:${refname}" &gt;/dev/null       ;;     refs/tags/*)       git push github "${refname}:${refname}" &gt;/dev/null       ;;   esac done </code></pre></p>
+<p><strong>Result:</strong></p>
+<ul>
+<li>Dev runs normal <code>git push local &lt;branch&gt;</code> (or you set <code>local</code> as default)</li>
+<li>Jenkins triggers instantly via local hook</li>
+<li>Same push is mirrored to GitHub automatically</li>
+<li>No polling, no exposed ports, and every branch push builds.</li>
+</ul>
+<hr>
+<h2>Option 2: Keep GitHub as origin, but “tee” pushes to both GitHub and local in one <code>git push</code></h2>
+<p>Git supports a single remote having <strong>multiple push URLs</strong>. So one <code>git push origin</code> can push to both:</p>
+<p><pre><code class="language-bash">git remote set-url --add --push origin git@github.com:YOURORG/YOURREPO.git git remote set-url --add --push origin /srv/git/yourrepo.git </code></pre></p>
+<p>Now: <pre><code class="language-bash">git push origin HEAD </code></pre> will push to <strong>both</strong> GitHub and the local bare repo.</p>
+<p>Then you still use the <strong>local bare repo <code>post-receive</code> hook</strong> to trigger Jenkins instantly.</p>
+<p><strong>Pros:</strong> no new “local” remote name; you keep typing <code>git push origin</code>.   <strong>Cons:</strong> if either push target fails, the overall push is “failed” (though one may have succeeded). For solo dev this is usually fine.</p>
+<hr>
+<h2>“Also run when PR merged to main on GitHub”</h2>
+<p>If you want an extra “spot-check main” build on merges to GitHub <code>main</code>:</p>
+<ul>
+<li>simplest: Jenkins can also have a <strong>second job</strong> that polls <em>only</em> <code>main</code> every 5–10 minutes (low waste), or</li>
+<li>use GitHub Actions to run tests on <code>main</code> (no Jenkins), or</li>
+<li>if you’re okay with GitHub→server connectivity later, a webhook (but you said no inbound, so skip).</li>
+</ul>
+<p>Given your goal, I’d do:</p>
+<ul>
+<li><strong>Local hook = instant per-branch proof-of-life</strong></li>
+<li><strong>Occasional main verification = lightweight poll every 10m</strong> (very low cycles)</li>
+</ul>
+<hr>
+<h2>One key Jenkinsfile tweak</h2>
+<p>Because you’ll be triggering with <code>BRANCH&lt;em&gt;NAME</code> / <code>GIT&lt;/em&gt;REF</code>, make your pipeline accept it:</p>
+<p><pre><code class="language-groovy">parameters {   string(name: 'BRANCH_NAME', defaultValue: 'main')   string(name: 'GIT_REF', defaultValue: 'refs/heads/main') } </code></pre></p>
+<p>And ensure checkout uses it (depending on pipeline style).</p>
+<hr>
+<h3>My pick for you</h3>
+<p>Use <strong>Option 1</strong> (local bare repo + mirror to GitHub). It’s the most reliable “proof of life on push” and keeps Jenkins and the trigger fully internal.</p>
+<p>If you tell me whether your Jenkins job is <strong>Pipeline script from SCM</strong> or a <strong>Jenkinsfile in repo</strong>, I’ll give you the exact Jenkinsfile + job config so <code>BRANCH_NAME</code> builds the right thing every time.</p></div></div>
+<div class="message user" data-ts="1772321400589" data-ts-iso="2026-02-28T23:30:00Z"><div class="role-label">You <span class="msg-time ts-display" data-ts="1772321400589" data-ts-iso="2026-02-28T23:30:00Z">2026-02-28 23:30</span></div><div class="content"><p>i like option 1.  the two options for the pipeline are: pipeline script/pipeline script from scm.  can the bare repo be the scm rather than github.com?  if the mirror pushed to github, do we maintain the actual user on the push? I have different users pushing, me, claude, codex.</p></div></div>
+<div class="message assistant" data-ts="1772321402381" data-ts-iso="2026-02-28T23:30:02Z"><div class="role-label">ChatGPT <span class="msg-time ts-display" data-ts="1772321402381" data-ts-iso="2026-02-28T23:30:02Z">2026-02-28 23:30</span></div><div class="content"><p>Yes to both questions, with one important nuance about “who pushed” on GitHub.</p>
+<h2>1) Can the bare repo be the SCM for “Pipeline script from SCM”?</h2>
+<p>Absolutely. Jenkins can treat a <strong>local bare repo path</strong> as the Git SCM.</p>
+<p>In your Jenkins job:</p>
+<ul>
+<li><strong>Definition:</strong> <em>Pipeline script from SCM</em></li>
+<li><strong>SCM:</strong> Git</li>
+<li><strong>Repository URL:</strong> <code>/srv/git/yourrepo.git</code> (or wherever you created it)</li>
+<li><strong>Credentials:</strong> none (it’s local filesystem)</li>
+<li><strong>Branches to build:</strong> you can keep this broad (e.g. <code>&lt;em&gt;/main</code>) </em>or* parameterize per push (recommended if you want “build exactly the pushed branch”).</li>
+</ul>
+<p>So yes — Jenkins can pull directly from the bare repo instead of <code>github.com</code>.</p>
+<h2>2) If the server mirrors to GitHub, do we preserve the “user who pushed”?</h2>
+<p>Two different “identities” exist:</p>
+<h3>A) Commit author/committer (✅ preserved)</h3>
+<p>These are stored <strong>inside the commit objects</strong>. Mirroring does <strong>not</strong> change them. So commits will still show as authored by “you / claude / codex” <em>if those commits were created with those author emails/names</em>.</p>
+<h3>B) “Pushed by” / the pusher account on GitHub (❌ not preserved by server mirroring)</h3>
+<p>GitHub records the <strong>account that performed the push over SSH/HTTPS</strong>. If your bare repo’s hook does <code>git push github ...</code>, then on GitHub the pusher will appear as <strong>whatever GitHub account corresponds to the SSH key/token used by that hook</strong> (often just “devserver” or your personal account).</p>
+<p>So: mirroring keeps <em>authorship</em> correct, but <em>pusher identity</em> on GitHub becomes the mirroring identity.</p>
+<hr>
+<h2>Best practice for your “multiple users pushing” situation</h2>
+<p>If you care about GitHub showing the real pusher per user (you vs claude vs codex), you have two good options:</p>
+<h3>Option 1 (cleanest): Devs push to <strong>local bare repo</strong>, and also push to GitHub themselves</h3>
+<ul>
+<li>Instant Jenkins build comes from the local push (post-receive hook triggers Jenkins).</li>
+<li>Each user’s push to GitHub happens with <em>their own</em> credentials → GitHub correctly shows “pushed by <that user>”.</li>
+</ul>
+<p>This is the best way to keep accurate GitHub pusher attribution.</p>
+<h3>Option 2: “Tee push” from the client using multiple push URLs (per-user identity preserved)</h3>
+<p>Keep your local bare repo as the <em>primary</em> trigger, but configure each user’s <code>origin</code> to push to both:</p>
+<ul>
+<li>local bare repo</li>
+<li>GitHub</li>
+</ul>
+<p>Because the <em>client</em> is pushing to GitHub, GitHub sees the right user.</p>
+<p>(You said you liked Option 1, but this is basically Option 1 + per-user tee, without server mirroring.)</p>
+<hr>
+<h2>If you don’t care about “pushed by” on GitHub</h2>
+<p>Then server mirroring is totally fine. You’ll still retain:</p>
+<ul>
+<li>correct commit authorship</li>
+<li>correct history</li>
+<li>branch updates</li>
+</ul>
+<p>…but GitHub will attribute the push action to the mirroring account.</p>
+<hr>
+<h2>Recommendation for you</h2>
+<p>Use <strong>local bare repo as SCM</strong>, trigger Jenkins via <code>post-receive</code>, and <strong>don’t mirror from the server</strong>. Instead, have each “user” push to GitHub with their own creds (either manually or via multiple push URLs). That gives you:</p>
+<ul>
+<li>instant build on every branch push</li>
+<li>no polling</li>
+<li>no exposed ports</li>
+<li>correct per-user attribution on GitHub</li>
+</ul>
+<p>If you tell me how you distinguish “me / claude / codex” on the server (separate Linux users? separate SSH keys? separate git configs?), I’ll give you the exact remote configuration that makes <code>git push</code> update local+GitHub in one command <em>per identity</em>.</p></div></div>
+<div class="message user" data-ts="1772322124532" data-ts-iso="2026-02-28T23:42:04Z"><div class="role-label">You <span class="msg-time ts-display" data-ts="1772322124532" data-ts-iso="2026-02-28T23:42:04Z">2026-02-28 23:42</span></div><div class="content"><p>we're using git and gh (github cli). ok i just realized - for my github personal account, claude, codex, and me, we all are pushing and creaeing prs using my account - all prs say they were created by ngallodev, however, in my personal organization (ngallodev-software) where i also have a private(will be public soon) repo,  Ive added claude-bot and codex-bot users who have there own login to github and authenticate using identity scripts in the repo linked to a github app and everyone authors their own pushes, and prs. thats where we independently are using gh and git.  i would like to mirror this setup across all repos, but i think maybe some of the features only exist in the org.  I could move app-tracker to the org though.  would it help for me to share my identity scfripts or anything else with you?</p></div></div>
+<div class="message assistant" data-ts="1772322126370" data-ts-iso="2026-02-28T23:42:06Z"><div class="role-label">ChatGPT <span class="msg-time ts-display" data-ts="1772322126370" data-ts-iso="2026-02-28T23:42:06Z">2026-02-28 23:42</span></div><div class="content"><p>You don’t need to share your identity scripts unless you want me to sanity-check them for pitfalls. Based on what you described, you can absolutely mirror the “separate bot identities” setup across repos — and most of what you’re using is <strong>not org-only</strong>. The “org-only” parts are usually around <strong>policies</strong> (required reviews, branch protections, SSO, etc.), not the basic mechanics of “multiple GitHub users can push/PR with their own identity.”</p>
+<p>Here’s the path I’d take for your Jenkins + local bare repo plan <em>and</em> the multi-identity GitHub workflow.</p>
+<h2>What’s likely org-only vs universally available</h2>
+<h3>Not org-only (works for personal repos too)</h3>
+<ul>
+<li>Multiple GitHub accounts pushing via SSH keys / tokens</li>
+<li><code>gh auth login</code> per account (with separate config dirs)</li>
+<li>PRs created by whichever account is authenticated in <code>gh</code></li>
+<li>Commit author identity per repo (<code>user.name</code>, <code>user.email</code>)</li>
+<li>Bot accounts (regular users) pushing/creating PRs</li>
+</ul>
+<h3>Potentially org-specific</h3>
+<ul>
+<li><strong>GitHub Apps</strong> installed at org scope vs user scope (depends how you created it)</li>
+<li>Some repo/org settings: required reviewers, CODEOWNERS enforcement, secret scanning policies, etc.</li>
+<li>Fine-grained PAT restrictions / SSO constraints (org setting)</li>
+</ul>
+<p>If your “identity scripts” rely on a <strong>GitHub App installed only on the org</strong>, then that’s the main reason it might feel org-only. But you can usually:</p>
+<ul>
+<li>install the same GitHub App on a user account (if it’s user-installable), or</li>
+<li>create a separate GitHub App for your personal account repos, or</li>
+<li>use bot user accounts with SSH keys / fine-grained PATs instead.</li>
+</ul>
+<h2>For your goal: “every push triggers build instantly” + “each agent has its own GitHub identity”</h2>
+<p>Use this combination:</p>
+<h3>A) Local bare repo triggers Jenkins (authoritative for CI triggers)</h3>
+<ul>
+<li>Everyone pushes to <code>local</code> remote (bare repo on the dev server)</li>
+<li><code>post-receive</code> triggers Jenkins immediately</li>
+<li>Jenkins pulls SCM from the bare repo (fast, local, no internet)</li>
+</ul>
+<h3>B) Each identity also pushes to GitHub under their own account</h3>
+<p>Do <strong>client-side tee push</strong> (so GitHub sees the real pusher), <em>not server mirroring</em>.</p>
+<p>That means: each identity’s <code>origin</code> has two push URLs:</p>
+<ul>
+<li>GitHub (auth depends on that identity)</li>
+<li>local bare repo (no auth; local path)</li>
+</ul>
+<p>So a single <code>git push origin branch</code> updates both:</p>
+<ul>
+<li>triggers Jenkins instantly (via local hook)</li>
+<li>updates GitHub under the correct user/bot</li>
+</ul>
+<p>This gives you everything you want.</p>
+<h2>How to do the multi-identity part cleanly (no scripts needed, but compatible with yours)</h2>
+<h3>1) Keep separate <code>gh</code> auth contexts per identity</h3>
+<p>On the dev server, use different config dirs:</p>
+<p><pre><code class="language-bash"># you GH<em>CONFIG</em>DIR=~/.config/gh-ngallodev gh auth login</p>
+<h1>claude-bot</h1>
+<p>GH<em>CONFIG</em>DIR=~/.config/gh-claude gh auth login</p>
+<h1>codex-bot</h1>
+<p>GH<em>CONFIG</em>DIR=~/.config/gh-codex gh auth login </code></pre></p>
+<p>Then in scripts you can run: <pre><code class="language-bash">GH<em>CONFIG</em>DIR=~/.config/gh-claude gh pr create ... </code></pre></p>
+<h3>2) Git remote: one “origin”, two push URLs</h3>
+<p>In each clone:</p>
+<p><pre><code class="language-bash">git remote set-url origin git@github.com:ngallodev-software/app-tracker.git git remote set-url --add --push origin git@github.com:ngallodev-software/app-tracker.git git remote set-url --add --push origin /srv/git/app-tracker.git </code></pre></p>
+<p>Now <code>git push origin HEAD</code> pushes to both.</p>
+<p><strong>Important:</strong> The <em>fetch</em> URL stays GitHub. The <em>push</em> URLs include GitHub + local.</p>
+<h3>3) Ensure each identity signs pushes to GitHub correctly</h3>
+<p>You can do this either by:</p>
+<ul>
+<li>using SSH keys and <code>GIT&lt;em&gt;SSH&lt;/em&gt;COMMAND</code> / <code>~/.ssh/config</code> host aliases per identity, or</li>
+<li>using HTTPS + tokens (less nice on shared server), or</li>
+<li>your existing identity scripts (sounds like you already solved this well).</li>
+</ul>
+<p>If you already have this working in the org repo, you can reuse the same pattern.</p>
+<h2>Should you move app-tracker to the org?</h2>
+<p>It will help if:</p>
+<ul>
+<li>your GitHub App is already built and installed org-wide (simplifies)</li>
+<li>you want consistent policies and bot permissions</li>
+<li>you want the repo to match the rest of your “agent workforce” story</li>
+</ul>
+<p>It’s not strictly required, but it’s usually cleaner.</p>
+<h2>Do I need your identity scripts?</h2>
+<p>Only if you want targeted help like:</p>
+<ul>
+<li>making them safer (avoid leaking tokens, avoid cross-contaminating <code>gh</code> auth state)</li>
+<li>ensuring they work in any repo with minimal changes</li>
+<li>adding “auto-select identity based on branch prefix / commit message / environment”</li>
+<li>integrating them with the local bare-repo trigger flow</li>
+</ul>
+<p>If you paste <strong>redacted snippets</strong> (remove tokens/URLs/private keys), I can:</p>
+<ul>
+<li>point out edge cases (GH<em>CONFIG</em>DIR, GIT<em>SSH</em>COMMAND, credential helpers)</li>
+<li>suggest a simplified, repo-agnostic layout</li>
+</ul>
+<h3>If you share anything, share this (safe + useful)</h3>
+<ul>
+<li>the high-level flow (which env vars/scripts choose identity)</li>
+<li>how SSH keys are selected (ssh config host aliases vs env var)</li>
+<li>how <code>gh</code> is isolated per identity (config dirs/profiles)</li>
+<li>an example command your script runs (redacted)</li>
+</ul>
+<p>No secrets needed.</p>
+<p>If you want, I can also give you the exact <code>post-receive</code> hook + Jenkins job parameter setup so the pushed branch builds correctly every time from the bare repo.</p></div></div>
+<div class="message user" data-ts="1772323710152" data-ts-iso="2026-03-01T00:08:30Z"><div class="role-label">You <span class="msg-time ts-display" data-ts="1772323710152" data-ts-iso="2026-03-01T00:08:30Z">2026-03-01 00:08</span></div><div class="content"><p>one more question before we execute, what if I create a local path like /lump/apps/github and then inside the github directory create a symbolic link to the actual dev directory e.g. ln -s /lump/apps/app-tracker /lump/apps/github/app-tracker and then have jenkins monitor commits to the /lump/apps/app-tracker/.git directory?</p></div></div>
+<div class="message assistant" data-ts="1772323711946" data-ts-iso="2026-03-01T00:08:31Z"><div class="role-label">ChatGPT <span class="msg-time ts-display" data-ts="1772323711946" data-ts-iso="2026-03-01T00:08:31Z">2026-03-01 00:08</span></div><div class="content"><p>That won’t work the way you want.</p>
+<h3>Why</h3>
+<ul>
+<li><strong>Jenkins doesn’t “monitor a <code>.git</code> directory”</strong> for pushes. When you configure “Pipeline script from SCM (Git)”, Jenkins decides to build based on <strong>its trigger</strong> (webhook, polling, or an explicit build trigger), and then it <strong>runs <code>git fetch/checkout</code></strong> into its workspace.</li>
+<li>A <strong>working repo</strong> at <code>/lump/apps/app-tracker</code> only changes when <em>someone commits there</em>. A <code>git push</code> to GitHub does <strong>not</strong> mutate that directory unless you also run <code>git pull</code>/<code>fetch</code> there.</li>
+<li>A symlink like <code>/lump/apps/github/app-tracker -&gt; /lump/apps/app-tracker</code> doesn’t create a place where pushes “arrive”. It’s still the same working tree.</li>
+<li>Even if Jenkins is pointed at a local path, it will still treat it as a Git remote and do fetch/checkout; it won’t magically get notified by filesystem changes unless you trigger it.</li>
+</ul>
+<h3>What <em>would</em> work (and is basically Option 1)</h3>
+<p>Create a <strong>bare repo</strong> as the “push landing zone” and trigger Jenkins from a server-side hook:</p>
+<ul>
+<li><code>/lump/apps/github/app-tracker.git</code>  (bare repo)</li>
+<li>Developers push to it (and also to GitHub if you want tee)</li>
+<li><code>post-receive</code> hook triggers Jenkins instantly</li>
+<li>Jenkins SCM points at <code>/lump/apps/github/app-tracker.git</code></li>
+</ul>
+<p>This gives you the “local GitHub” behavior you’re intuitively aiming for, but correctly.</p>
+<h3>Minimal layout</h3>
+<p><pre><code class="language-bash">/lump/apps/github/app-tracker.git   # bare repo (receives pushes) /lump/apps/app-tracker              # working repo (your dev checkout) /var/lib/jenkins/workspace/...      # Jenkins workspaces (its own checkouts) </code></pre></p>
+<h3>If you <em>really</em> want Jenkins to build from your working tree</h3>
+<p>You can, but it’s a different pattern:</p>
+<ul>
+<li>Jenkins job uses “Pipeline script” (not SCM) and runs shell steps that build <code>/lump/apps/app-tracker</code> directly.</li>
+<li>Then you still need a trigger (hook/alias) to start Jenkins after push.</li>
+</ul>
+<p>This is usually less clean than letting Jenkins do its normal checkout.</p>
+<p><strong>Bottom line:</strong> symlinking a working directory won’t provide “push-triggered builds.” A <strong>bare repo + post-receive hook</strong> is the right mechanism.</p>
+<p>If you’re ready, I can give you the exact commands to: 1) create the bare repo under <code>/lump/apps/github/</code> 2) set up the <code>post-receive</code> hook to trigger Jenkins on every branch push 3) configure your Jenkins Pipeline job to build the pushed branch (no polling).</p></div></div>
+<div class="message user" data-ts="1772324127517" data-ts-iso="2026-03-01T00:15:27Z"><div class="role-label">You <span class="msg-time ts-display" data-ts="1772324127517" data-ts-iso="2026-03-01T00:15:27Z">2026-03-01 00:15</span></div><div class="content"><p>what about just a post-commit hook. no duplication to bare repo and github. on developer commit to the shared local repository, notify jenkins, jenkins pulls its mirrored build from /lump/apps/app-tracker and runs its job.  this gives me actionable results in the space where a developer commits to their working branch, which we assume means everything in the app should be functioning, and then maybe is working on something else, but jenkins pulls the branch from local, at that commit, and we get a pass or fail.  this would be most useful to me, rather than pushing broken stuff to github branches.  our workflow is such that if a user is pushing to remote, they're ready to create a pr immediately after.  github failing smoke tests shouldn't be our alert that there is an issue.  does this make sense?</p></div></div>
+<div class="message assistant" data-ts="1772324129332" data-ts-iso="2026-03-01T00:15:29Z"><div class="role-label">ChatGPT <span class="msg-time ts-display" data-ts="1772324129332" data-ts-iso="2026-03-01T00:15:29Z">2026-03-01 00:15</span></div><div class="content"><p>Yes, that <em>can</em> make sense — with two big caveats and one tweak that makes it reliable.</p>
+<h3>The idea that works</h3>
+<p>Use a <strong>client-side hook</strong> (e.g., <code>post-commit</code>) to <strong>trigger Jenkins immediately</strong> when a developer commits locally. Jenkins then checks out and tests <strong>that exact commit</strong> and gives you pass/fail before anything gets pushed to GitHub.</p>
+<p>That matches your workflow goal: “GitHub shouldn’t be the first place we discover it’s broken.”</p>
+<hr>
+<h2>Caveat 1: <code>post-commit</code> is per-clone, not “shared repo wide”</h2>
+<p><code>post-commit</code> runs in <strong>the working copy where the commit is created</strong>.</p>
+<ul>
+<li>If everyone commits in the <strong>same single working directory</strong> on the server: it will trigger, but you’ll have <strong>concurrency collisions</strong> (people switching branches, uncommitted changes, rebases, etc.).</li>
+<li>If everyone has <strong>their own clone</strong> (recommended), each clone’s <code>post-commit</code> triggers Jenkins cleanly.</li>
+</ul>
+<p>If you truly mean “shared local repository” as in “one working tree everyone uses,” I’d strongly push you away from that for sanity.</p>
+<hr>
+<h2>Caveat 2: Don’t have Jenkins “build the branch”</h2>
+<p>Branches move. Rebase/amend changes history. If Jenkins pulls “the branch”, it might build a different commit than the one you intended.</p>
+<p><strong>Fix:</strong> Trigger Jenkins with the <strong>commit SHA</strong> and have Jenkins build that SHA.</p>
+<p>That gives you: “build exactly what I just committed.”</p>
+<hr>
+<h1>How to implement (clean + repo-portable)</h1>
+<h2>Step 1: Put hooks in the repo using <code>core.hooksPath</code></h2>
+<p>This avoids manually copying into <code>.git/hooks</code> for each clone.</p>
+<p>In the repo: <pre><code class="language-bash">mkdir -p .githooks git config core.hooksPath .githooks </code></pre></p>
+<p>Commit the <code>.githooks/</code> directory so everyone gets it.</p>
+<h2>Step 2: Create <code>.githooks/post-commit</code></h2>
+<p><pre><code class="language-bash">#!/usr/bin/env bash set -euo pipefail</p>
+<p>JENKINS_URL="http://localhost:8080" JOB="app-tracker-proof-of-life" TOKEN="localtrigger123"</p>
+<p>SHA="$(git rev-parse HEAD)" BRANCH="$(git rev-parse --abbrev-ref HEAD)" REPO_PATH="$(pwd)"</p>
+<h1>Trigger Jenkins to build <em>this exact commit</em></h1>
+<p>curl -fsS -X POST \   "${JENKINS<em>URL}/job/${JOB}/buildWithParameters?token=${TOKEN}&amp;GIT</em>SHA=${SHA}&amp;BRANCH<em>NAME=${BRANCH}&amp;REPO</em>PATH=${REPO_PATH}" \   &gt;/dev/null</p>
+<p>echo "Triggered Jenkins for ${BRANCH}@${SHA:0:8}" </code></pre></p>
+<p>Make executable: <pre><code class="language-bash">chmod +x .githooks/post-commit </code></pre></p>
+<h2>Step 3: Configure Jenkins Pipeline job to accept parameters</h2>
+<p>Job type: <strong>Pipeline</strong></p>
+<ul>
+<li>Use <strong>Pipeline script</strong> <em>or</em> <strong>Pipeline script from SCM</strong> — either works, but for your approach I’d do <strong>Pipeline script</strong> (simpler when building by SHA from arbitrary local paths).</li>
+</ul>
+<p>Add parameters:</p>
+<ul>
+<li><code>GIT_SHA</code> (string)</li>
+<li><code>REPO_PATH</code> (string)</li>
+<li><code>BRANCH_NAME</code> (string)</li>
+</ul>
+<p>Then in Jenkinsfile, checkout that SHA from the local repo path:</p>
+<p><pre><code class="language-groovy">pipeline {   agent any   parameters {     string(name: 'GIT_SHA', defaultValue: '', description: 'Commit SHA to build')     string(name: 'REPO_PATH', defaultValue: '', description: 'Local repo path that contains the commit')     string(name: 'BRANCH_NAME', defaultValue: '', description: 'Branch name (informational)')   }   stages {     stage('Checkout') {       steps {         sh '''           set -e           rm -rf src           git clone "${REPO_PATH}" src           cd src           git checkout "${GIT_SHA}"         '''       }     }     stage('Build/Test') {       steps {         sh '''           set -e           cd src           # your build/test/proof-of-life steps here         '''       }     }   } } </code></pre></p>
+<p>This makes Jenkins immune to “branch moved” problems.</p>
+<hr>
+<h1>Does this avoid duplication?</h1>
+<p>Mostly, yes:</p>
+<ul>
+<li>You keep <strong>one dev clone per developer</strong> (recommended).</li>
+<li>Jenkins still does its normal thing: it checks out into its workspace. That’s “duplication,” but it’s standard and avoids corrupting your dev working tree.</li>
+</ul>
+<p>Trying to make Jenkins build directly inside <code>/lump/apps/app-tracker</code> is possible, but it’s a foot-gun (workspace pollution, leftover artifacts, branch switching, half-finished changes, etc.).</p>
+<hr>
+<h1>When this approach is <em>not</em> enough</h1>
+<p>If you later want “build on push” <strong>from multiple machines</strong> (not all commits happening on the same Jenkins host), or you want a true server-side “every update to any branch triggers,” then the <strong>bare repo + post-receive</strong> design becomes the clean universal solution.</p>
+<p>But for your current reality (“dev happens on the Debian server”), <strong>post-commit → Jenkins build by SHA</strong> is a very reasonable setup.</p>
+<hr>
+<p>If you tell me what your “proof-of-life UI run” looks like (e.g., <code>docker compose up</code>, <code>dotnet test</code>, Playwright smoke, curl <code>/healthz</code>), I’ll draft the exact Jenkins stages so the build result is maximally informative (logs + artifact links) with minimal flake.</p></div></div>
+</div>
+</body>
+</html>

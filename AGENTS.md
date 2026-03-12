@@ -1,1 +1,1 @@
-Read `/lump/apps/conversation-export-workbench/testing-instructions.md` at the start of any end-to-end testing or browser-validation session for this repo. Treat it as additional task-specific instructions for the current run.
+No additional repo-specific testing instructions.

@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Custom yt-dlp in MeTube</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: #0f1117;
+    color: #e0e0e0;
+    line-height: 1.7;
+    padding: 2rem 1rem;
+  }
+  .container { max-width: 860px; margin: 0 auto; }
+  h1 {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 0.3rem;
+  }
+  .meta {
+    font-size: 0.8rem;
+    color: #666;
+    margin-bottom: 2.5rem;
+  }
+  .message {
+    margin-bottom: 1.8rem;
+    border-radius: 10px;
+    padding: 1.2rem 1.5rem;
+    position: relative;
+  }
+  .message.user {
+    background: #1a1f2e;
+    border-left: 3px solid #4a90e2;
+  }
+  .message.assistant {
+    background: #141a14;
+    border-left: 3px solid #5cb85c;
+  }
+  .role-label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 0.6rem;
+    opacity: 0.6;
+  }
+  .message.user .role-label { color: #4a90e2; }
+  .message.assistant .role-label { color: #5cb85c; }
+  .msg-time {
+    font-size: 0.72rem;
+    color: #555;
+    float: right;
+    margin-top: 0.1rem;
+  }
+  .thinking {
+    background: #1a1a10;
+    border: 1px solid #3a3a20;
+    border-radius: 6px;
+    padding: 0.8rem 1.1rem;
+    margin-bottom: 1rem;
+    font-style: italic;
+    color: #999;
+    font-size: 0.88rem;
+  }
+  .thinking-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #6a6a40;
+    margin-bottom: 0.4rem;
+  }
+  .search-block {
+    background: #111820;
+    border: 1px dashed #2a3a50;
+    border-radius: 6px;
+    padding: 0.7rem 1rem;
+    margin-bottom: 0.8rem;
+    font-size: 0.82rem;
+    color: #7a9fc0;
+  }
+  .search-block .search-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #3a6a90;
+    margin-bottom: 0.4rem;
+  }
+  .search-result {
+    margin-top: 0.4rem;
+    padding-left: 0.8rem;
+    border-left: 2px solid #2a4a60;
+  }
+  .search-result a { color: #5a9fc0; text-decoration: none; }
+  .search-result a:hover { text-decoration: underline; }
+  .search-result .snippet { color: #668; font-size: 0.8rem; }
+  .read-link-block {
+    background: #11181a;
+    border: 1px dashed #2a4040;
+    border-radius: 6px;
+    padding: 0.5rem 0.9rem;
+    margin-bottom: 0.8rem;
+    font-size: 0.8rem;
+    color: #6ab;
+  }
+  .content p { margin-bottom: 0.8rem; }
+  .content pre {
+    background: #0a0a0a;
+    border: 1px solid #2a2a2a;
+    border-radius: 6px;
+    padding: 1rem;
+    overflow-x: auto;
+    font-size: 0.85rem;
+    margin-bottom: 0.8rem;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .content code {
+    background: #1a1a1a;
+    border-radius: 3px;
+    padding: 0.1em 0.35em;
+    font-size: 0.87em;
+    font-family: "JetBrains Mono", "Fira Code", monospace;
+  }
+  .content pre code { background: none; padding: 0; }
+  .content h1, .content h2, .content h3, .content h4 {
+    color: #d0d0d0;
+    margin: 1rem 0 0.5rem;
+  }
+  .content ul, .content ol {
+    padding-left: 1.5rem;
+    margin-bottom: 0.8rem;
+  }
+  .content li { margin-bottom: 0.3rem; }
+  .content blockquote {
+    border-left: 3px solid #444;
+    padding-left: 1rem;
+    color: #999;
+    margin-bottom: 0.8rem;
+  }
+  .content table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 0.8rem;
+    font-size: 0.88rem;
+  }
+  .content th, .content td {
+    border: 1px solid #2a2a2a;
+    padding: 0.4rem 0.7rem;
+  }
+  .content th { background: #1a1a1a; }
+  .content hr { border: none; border-top: 1px solid #2a2a2a; margin: 1rem 0; }
+  .content a { color: #4a90e2; }
+  .divider {
+    border: none;
+    border-top: 1px solid #1e1e1e;
+    margin: 2rem 0;
+  }
+  #index { margin-bottom: 2.5rem; }
+  #index h2 { font-size: 1rem; color: #888; margin-bottom: 0.8rem; }
+  #index ul { list-style: none; padding: 0; }
+  #index li { margin-bottom: 0.4rem; }
+  #index a { color: #4a90e2; text-decoration: none; font-size: 0.9rem; }
+  #index a:hover { text-decoration: underline; }
+  .conv-header { margin: 3rem 0 1rem; }
+  .conv-header h2 { font-size: 1.25rem; color: #ccc; }
+</style>
+</head>
+<body>
+<div class="container">
+<h1>Custom yt-dlp in MeTube</h1>
+<div class="meta" data-started-ts="1757508014923" data-updated-ts="1757509630192" data-started-iso="2025-09-10T12:40:14.923853Z" data-updated-iso="2025-09-10T13:07:10.192338Z">Started <span class="ts-display">2025-09-10 12:40</span> &nbsp;·&nbsp; Last updated <span class="ts-display">2025-09-10 13:07</span></div>
+<div class="message user" data-ts="1757508015739" data-ts-iso="2025-09-10T12:40:15.739354Z"><div class="role-label">You <span class="msg-time ts-display" data-ts="1757508015739" data-ts-iso="2025-09-10T12:40:15.739354Z">2025-09-10 12:40</span></div><div class="content"><p>how can i rn a custom version, that is built locally  of yt-dlp in the metube application.</p></div></div>
+<div class="message assistant" data-ts="1757508026609" data-ts-iso="2025-09-10T12:40:26.609863Z"><div class="role-label">Claude <span class="msg-time ts-display" data-ts="1757508026609" data-ts-iso="2025-09-10T12:40:26.609863Z">2025-09-10 12:40</span></div><div class="content"><p>To run a custom locally-built version of yt-dlp in MeTube, you have a few options depending on how you're running MeTube:</p>
+<h2>Option 1: Docker Volume Mount (Recommended)</h2>
+<p>If you're using Docker, you can mount your custom yt-dlp binary into the container:</p>
+<ol>
+<li>Build your custom yt-dlp locally</li>
+<li>Mount it into the MeTube container:</li>
+</ol>
+<p><pre><code class="language-bash">docker run -d -p 8081:8081 \   -v /path/to/your/custom/yt-dlp:/usr/local/bin/yt-dlp \   -v /path/to/downloads:/downloads \   alexta69/metube </code></pre></p>
+<h2>Option 2: Custom Docker Image</h2>
+<p>Create a custom MeTube image that includes your yt-dlp build:</p>
+<p><pre><code class="language-dockerfile">FROM alexta69/metube:latest</p>
+<h1>Copy your custom yt-dlp binary</h1>
+<p>COPY ./your-custom-yt-dlp /usr/local/bin/yt-dlp RUN chmod +x /usr/local/bin/yt-dlp</p>
+<h1>Or build from source inside the container</h1>
+<h1>RUN pip install --upgrade pip setuptools wheel</h1>
+<h1>COPY ./yt-dlp-source /tmp/yt-dlp-source</h1>
+<h1>RUN cd /tmp/yt-dlp-source &amp;&amp; pip install .</h1>
+<p></code></pre></p>
+<h2>Option 3: Environment Variable Override</h2>
+<p>MeTube allows you to specify a custom yt-dlp path via environment variables:</p>
+<p><pre><code class="language-bash">docker run -d -p 8081:8081 \   -e YTDL_PATH=/custom/path/to/yt-dlp \   -v /path/to/your/custom/yt-dlp:/custom/path/to/yt-dlp \   -v /path/to/downloads:/downloads \   alexta69/metube </code></pre></p>
+<h2>Option 4: Direct Installation (Non-Docker)</h2>
+<p>If running MeTube directly on your system:</p>
+<ol>
+<li>Install your custom yt-dlp in your Python environment</li>
+<li>Make sure it's in the PATH before starting MeTube</li>
+<li>Start MeTube normally</li>
+</ol>
+<h2>Building Custom yt-dlp</h2>
+<p>To build a custom version of yt-dlp:</p>
+<p><pre><code class="language-bash">git clone https://github.com/yt-dlp/yt-dlp.git cd yt-dlp</p>
+<h1>Make your modifications</h1>
+<p>python -m build pip install dist/*.whl </code></pre></p>
+<p>The Docker volume mount approach (Option 1) is usually the simplest since it doesn't require rebuilding containers and allows you to easily swap different versions for testing.</p></div></div>
+<div class="message user" data-ts="1757509621780" data-ts-iso="2025-09-10T13:07:01.780438Z"><div class="role-label">You <span class="msg-time ts-display" data-ts="1757509621780" data-ts-iso="2025-09-10T13:07:01.780438Z">2025-09-10 13:07</span></div><div class="content"><p>how do i get a bash terminal in a running docker container</p></div></div>
+<div class="message assistant" data-ts="1757509630192" data-ts-iso="2025-09-10T13:07:10.192338Z"><div class="role-label">Claude <span class="msg-time ts-display" data-ts="1757509630192" data-ts-iso="2025-09-10T13:07:10.192338Z">2025-09-10 13:07</span></div><div class="content"><p>You can get a bash terminal in a running Docker container using the <code>docker exec</code> command:</p>
+<h2>Basic Command</h2>
+<p><pre><code class="language-bash">docker exec -it &lt;container<em>name</em>or_id&gt; bash </code></pre></p>
+<h2>Step-by-Step Process</h2>
+<ol>
+<li><strong>Find your running container:</strong></li>
+</ol>
+<p><pre><code class="language-bash">docker ps </code></pre> This shows all running containers with their names and IDs.</p>
+<ol>
+<li><strong>Connect to the container:</strong></li>
+</ol>
+<p><pre><code class="language-bash"># Using container name docker exec -it metube bash</p>
+<h1>Using container ID (first few characters work)</h1>
+<p>docker exec -it a1b2c3d4 bash </code></pre></p>
+<h2>Command Breakdown</h2>
+<ul>
+<li><code>docker exec</code> - Execute a command in a running container</li>
+<li><code>-it</code> - Interactive mode with TTY (terminal)</li>
+</ul>
+<p>- <code>-i</code> keeps STDIN open   - <code>-t</code> allocates a pseudo-TTY</p>
+<ul>
+<li><code>bash</code> - The command to run (bash shell)</li>
+</ul>
+<h2>Alternative Shells</h2>
+<p>If bash isn't available, try other shells: <pre><code class="language-bash"># Try sh (more universally available) docker exec -it &lt;container&gt; sh</p>
+<h1>Or ash (Alpine Linux)</h1>
+<p>docker exec -it &lt;container&gt; ash </code></pre></p>
+<h2>Common Use Cases</h2>
+<p><pre><code class="language-bash"># Navigate and explore the container docker exec -it metube bash</p>
+<h1>Run as root user</h1>
+<p>docker exec -it --user root metube bash</p>
+<h1>Execute a single command without interactive shell</h1>
+<p>docker exec metube ls -la /downloads</p>
+<h1>Check what's running in the container</h1>
+<p>docker exec metube ps aux </code></pre></p>
+<p>Once you're inside the container, you can navigate the filesystem, check configurations, install packages (if you have permissions), and debug issues directly.</p>
+<p>To exit the container shell, just type <code>exit</code> or press <code>Ctrl+D</code>.</p></div></div>
+</div>
+</body>
+</html>

@@ -94,6 +94,14 @@ def detect_provider(data: list):
 
 
 def load_conversations(path: str) -> list:
+    input_path = Path(path)
+    if input_path.suffix.lower() == ".zip":
+        with zipfile.ZipFile(input_path) as zf:
+            json_names = sorted(n for n in zf.namelist() if Path(n).name == "conversations.json")
+            if not json_names:
+                raise ValueError(f"No conversations.json found in zip: {input_path}")
+            return json.loads(zf.read(json_names[0]).decode("utf-8"))
+
     with open(path, encoding="utf-8") as f:
         return json.load(f)
 
@@ -104,7 +112,10 @@ def load_conversations(path: str) -> list:
 
 def _prompt(question: str) -> bool:
     """Ask a yes/no question; return True for yes."""
-    ans = input(f"{question} [y/N] ").strip().lower()
+    try:
+        ans = input(f"{question} [y/N] ").strip().lower()
+    except EOFError:
+        return False
     return ans in ("y", "yes")
 
 
@@ -260,6 +271,13 @@ def interactive_mode():
 def main():
     # Zero-args → interactive mode
     if len(sys.argv) == 1:
+        if not sys.stdin.isatty():
+            print(
+                "No arguments provided and no interactive input is available. "
+                "Use --input <conversations.json|zip> and --yes for non-interactive runs.",
+                file=sys.stderr,
+            )
+            sys.exit(2)
         interactive_mode()
         return
 
@@ -299,6 +317,9 @@ def main():
         print(f"Detected provider: {fmt_mod.PROVIDER}")
     else:
         print("Could not auto-detect provider from file structure.")
+        if not sys.stdin.isatty():
+            print("Use --provider {deepseek,claude,chatgpt} in non-interactive mode.", file=sys.stderr)
+            sys.exit(1)
         ans = input("Enter provider [deepseek/claude/chatgpt]: ").strip().lower()
         fmt_mod = {"deepseek": deepseek, "claude": claude, "chatgpt": chatgpt}.get(ans)
         if not fmt_mod:

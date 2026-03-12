@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ChemGPT with Ollama</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: #0f1117;
+    color: #e0e0e0;
+    line-height: 1.7;
+    padding: 2rem 1rem;
+  }
+  .container { max-width: 860px; margin: 0 auto; }
+  h1 {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 0.3rem;
+  }
+  .meta {
+    font-size: 0.8rem;
+    color: #666;
+    margin-bottom: 2.5rem;
+  }
+  .message {
+    margin-bottom: 1.8rem;
+    border-radius: 10px;
+    padding: 1.2rem 1.5rem;
+    position: relative;
+  }
+  .message.user {
+    background: #1a1f2e;
+    border-left: 3px solid #4a90e2;
+  }
+  .message.assistant {
+    background: #141a14;
+    border-left: 3px solid #5cb85c;
+  }
+  .role-label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 0.6rem;
+    opacity: 0.6;
+  }
+  .message.user .role-label { color: #4a90e2; }
+  .message.assistant .role-label { color: #5cb85c; }
+  .msg-time {
+    font-size: 0.72rem;
+    color: #555;
+    float: right;
+    margin-top: 0.1rem;
+  }
+  .thinking {
+    background: #1a1a10;
+    border: 1px solid #3a3a20;
+    border-radius: 6px;
+    padding: 0.8rem 1.1rem;
+    margin-bottom: 1rem;
+    font-style: italic;
+    color: #999;
+    font-size: 0.88rem;
+  }
+  .thinking-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #6a6a40;
+    margin-bottom: 0.4rem;
+  }
+  .search-block {
+    background: #111820;
+    border: 1px dashed #2a3a50;
+    border-radius: 6px;
+    padding: 0.7rem 1rem;
+    margin-bottom: 0.8rem;
+    font-size: 0.82rem;
+    color: #7a9fc0;
+  }
+  .search-block .search-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #3a6a90;
+    margin-bottom: 0.4rem;
+  }
+  .search-result {
+    margin-top: 0.4rem;
+    padding-left: 0.8rem;
+    border-left: 2px solid #2a4a60;
+  }
+  .search-result a { color: #5a9fc0; text-decoration: none; }
+  .search-result a:hover { text-decoration: underline; }
+  .search-result .snippet { color: #668; font-size: 0.8rem; }
+  .read-link-block {
+    background: #11181a;
+    border: 1px dashed #2a4040;
+    border-radius: 6px;
+    padding: 0.5rem 0.9rem;
+    margin-bottom: 0.8rem;
+    font-size: 0.8rem;
+    color: #6ab;
+  }
+  .content p { margin-bottom: 0.8rem; }
+  .content pre {
+    background: #0a0a0a;
+    border: 1px solid #2a2a2a;
+    border-radius: 6px;
+    padding: 1rem;
+    overflow-x: auto;
+    font-size: 0.85rem;
+    margin-bottom: 0.8rem;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .content code {
+    background: #1a1a1a;
+    border-radius: 3px;
+    padding: 0.1em 0.35em;
+    font-size: 0.87em;
+    font-family: "JetBrains Mono", "Fira Code", monospace;
+  }
+  .content pre code { background: none; padding: 0; }
+  .content h1, .content h2, .content h3, .content h4 {
+    color: #d0d0d0;
+    margin: 1rem 0 0.5rem;
+  }
+  .content ul, .content ol {
+    padding-left: 1.5rem;
+    margin-bottom: 0.8rem;
+  }
+  .content li { margin-bottom: 0.3rem; }
+  .content blockquote {
+    border-left: 3px solid #444;
+    padding-left: 1rem;
+    color: #999;
+    margin-bottom: 0.8rem;
+  }
+  .content table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 0.8rem;
+    font-size: 0.88rem;
+  }
+  .content th, .content td {
+    border: 1px solid #2a2a2a;
+    padding: 0.4rem 0.7rem;
+  }
+  .content th { background: #1a1a1a; }
+  .content hr { border: none; border-top: 1px solid #2a2a2a; margin: 1rem 0; }
+  .content a { color: #4a90e2; }
+  .divider {
+    border: none;
+    border-top: 1px solid #1e1e1e;
+    margin: 2rem 0;
+  }
+  #index { margin-bottom: 2.5rem; }
+  #index h2 { font-size: 1rem; color: #888; margin-bottom: 0.8rem; }
+  #index ul { list-style: none; padding: 0; }
+  #index li { margin-bottom: 0.4rem; }
+  #index a { color: #4a90e2; text-decoration: none; font-size: 0.9rem; }
+  #index a:hover { text-decoration: underline; }
+  .conv-header { margin: 3rem 0 1rem; }
+  .conv-header h2 { font-size: 1.25rem; color: #ccc; }
+</style>
+</head>
+<body>
+<div class="container">
+<h1>ChemGPT with Ollama</h1>
+<div class="meta" data-started-ts="1764747284108" data-updated-ts="1764747295669" data-started-iso="2025-12-03T07:34:44Z" data-updated-iso="2025-12-03T07:34:55Z">Started <span class="ts-display">2025-12-03 07:34</span> &nbsp;·&nbsp; Last updated <span class="ts-display">2025-12-03 07:34</span></div>
+<div class="message user" data-ts="1764747282721" data-ts-iso="2025-12-03T07:34:42Z"><div class="role-label">You <span class="msg-time ts-display" data-ts="1764747282721" data-ts-iso="2025-12-03T07:34:42Z">2025-12-03 07:34</span></div><div class="content"><p>chemgpt for ollama</p></div></div>
+<div class="message assistant" data-ts="1764747284044" data-ts-iso="2025-12-03T07:34:44Z"><div class="role-label">ChatGPT <span class="msg-time ts-display" data-ts="1764747284044" data-ts-iso="2025-12-03T07:34:44Z">2025-12-03 07:34</span></div><div class="content"><p>Ah, you're looking to run <strong>ChemGPT</strong> using <strong>Ollama</strong>? Great choice if you're working on molecular generation, cheminformatics, or drug discovery tasks using large language models. Let’s walk through it step-by-step so you can get <strong>ChemGPT</strong> running locally with <strong>Ollama</strong>. 🔬⚗️🧠</p>
+<hr>
+<h2>✅ Step 1: Install Ollama (if not already)</h2>
+<p>Download and install Ollama for your OS:   👉 <a href="https://ollama.com/download">https://ollama.com/download</a></p>
+<hr>
+<h2>✅ Step 2: Search or Pull ChemGPT Model</h2>
+<p>As of now, <strong>ChemGPT</strong> may not be officially listed in Ollama's model library yet. You can check the latest available models:</p>
+<ul>
+<li><strong>Trending:</strong> <a href="https://ollama.com/library?sort=popular">https://ollama.com/library?sort=popular</a>  </li>
+<li><strong>Newest:</strong> <a href="https://ollama.com/library?sort=newest">https://ollama.com/library?sort=newest</a></li>
+</ul>
+<p>If ChemGPT isn't listed there, you have <strong>two options</strong>:</p>
+<hr>
+<h3>✅ OPTION A: If ChemGPT is available on Ollama (e.g., via <code>ollama run chemgpt</code>)</h3>
+<p>Try running:</p>
+<p><pre><code class="language-bash">ollama run chemgpt </code></pre></p>
+<p>If it works, great! You’re done 🎉</p>
+<hr>
+<h3>✅ OPTION B: Build and Run ChemGPT Locally (from GGUF or Model Repo)</h3>
+<p>If it's <strong>not yet officially available</strong>, you can manually add a ChemGPT model. Here's how:</p>
+<h4>🔧 Step-by-Step to Import Custom ChemGPT Model:</h4>
+<ol>
+<li><strong>Find the GGUF or GPTQ Model:</strong></li>
+</ol>
+<p>- Search places like Hugging Face: <a href="https://huggingface.co/models">https://huggingface.co/models</a>    - Look for <strong>ChemGPT</strong> converted to <strong>GGUF</strong> format or a format compatible with <code>llama.cpp</code> (which Ollama uses under the hood).    - Good starting point: <a href="https://huggingface.co/benyaminahmed/ChemGPT-2.7B">https://huggingface.co/benyaminahmed/ChemGPT-2.7B</a> (convert to GGUF if needed)</p>
+<ol>
+<li><strong>Prepare a Modelfile:</strong></li>
+</ol>
+<p>Here’s an example <code>Modelfile</code> for a ChemGPT model:</p>
+<p><pre><code class="language-Dockerfile">FROM llama2:7b</p>
+<p>PARAMETER temperature 0.7 PARAMETER top_p 0.9</p>
+<h1>Replace with the actual model path you’ve converted or downloaded</h1>
+<p>WEIGHTS ./chemgpt-2.7b.Q4<em>K</em>M.gguf</p>
+<p>TEMPLATE """ You are ChemGPT, an expert chemistry assistant. Answer questions about molecules, reactions, and drug discovery in detail.</p>
+<p>{{ .Prompt }} """ </code></pre></p>
+<ol>
+<li><strong>Build the Model:</strong></li>
+</ol>
+<p><pre><code class="language-bash">ollama create chemgpt -f Modelfile </code></pre></p>
+<ol>
+<li><strong>Run the Model:</strong></li>
+</ol>
+<p><pre><code class="language-bash">ollama run chemgpt </code></pre></p>
+<hr>
+<h2>🧪 Test It Out</h2>
+<p>Try prompts like:</p>
+<p><pre><code class="language-bash">&gt; Predict the SMILES notation for aspirin. &gt; What is the binding affinity of imatinib to BCR-ABL? &gt; Generate a novel small molecule that inhibits EGFR. </code></pre></p>
+<hr>
+<h2>💡 Pro Tip</h2>
+<p>You can fine-tune ChemGPT on your own datasets using Ollama’s upcoming fine-tuning capabilities, or via model adapters if you're using Hugging Face + GGUF exports.</p>
+<hr>
+<h2>🧠 Want me to help you convert ChemGPT to GGUF?</h2>
+<p>If you’ve found a <code>.pth</code> or <code>.safetensors</code> ChemGPT model, I can guide you step-by-step to convert it into GGUF so you can run it via Ollama 🔨🤖🔧</p>
+<p>Just let me know what model format you have!</p></div></div>
+</div>
+</body>
+</html>

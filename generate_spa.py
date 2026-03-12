@@ -22,7 +22,7 @@ import sys
 from pathlib import Path
 
 from formatters.shared import safe_write
-from formatters.spa import PROVIDERS, build_spa
+from formatters.spa import PROVIDERS, _data_dir, build_spa
 
 
 def main():
@@ -34,8 +34,8 @@ def main():
     parser.add_argument("--output", default="output", help="Root output directory")
     parser.add_argument("--provider", choices=PROVIDERS,
                         help="Include only one provider (default: all)")
-    parser.add_argument("--config", default="config/spa.toml",
-                        help="Path to spa.toml config (default: config/spa.toml)")
+    parser.add_argument("--config", default=str(_data_dir() / "config" / "spa.toml"),
+                        help="Path to spa.toml config (default: config/spa.toml relative to install root)")
     parser.add_argument("--yes", "-y", action="store_true",
                         help="Overwrite index.html without prompting")
     args = parser.parse_args()

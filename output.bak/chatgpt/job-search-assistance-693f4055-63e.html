@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Job search assistance</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: #0f1117;
+    color: #e0e0e0;
+    line-height: 1.7;
+    padding: 2rem 1rem;
+  }
+  .container { max-width: 860px; margin: 0 auto; }
+  h1 {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 0.3rem;
+  }
+  .meta {
+    font-size: 0.8rem;
+    color: #666;
+    margin-bottom: 2.5rem;
+  }
+  .message {
+    margin-bottom: 1.8rem;
+    border-radius: 10px;
+    padding: 1.2rem 1.5rem;
+    position: relative;
+  }
+  .message.user {
+    background: #1a1f2e;
+    border-left: 3px solid #4a90e2;
+  }
+  .message.assistant {
+    background: #141a14;
+    border-left: 3px solid #5cb85c;
+  }
+  .role-label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 0.6rem;
+    opacity: 0.6;
+  }
+  .message.user .role-label { color: #4a90e2; }
+  .message.assistant .role-label { color: #5cb85c; }
+  .msg-time {
+    font-size: 0.72rem;
+    color: #555;
+    float: right;
+    margin-top: 0.1rem;
+  }
+  .thinking {
+    background: #1a1a10;
+    border: 1px solid #3a3a20;
+    border-radius: 6px;
+    padding: 0.8rem 1.1rem;
+    margin-bottom: 1rem;
+    font-style: italic;
+    color: #999;
+    font-size: 0.88rem;
+  }
+  .thinking-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #6a6a40;
+    margin-bottom: 0.4rem;
+  }
+  .search-block {
+    background: #111820;
+    border: 1px dashed #2a3a50;
+    border-radius: 6px;
+    padding: 0.7rem 1rem;
+    margin-bottom: 0.8rem;
+    font-size: 0.82rem;
+    color: #7a9fc0;
+  }
+  .search-block .search-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #3a6a90;
+    margin-bottom: 0.4rem;
+  }
+  .search-result {
+    margin-top: 0.4rem;
+    padding-left: 0.8rem;
+    border-left: 2px solid #2a4a60;
+  }
+  .search-result a { color: #5a9fc0; text-decoration: none; }
+  .search-result a:hover { text-decoration: underline; }
+  .search-result .snippet { color: #668; font-size: 0.8rem; }
+  .read-link-block {
+    background: #11181a;
+    border: 1px dashed #2a4040;
+    border-radius: 6px;
+    padding: 0.5rem 0.9rem;
+    margin-bottom: 0.8rem;
+    font-size: 0.8rem;
+    color: #6ab;
+  }
+  .content p { margin-bottom: 0.8rem; }
+  .content pre {
+    background: #0a0a0a;
+    border: 1px solid #2a2a2a;
+    border-radius: 6px;
+    padding: 1rem;
+    overflow-x: auto;
+    font-size: 0.85rem;
+    margin-bottom: 0.8rem;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .content code {
+    background: #1a1a1a;
+    border-radius: 3px;
+    padding: 0.1em 0.35em;
+    font-size: 0.87em;
+    font-family: "JetBrains Mono", "Fira Code", monospace;
+  }
+  .content pre code { background: none; padding: 0; }
+  .content h1, .content h2, .content h3, .content h4 {
+    color: #d0d0d0;
+    margin: 1rem 0 0.5rem;
+  }
+  .content ul, .content ol {
+    padding-left: 1.5rem;
+    margin-bottom: 0.8rem;
+  }
+  .content li { margin-bottom: 0.3rem; }
+  .content blockquote {
+    border-left: 3px solid #444;
+    padding-left: 1rem;
+    color: #999;
+    margin-bottom: 0.8rem;
+  }
+  .content table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 0.8rem;
+    font-size: 0.88rem;
+  }
+  .content th, .content td {
+    border: 1px solid #2a2a2a;
+    padding: 0.4rem 0.7rem;
+  }
+  .content th { background: #1a1a1a; }
+  .content hr { border: none; border-top: 1px solid #2a2a2a; margin: 1rem 0; }
+  .content a { color: #4a90e2; }
+  .divider {
+    border: none;
+    border-top: 1px solid #1e1e1e;
+    margin: 2rem 0;
+  }
+  #index { margin-bottom: 2.5rem; }
+  #index h2 { font-size: 1rem; color: #888; margin-bottom: 0.8rem; }
+  #index ul { list-style: none; padding: 0; }
+  #index li { margin-bottom: 0.4rem; }
+  #index a { color: #4a90e2; text-decoration: none; font-size: 0.9rem; }
+  #index a:hover { text-decoration: underline; }
+  .conv-header { margin: 3rem 0 1rem; }
+  .conv-header h2 { font-size: 1.25rem; color: #ccc; }
+</style>
+</head>
+<body>
+<div class="container">
+<h1>Job search assistance</h1>
+<div class="meta" data-started-ts="1765752918255" data-updated-ts="1768338507880" data-started-iso="2025-12-14T22:55:18Z" data-updated-iso="2026-01-13T21:08:27Z">Started <span class="ts-display">2025-12-14 22:55</span> &nbsp;·&nbsp; Last updated <span class="ts-display">2026-01-13 21:08</span></div>
+<div class="message user" data-ts="1765752915656" data-ts-iso="2025-12-14T22:55:15Z"><div class="role-label">You <span class="msg-time ts-display" data-ts="1765752915656" data-ts-iso="2025-12-14T22:55:15Z">2025-12-14 22:55</span></div><div class="content"><p>I need help finding a job.  I'm a software engineer with over 10 years of experience.  I'd like to find a job with an AI forward  development minded company.  Preferably .net but I'm flexible.  I'd like to find a solid industry, either tech or maybe oil and gas that is solid and long term and bleeding edge.  I've attached my resume.  let's have a discussion about possibilities and how best to get a job quickly.</p></div></div>
+<div class="message assistant" data-ts="1765752918931" data-ts-iso="2025-12-14T22:55:18Z"><div class="role-label">ChatGPT <span class="msg-time ts-display" data-ts="1765752918931" data-ts-iso="2025-12-14T22:55:18Z">2025-12-14 22:55</span></div><div class="content"><p>Thanks for sharing your resume—your background in full-stack development, cloud-native architecture, and AI-assisted workflows is impressive. To tailor the job search better, could you please clarify a few things:</p>
+<ol>
+<li><strong>Preferred Location</strong>: Are you open to fully remote roles only, or are hybrid/on-site options acceptable? Any geographic preferences?</li>
+<li><strong>Target Role Types</strong>: Are you aiming for individual contributor roles, or would you also consider tech lead, architect, or management positions?</li>
+<li><strong>Salary Expectations</strong>: Do you have a target salary range (either annual or hourly/contract)?</li>
+<li><strong>Company Size or Stage</strong>: Do you prefer large enterprises, mid-size companies, or startups?</li>
+<li><strong>Industries of Interest</strong>: You mentioned tech and oil & gas—are you also open to sectors like fintech, healthcare, energy, or defense?</li>
+<li><strong>Timeline</strong>: How urgently are you looking to make a move (e.g., ASAP, within 1-3 months, exploratory)?</li>
+</ol>
+<p>Once I have these details, I can begin identifying strong job matches and strategies to accelerate your search.</p></div></div>
+<div class="message user" data-ts="1765753050883" data-ts-iso="2025-12-14T22:57:30Z"><div class="role-label">You <span class="msg-time ts-display" data-ts="1765753050883" data-ts-iso="2025-12-14T22:57:30Z">2025-12-14 22:57</span></div><div class="content"><ol>
+<li>remote only.</li>
+<li>i would consider any position i am qualified for or could talk my way into.</li>
+<li>Preferably at least 160k/year for salary - more to compensate for medical and taxes if contract.  If I'm overshooting let me know.</li>
+<li>I'm open.</li>
+<li>yes I'm open.</li>
+<li>ASAP I'm unemployed.</li>
+</ol></div></div>
+<div class="message assistant" data-ts="1765753053816" data-ts-iso="2025-12-14T22:57:33Z"><div class="role-label">ChatGPT <span class="msg-time ts-display" data-ts="1765753053816" data-ts-iso="2025-12-14T22:57:33Z">2025-12-14 22:57</span></div><div class="content"><p>Thanks for the details. I’ll begin searching for remote software engineering roles—focused on AI-forward, cloud-native companies—that match your background in .NET, microservices, and modern DevOps. I’ll prioritize roles offering at least $160k/year, and I’ll explore multiple industries including tech, oil and gas, fintech, and healthcare.</p>
+<p>I’ll let you know when I have strong leads for you to review. In the meantime, feel free to ask me about resume updates, interview prep, or networking strategies.</p></div></div>
+<div class="message assistant" data-ts="1765753052842" data-ts-iso="2025-12-14T22:57:32Z"><div class="role-label">ChatGPT <span class="msg-time ts-display" data-ts="1765753052842" data-ts-iso="2025-12-14T22:57:32Z">2025-12-14 22:57</span></div><div class="content"><p>{   "task<em>violates</em>safety_guidelines": false,   "user<em>def</em>doesnt<em>want</em>research": false,   "response": "Thanks for the details. I’ll begin searching for remote software engineering roles—focused on AI-forward, cloud-native companies—that match your background in .NET, microservices, and modern DevOps. I’ll prioritize roles offering at least $160k/year, and I’ll explore multiple industries including tech, oil and gas, fintech, and healthcare.\n\nI’ll let you know when I have strong leads for you to review. In the meantime, feel free to ask me about resume updates, interview prep, or networking strategies.",   "title": "Remote Software Engineer Jobs with AI-Focused Companies",   "prompt": "Find remote software engineering jobs suitable for a senior full-stack developer with over 10 years of experience in .NET (C#), cloud-native microservices, and DevOps using Docker/Kubernetes and AWS. The user prefers companies that are AI-forward and development-minded, and is open to any solid industry including tech, oil and gas, fintech, or healthcare. Frontend experience includes Vue.js and TypeScript. \n\nThe candidate is seeking roles that are individual contributor, tech lead, architect, or engineering management depending on fit. The salary target is at least $160,000/year, with higher rates preferred for contract roles to compensate for lack of benefits. The candidate is available immediately and is seeking urgent opportunities. \n\nInclude full-time, contract, and contract-to-hire positions. Only include remote roles. Prioritize companies working on bleeding-edge technology or AI/ML. \n\nFormat findings as a report with sections for different industries and tables that compare company, job title, salary (if available), tech stack, and application link. Include any tips about companies or roles that match the candidate’s background especially well." }</p></div></div>
+<div class="message user" data-ts="1765753094314" data-ts-iso="2025-12-14T22:58:14Z"><div class="role-label">You <span class="msg-time ts-display" data-ts="1765753094314" data-ts-iso="2025-12-14T22:58:14Z">2025-12-14 22:58</span></div><div class="content"><p>beyond job leads, can we have a discussion about best approaches, best opportunities, some sort of force multiplier in my search</p></div></div>
+<div class="message assistant" data-ts="1765753096083" data-ts-iso="2025-12-14T22:58:16Z"><div class="role-label">ChatGPT <span class="msg-time ts-display" data-ts="1765753096083" data-ts-iso="2025-12-14T22:58:16Z">2025-12-14 22:58</span></div><div class="content"><p>Absolutely — this is the <em>right</em> question, especially given your background and the urgency. With 10+ years, cloud-native experience, and real AI-assisted development exposure, <strong>your fastest path is not “apply more,” it’s “apply smarter + reposition slightly.”</strong> Let’s break this into <em>force multipliers</em> that materially increase speed-to-offer.</p>
+<hr>
+<h2>Big Picture: How Senior Engineers Get Hired Fast (2025 Reality)</h2>
+<p>For senior+ engineers, <strong>most offers come from one of three channels</strong>:</p>
+<ol>
+<li><strong>Warm-network / recruiter pull</strong> (fastest, lowest friction)</li>
+<li><strong>Targeted positioning into “hard-to-fill” niches</strong></li>
+<li><strong>Demonstrated relevance to current business pain (AI + platform + reliability)</strong></li>
+</ol>
+<p>Right now, job boards alone will be slow and demoralizing unless paired with 1–2 multipliers below.</p>
+<hr>
+<h2>Force Multiplier #1: Position Yourself as “AI-Accelerated Platform Engineer” (Not Just .NET)</h2>
+<p>You already <em>are</em> this — but your market framing matters.</p>
+<h3>Why this works</h3>
+<p>Companies don’t want:</p>
+<blockquote>“Senior .NET dev who wants to work with AI”</blockquote>
+<p>They <em>do</em> want:</p>
+<blockquote>“Senior platform engineer who ships faster using AI and builds systems AI plugs into”</blockquote>
+<p>That distinction moves you from a crowded pool to a <strong>scarce one</strong>.</p>
+<h3>How to message this (LinkedIn / recruiter calls)</h3>
+<p>You should consistently describe yourself as:</p>
+<blockquote><strong>Senior Platform / Full-Stack Engineer specializing in cloud-native systems and AI-accelerated development. I build APIs, internal platforms, and distributed systems that teams move fast on — and I actively use AI tooling to reduce cycle time and defects.</strong></blockquote>
+<p>This:</p>
+<ul>
+<li>Avoids “AI hype”</li>
+<li>Signals business value</li>
+<li>Fits <em>any</em> industry (tech, energy, fintech, gov-adjacent)</li>
+</ul>
+<p><strong>Important:</strong> You do <em>not</em> need ML modeling experience for this positioning.</p>
+<hr>
+<h2>Force Multiplier #2: Target “Unsexy but Strategic” AI-Adjacent Industries</h2>
+<p>Pure AI startups are flooded with applicants.   <strong>AI-adjacent, regulated, or capital-heavy industries are not.</strong></p>
+<p>These are <em>excellent</em> fits for you:</p>
+<h3>Tier 1 (Best Odds + Pay)</h3>
+<ul>
+<li><strong>Energy / Oil & Gas (digital transformation teams)</strong></li>
+<li><strong>Fintech / Payments / Risk</strong></li>
+<li><strong>Enterprise SaaS with AI features (not AI-native startups)</strong></li>
+</ul>
+<p>Why?</p>
+<ul>
+<li>They need <strong>platform stability + cloud + APIs</strong></li>
+<li>AI is being <em>added</em>, not invented</li>
+<li>.NET is common and respected</li>
+<li>They pay for seniority and reliability</li>
+</ul>
+<p>Examples of roles to search for:</p>
+<ul>
+<li><em>Senior Platform Engineer</em></li>
+<li><em>Staff Software Engineer (Backend / Cloud)</em></li>
+<li><em>Principal Software Engineer – APIs</em></li>
+<li><em>Senior Software Engineer – AI Enablement</em></li>
+</ul>
+<p>Avoid roles titled:</p>
+<ul>
+<li>“AI Engineer” (unless it’s infrastructure-focused)</li>
+<li>“ML Researcher”</li>
+</ul>
+<hr>
+<h2>Force Multiplier #3: Recruiter-First Strategy (This Is Critical for Speed)</h2>
+<p>When unemployed and senior, <strong>recruiters are your best acceleration tool</strong>, not your enemy.</p>
+<h3>What works best <em>right now</em></h3>
+<ul>
+<li>Boutique recruiting firms</li>
+<li>In-house recruiters at mid-size companies</li>
+<li>Contract-focused recruiters (even if you want perm)</li>
+</ul>
+<p>Why?</p>
+<ul>
+<li>They move faster</li>
+<li>They sell <em>you</em> internally</li>
+<li>They bypass resume black holes</li>
+</ul>
+<h3>How to engage them effectively</h3>
+<p>Instead of “I’m looking,” say:</p>
+<blockquote>“I’m a senior platform engineer, remote-only, available immediately. I specialize in .NET, cloud-native systems, and AI-enabled development workflows. I’m open to perm or contract. What roles are hardest for you to fill right now?”</blockquote>
+<p>This flips the power dynamic.</p>
+<p>If they say “we mostly have Java / Go / Python”   You say:</p>
+<blockquote>“That’s fine — my strength is systems, not syntax.”</blockquote>
+<p>That is a senior-level answer.</p>
+<hr>
+<h2>Force Multiplier #4: Contract as a Trojan Horse (Very Underrated)</h2>
+<p>Given:</p>
+<ul>
+<li>Remote-only</li>
+<li>ASAP</li>
+<li>$160k+ target</li>
+</ul>
+<p><strong>High-rate contract roles are often the fastest path to income</strong>, and many convert.</p>
+<h3>Reality check on comp</h3>
+<ul>
+<li>$160k salary is <strong>not overshooting</strong> for your experience</li>
+<li>Remote-only <em>can</em> compress offers slightly</li>
+<li>Contract rates that match this:</li>
+</ul>
+<p>- ~$80–95/hr W2   - ~$95–120/hr C2C</p>
+<p>Many companies:</p>
+<ul>
+<li>Can approve contracts faster than headcount</li>
+<li>Use contracts as extended interviews</li>
+</ul>
+<p><strong>Key mindset shift:</strong>   Contract ≠ step down. It’s a speed strategy.</p>
+<hr>
+<h2>Force Multiplier #5: 30-Day “Proof of Relevance” Strategy (Lightweight)</h2>
+<p>You do <strong>not</strong> need a giant side project.</p>
+<p>One of these is enough:</p>
+<h3>Option A: Small AI-Enabled Backend Demo</h3>
+<ul>
+<li>.NET Web API</li>
+<li>Calls an LLM (OpenAI/Azure)</li>
+<li>Demonstrates:</li>
+</ul>
+<p>- API design   - Prompt management   - Caching   - Rate limiting   - Observability</p>
+<p>This gives you instant credibility in interviews.</p>
+<h3>Option B: Write 2–3 Short LinkedIn Posts</h3>
+<p>Topics like:</p>
+<ul>
+<li>“How AI tools changed my development workflow as a senior engineer”</li>
+<li>“Where AI fits <em>and doesn’t fit</em> in enterprise systems”</li>
+<li>“Why platform engineering matters more than models”</li>
+</ul>
+<p>This:</p>
+<ul>
+<li>Attracts recruiters</li>
+<li>Signals thought leadership</li>
+<li>Costs almost no time</li>
+</ul>
+<p>You don’t need virality — you need <em>signal</em>.</p>
+<hr>
+<h2>Force Multiplier #6: Interview Framing (This Wins Senior Interviews)</h2>
+<p>Your strongest angle is <strong>decision-making</strong>, not syntax.</p>
+<p>Prepare stories around:</p>
+<ul>
+<li>Tradeoffs in microservices vs monoliths</li>
+<li>Reliability, deployment safety, and observability</li>
+<li>How AI tooling reduced delivery time <em>without lowering quality</em></li>
+<li>Times you stabilized or modernized systems</li>
+</ul>
+<p>When asked about AI:</p>
+<blockquote>“I don’t treat AI as magic. I treat it as an acceleration layer that still needs guardrails, testing, and human judgment.”</blockquote>
+<p>That answer lands <em>very</em> well.</p>
+<hr>
+<h2>Reality Check: Timeline Expectations</h2>
+<p>With the right execution:</p>
+<ul>
+<li><strong>2–4 weeks</strong> to serious interviews</li>
+<li><strong>4–8 weeks</strong> to offer is realistic</li>
+<li>Contract roles can land even faster</li>
+</ul>
+<p>The biggest risk is:</p>
+<blockquote>Spending weeks applying cold to roles that don’t know how to evaluate senior engineers.</blockquote>
+<hr>
+<h2>Next Steps (Concrete and Actionable)</h2>
+<p>If you want, I can:</p>
+<ol>
+<li><strong>Reposition your resume headline + summary</strong> for AI-forward roles</li>
+<li><strong>Create a recruiter outreach script</strong> (LinkedIn/email)</li>
+<li><strong>Map 3–4 role “lanes”</strong> you should pursue in parallel</li>
+<li><strong>Help you decide perm vs contract strategically</strong></li>
+<li><strong>Prep you for senior-level system design interviews (AI-aware)</strong></li>
+</ol>
+<p>Tell me which of those you want to tackle first — or if you want to pressure-test a specific concern you have right now.</p></div></div>
+<div class="message assistant" data-ts="1765753642573" data-ts-iso="2025-12-14T23:07:22Z"><div class="role-label">ChatGPT <span class="msg-time ts-display" data-ts="1765753642573" data-ts-iso="2025-12-14T23:07:22Z">2025-12-14 23:07</span></div><div class="content"><h1>Remote Opportunities for a Senior Full-Stack .NET/Cloud Engineer</h1>
+<p>Below is a comprehensive list of current <strong>remote</strong> job openings suited to a senior full-stack developer with 10+ years in C#/.NET, cloud-native microservices, and DevOps (Docker, Kubernetes, AWS). Roles are grouped by industry (Tech, FinTech, Healthcare, Oil & Gas). Each section includes a comparison table of positions (full-time, contract, and contract-to-hire) with company, title, salary, tech stack, and application link. Tips are provided highlighting particularly well-matched opportunities and how your background aligns.</p>
+<h2>Technology Industry (SaaS, Software & AI Tech)</h2>
+<p>The tech industry offers numerous cutting-edge roles leveraging modern .NET Core, cloud services, and containerization. Many companies here are <strong>AI-forward</strong> or focused on cloud SaaS platforms, aligning well with your cloud-native microservices and DevOps expertise. Notably, principal-level and lead roles at SaaS companies value your experience driving architecture and engineering excellence. High-end contract roles are also available, often with rates reflecting lack of benefits (e.g. ~$80–90/hour, equivalent to $160K+ annual)【44†L101-L109】【44†L117-L125】.</p>
+<table><thead><tr><th>Company</th><th>Position & Level</th><th>Salary/Rate</th><th>Tech Stack (Key)</th><th>Apply Link</th></tr></thead><tbody>
+<tr><td><strong>Unanet</strong> (Enterprise SaaS; GovCon/AEC)</td><td><strong>Principal Software Engineer – Tech Lead</strong> (Full-Time, Senior)【53†L23-L31】【53†L33-L41】</td><td>$160K–$175K/year【53†L29-L37】【53†L143-L151】</td><td>C#/.NET Core, Angular, SQL Server, AWS/Azure, Redis, Elasticsearch【53†L109-L117】【53†L159-L167】</td><td><strong>[Apply via BuiltIn]</strong>(https://builtin.com/job/principal-software-engineer-tech-lead-net-core-angular/7874842)</td></tr>
+<tr><td><strong>Two95 Intl.</strong> (IT Consulting)</td><td><strong>Senior .NET Engineer</strong> – <em>Contract-to-hire</em> (6+ mo.)【44†L101-L109】【44†L117-L125】</td><td>$80–$90/hour (≈$154K–$173K/year)【44†L13-L21】【44†L101-L109】</td><td>ASP.NET MVC/Core (C#), REST APIs, JavaScript (HTML/CSS), <strong>SQL</strong>, Docker, Git【44†L111-L119】【44†L129-L137】</td><td><strong>[Apply via Job Board]</strong>(https://jobgether.com/offer/6758a0c6dabd453a08b9b7b1-senior-.net-engineer-120-hr---remote-work)</td></tr>
+</tbody></table>
+<p><strong>Why These Fit Well:</strong> The Unanet role is a tech-lead position building a cloud SaaS product, exactly the kind of environment to apply your microservices architecture skills. It requires full-stack .NET Core and cloud experience, including AWS/Azure and container tech (Redis, Elasticsearch on cloud)【53†L109-L117】【53†L159-L167】 – all areas of your expertise. The Two95 contract role highlights <strong>.NET Core</strong> and <strong>RESTful API</strong> development with Docker exposure, mirroring your background; its $80–90/hr rate underscores the premium for senior contractors【44†L101-L109】【44†L107-L115】. Both roles emphasize modernizing and scaling complex applications – a great match for your 10+ years of delivering enterprise-grade .NET solutions.</p>
+<h2>FinTech Industry (Financial Technology)</h2>
+<p>FinTech companies are highly <strong>development-minded</strong> and often work on “bleeding-edge” tech to disrupt finance. These roles focus on scalable, secure financial systems and in many cases involve real-time processing, compliance, and even crypto/AI elements. Your skills in cloud-native microservices and DevOps are in strong demand here, as firms build robust, cloud-hosted platforms for payments, banking, or financial wellness. Senior individual contributor roles (and potential leadership) commonly pay in the upper range (>$160K) given the critical nature of fintech systems【41†L69-L77】【9†L19-L27】.</p>
+<table><thead><tr><th>Company</th><th>Position & Level</th><th>Salary</th><th>Tech Stack (Key)</th><th>Apply Link</th></tr></thead><tbody>
+<tr><td><strong>Cross River Bank</strong> (FinTech Unicorn)</td><td><strong>Senior Software Engineer</strong> (Full-Time, Senior)【41†L62-L70】【41†L107-L115】</td><td>$150K–$180K/year【41†L69-L77】【41†L145-L153】</td><td>C#/.NET 6–8, <strong>AWS</strong> cloud, Docker, <strong>RabbitMQ</strong>, SQL (SQL Server/Postgres), Microservices, DDD【41†L119-L127】【41†L131-L139】</td><td><strong>[Apply via Company]</strong>(https://www.builtinnyc.com/job/senior-software-engineer/4798488)</td></tr>
+<tr><td><strong>FinFit</strong> (Financial Wellness SaaS)</td><td><strong>Sr. Software Developer</strong> (Full-Time, Senior)【13†L18-L27】【13†L100-L107】</td><td><em>Not specified (market)</em></td><td>C#/<strong>ASP.NET MVC/Core</strong>, JavaScript/TypeScript (modern frontend), <strong>SQL Server</strong>, Azure DevOps (CI/CD), Agile/DevOps culture【13†L18-L27】【13†L73-L81】</td><td><strong>[Apply via Lever]</strong>(https://jobs.lever.co/finfit/6b7f168e-9928-4438-9e55-a2187e287261)</td></tr>
+</tbody></table>
+<p><strong>Why These Fit Well:</strong> Cross River is a fast-growing fintech where your .NET microservices and AWS experience will shine. Their engineering team builds <strong>high-performance real-time banking modules</strong> and APIs using .NET Core/6/8, SQL, RabbitMQ, Docker on AWS【41†L119-L127】【41†L131-L139】 – exactly aligning with your expertise in cloud-native architecture. They explicitly seek senior engineers to drive <em>idempotent</em>, scalable systems (even touching crypto)【41†L133-L141】. FinFit is another strong match: it’s a full-stack role using ASP.NET Core with modern JS (Vue/TypeScript fits here) and a heavy DevOps mindset【13†L23-L30】【13†L25-L33】. FinFit emphasizes <strong>continuous delivery and AI-assisted development</strong> in its culture【13†L28-L36】, which dovetails with your DevOps background and interest in AI-forward companies. Both companies are likely to value your 10+ years experience delivering secure, scalable financial software, and Cross River’s salary range up to $180K reflects the premium for such skillsets【41†L69-L77】.</p>
+<h2>Healthcare Industry (Health Tech & AI in Healthcare)</h2>
+<p>Healthcare technology firms are increasingly <strong>AI-forward</strong> and cloud-based, working on challenges like electronic health records, e-prescribing, and healthcare data analytics. Roles in this space leverage your .NET skills for building reliable, secure services (often with high compliance needs) and many now incorporate <strong>AI/ML</strong> components (e.g. using Large Language Models for clinical or operational enhancements). Your experience with Kubernetes, microservices, and AWS is highly relevant as these companies modernize legacy systems or build new platforms in the cloud. Senior roles here often are at the architect or principal engineer level and can command strong salaries (well into six figures, especially for AI-focused positions).</p>
+<table><thead><tr><th>Company</th><th>Position & Level</th><th>Salary</th><th>Tech Stack (Key)</th><th>Apply Link</th></tr></thead><tbody>
+<tr><td><strong>DoseSpot</strong> (Healthtech + AI)</td><td><strong>Senior AI Software Developer</strong> (Full-Time, Senior)【46†L18-L26】【46†L68-L76】</td><td><strong>$154K–$200K/year</strong>【46†L18-L26】【24†L142-L150】</td><td>.NET (C#) <strong>or Java</strong>, <strong>LLMs/GenAI</strong> (GPT, LangChain, etc.), AI/ML prototyping, Azure/AWS cloud, Docker/K8s, Microservices, APIs【46†L95-L102】【46†L98-L106】</td><td><strong>[Apply via DoseSpot]</strong>(https://himalayas.app/companies/dosespot/jobs/senior-ai-software-developer)</td></tr>
+<tr><td><strong>Veradigm</strong> (Allscripts Healthcare)</td><td><strong>Principal Software Engineer (Backend)</strong> – <em>Practice Fusion EHR</em> (Full-Time, Principal/Lead)【43†L39-L47】【43†L53-L61】</td><td>~$130K–$175K/year【25†L23-L31】【25†L17-L25】</td><td>C#/.NET Framework & Core, <strong>AWS</strong> cloud, ASP.NET Web API/WCF, <strong>180+ microservices</strong> (SOA), SQL Server, Distributed systems, <strong>Analytics/AI-driven</strong> solutions【43†L33-L42】【43†L57-L65】</td><td><strong>[Apply via Veradigm]</strong>(https://veradigm.com/about-veradigm/careers/job-openings/)</td></tr>
+</tbody></table>
+<p><strong>Why These Fit Well:</strong> The DoseSpot role is tailor-made for an <strong>AI-forward developer</strong> – it requires 8+ years in .NET/Java and <strong>hands-on LLM experience</strong> to build AI features into healthcare software【46†L70-L78】. This position would leverage both your core .NET skills and give you a chance to apply any AI/ML knowledge (or at least work closely with it) on a product improving patient care. They are offering up to $200K, reflecting the high value of combining AI and senior development skills in healthcare【46†L18-L26】. On the other hand, Veradigm’s Principal Engineer role (for the Practice Fusion cloud EHR) plays to your strengths in architecture and team leadership. You’d be working on an AWS-hosted platform <strong>written in .NET</strong> with a <strong>microservices architecture (~180 services!)</strong>【43†L57-L65】【43†L33-L42】. They explicitly mention harnessing <strong>AI and data analytics</strong> to transform healthcare【43†L33-L41】, aligning with your interest in AI-driven projects. This role lets you act as a <strong>hands-on architect/tech lead</strong>, driving architectural decisions, mentoring developers, and improving DevOps and performance across the platform【26†L107-L115】【26†L115-L123】 – exactly the kind of impact a person with your background can make. Salary-wise, it’s competitive (well into the $100Ks)【25†L23-L31】 and the scope of responsibility is broad, matching your experience level.</p>
+<h2>Oil & Gas Industry (Energy Tech)</h2>
+<p>The oil & gas sector has been slower to go fully remote, but it is rapidly adopting cloud and AI technologies for things like IoT, predictive maintenance, and advanced analytics. <strong>Development-minded, AI-forward projects are emerging in this industry</strong> as companies modernize legacy systems. Opportunities for senior .NET engineers do exist – often through consulting firms or software vendors serving energy companies – and they strongly prefer candidates with domain experience. (For example, some roles specifically require knowledge of oil & gas operations or tools like RightAngle.) Below is one such role illustrating the space:</p>
+<table><thead><tr><th>Company (Sector)</th><th>Position & Level</th><th>Salary</th><th>Tech Stack (Key)</th><th>Apply Link</th></tr></thead><tbody>
+<tr><td><strong>Energy Co. (via Vaco)</strong> <em>(Oil & Gas)</em></td><td><strong>Senior .NET Developer – Oil & Gas</strong> (Contract-to-Hire, Senior)【51†L139-L147】【51†L153-L161】</td><td>$70–$75/hour (W2) (≈$145K–$156K/year)【51†L129-L137】【51†L139-L147】</td><td>C#/.NET Framework & Core, <strong>Cloud (Azure/AWS)</strong>, SQL, Enterprise O&G systems (Trading/Logistics), <strong>Domain knowledge required</strong>【32†L57-L65】【32†L59-L67】</td><td><strong>[Job Listing]</strong>(https://www.tealhq.com/job/sr-net-developer-with-oil-gas-experience_baf1112c-8cdc-4ce0-b7fa-2f2983ca41bf)</td></tr>
+</tbody></table>
+<p><strong>Why This Fits / Tips:</strong> This role shows how your technical skills can apply in oil & gas: the company sought a 10+ year .NET expert comfortable with cloud deployments and <strong>commercial O&G software</strong> context【32†L55-L63】【32†L59-L67】. It offered ~$75/hour, acknowledging the need to pay top talent in niche industries. <strong>Note, however, that many O&G postings are hybrid</strong> or location-specific – in this case candidates needed to be local to certain hubs for occasional on-site work【51†L159-L167】. If you target oil/gas, be prepared to highlight any domain experience (or analogous experience in enterprise supply chain/finance systems) and clarify your ability to work remotely with perhaps periodic travel. The good news is that O&G firms are investing in cloud and even AI (for example, deploying ML for drilling optimization or pipeline monitoring), so your cloud-native microservice skills and DevOps know-how are increasingly valuable as the industry modernizes【43†L33-L42】【24†L95-L103】. Look out for roles at energy software vendors or progressive O&G companies that explicitly offer remote work – they do exist, and your background fits the bill for leading their digital transformation.</p>
+<h2><strong>Additional Tips for Your Job Search</strong></h2>
+<ul>
+<li><strong>Highlight DevOps and Cloud Mastery:</strong> Emphasize your Docker, Kubernetes, and AWS experience on your resume and interviews. Many listings specifically call out containerization and cloud architecture. For instance, Cross River and Two95 both list <strong>Docker</strong> and cloud as key skills【41†L131-L139】【44†L43-L50】. Showing concrete examples of deploying microservices to AWS or orchestrating with Kubernetes will set you apart.</li>
+</ul>
+<ul>
+<li><strong>Mention AI/ML Exposure:</strong> Even if you’re not an AI specialist, convey your enthusiasm and any exposure to AI projects (or self-study). Companies like DoseSpot explicitly require LLM experience【46†L70-L78】, and others (Cross River, Veradigm) mention AI/analytics focus【43†L33-L41】【41†L131-L139】. If you can’t claim direct ML work, stress your experience building platforms that could integrate AI, and your ability to lead teams alongside data scientists. Your interest in AI-forward companies is a plus – make sure they know that.</li>
+</ul>
+<ul>
+<li><strong>Be Open to Senior IC or Leadership Roles:</strong> You indicated flexibility for roles from individual contributor up to engineering management. Many of the listed positions (e.g. <strong>Principal Engineer/Tech Lead at Unanet, Principal at Veradigm</strong>) have substantial leadership components (mentoring, architecture ownership) without being pure people-manager roles【26†L115-L123】【53†L121-L129】. Given your 10+ years experience, don’t shy away from these hybrid tech-lead positions – your background in guiding teams and setting DevOps best practices will be very attractive.</li>
+</ul>
+<ul>
+<li><strong>Salary Negotiation:</strong> A target of $160K+ is reasonable for these roles. In fintech and tech sectors, Senior/Principal engineers are frequently in the $150K–$180K range as seen in Cross River and others【41†L69-L77】【9†L19-L27】. For <strong>contract roles</strong>, aim even higher on an hourly basis to make up for benefits – the Two95 example at $80–90/hr is a good benchmark【44†L13-L21】【44†L107-L115】. Don’t hesitate to discuss the upper end of ranges if you bring all the desired skills. Your DevOps expertise in particular adds value; companies know that someone who can improve CI/CD, cloud cost efficiency, and deployment reliability saves money in the long run.</li>
+</ul>
+<ul>
+<li><strong>Urgency & Availability:</strong> Many listings note if they’re hiring immediately or have been posted recently (e.g., Unanet was posted “Yesterday”【53†L25-L33】). In your applications, highlight that you are <strong>available to start immediately</strong>. This can give you an edge for roles that have an urgent need to fill a senior position. Companies working on active product launches or critical projects will appreciate a seasoned engineer who can onboard quickly.</li>
+</ul>
+<p>By targeting these remote opportunities across industries, you’ll find several that align extremely well with your .NET, microservices, and cloud DevOps background. Leverage the provided links to apply, and tailor your resume to the tech stacks and responsibilities noted. Good luck with your job search!</p>
+<p><strong>Sources:</strong></p>
+<ul>
+<li>Remote .NET job listings and descriptions (Indeed, BuiltIn, Lever, etc.) for salary info, tech stacks, and role requirements【41†L119-L127】【44†L111-L119】【46†L95-L102】【53†L109-L117】.  </li>
+<li>Company career pages and job posts (Cross River, FinFit, DoseSpot, Veradigm, Unanet, Vaco) for role details and culture notes【13†L25-L33】【26†L91-L99】【24†L93-L100】【53†L143-L151】.</li>
+</ul></div></div>
+</div>
+</body>
+</html>

@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Workforce Management</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: #0f1117;
+    color: #e0e0e0;
+    line-height: 1.7;
+    padding: 2rem 1rem;
+  }
+  .container { max-width: 860px; margin: 0 auto; }
+  h1 {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 0.3rem;
+  }
+  .meta {
+    font-size: 0.8rem;
+    color: #666;
+    margin-bottom: 2.5rem;
+  }
+  .message {
+    margin-bottom: 1.8rem;
+    border-radius: 10px;
+    padding: 1.2rem 1.5rem;
+    position: relative;
+  }
+  .message.user {
+    background: #1a1f2e;
+    border-left: 3px solid #4a90e2;
+  }
+  .message.assistant {
+    background: #141a14;
+    border-left: 3px solid #5cb85c;
+  }
+  .role-label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 0.6rem;
+    opacity: 0.6;
+  }
+  .message.user .role-label { color: #4a90e2; }
+  .message.assistant .role-label { color: #5cb85c; }
+  .msg-time {
+    font-size: 0.72rem;
+    color: #555;
+    float: right;
+    margin-top: 0.1rem;
+  }
+  .thinking {
+    background: #1a1a10;
+    border: 1px solid #3a3a20;
+    border-radius: 6px;
+    padding: 0.8rem 1.1rem;
+    margin-bottom: 1rem;
+    font-style: italic;
+    color: #999;
+    font-size: 0.88rem;
+  }
+  .thinking-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #6a6a40;
+    margin-bottom: 0.4rem;
+  }
+  .search-block {
+    background: #111820;
+    border: 1px dashed #2a3a50;
+    border-radius: 6px;
+    padding: 0.7rem 1rem;
+    margin-bottom: 0.8rem;
+    font-size: 0.82rem;
+    color: #7a9fc0;
+  }
+  .search-block .search-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #3a6a90;
+    margin-bottom: 0.4rem;
+  }
+  .search-result {
+    margin-top: 0.4rem;
+    padding-left: 0.8rem;
+    border-left: 2px solid #2a4a60;
+  }
+  .search-result a { color: #5a9fc0; text-decoration: none; }
+  .search-result a:hover { text-decoration: underline; }
+  .search-result .snippet { color: #668; font-size: 0.8rem; }
+  .read-link-block {
+    background: #11181a;
+    border: 1px dashed #2a4040;
+    border-radius: 6px;
+    padding: 0.5rem 0.9rem;
+    margin-bottom: 0.8rem;
+    font-size: 0.8rem;
+    color: #6ab;
+  }
+  .content p { margin-bottom: 0.8rem; }
+  .content pre {
+    background: #0a0a0a;
+    border: 1px solid #2a2a2a;
+    border-radius: 6px;
+    padding: 1rem;
+    overflow-x: auto;
+    font-size: 0.85rem;
+    margin-bottom: 0.8rem;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .content code {
+    background: #1a1a1a;
+    border-radius: 3px;
+    padding: 0.1em 0.35em;
+    font-size: 0.87em;
+    font-family: "JetBrains Mono", "Fira Code", monospace;
+  }
+  .content pre code { background: none; padding: 0; }
+  .content h1, .content h2, .content h3, .content h4 {
+    color: #d0d0d0;
+    margin: 1rem 0 0.5rem;
+  }
+  .content ul, .content ol {
+    padding-left: 1.5rem;
+    margin-bottom: 0.8rem;
+  }
+  .content li { margin-bottom: 0.3rem; }
+  .content blockquote {
+    border-left: 3px solid #444;
+    padding-left: 1rem;
+    color: #999;
+    margin-bottom: 0.8rem;
+  }
+  .content table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 0.8rem;
+    font-size: 0.88rem;
+  }
+  .content th, .content td {
+    border: 1px solid #2a2a2a;
+    padding: 0.4rem 0.7rem;
+  }
+  .content th { background: #1a1a1a; }
+  .content hr { border: none; border-top: 1px solid #2a2a2a; margin: 1rem 0; }
+  .content a { color: #4a90e2; }
+  .divider {
+    border: none;
+    border-top: 1px solid #1e1e1e;
+    margin: 2rem 0;
+  }
+  #index { margin-bottom: 2.5rem; }
+  #index h2 { font-size: 1rem; color: #888; margin-bottom: 0.8rem; }
+  #index ul { list-style: none; padding: 0; }
+  #index li { margin-bottom: 0.4rem; }
+  #index a { color: #4a90e2; text-decoration: none; font-size: 0.9rem; }
+  #index a:hover { text-decoration: underline; }
+  .conv-header { margin: 3rem 0 1rem; }
+  .conv-header h2 { font-size: 1.25rem; color: #ccc; }
+</style>
+</head>
+<body>
+<div class="container">
+<h1>AI Workforce Management</h1>
+<div class="meta" data-started-ts="1768438186257" data-updated-ts="1768438568235" data-started-iso="2026-01-15T00:49:46Z" data-updated-iso="2026-01-15T00:56:08Z">Started <span class="ts-display">2026-01-15 00:49</span> &nbsp;·&nbsp; Last updated <span class="ts-display">2026-01-15 00:56</span></div>
+<div class="message user" data-ts="1768438186095" data-ts-iso="2026-01-15T00:49:46Z"><div class="role-label">You <span class="msg-time ts-display" data-ts="1768438186095" data-ts-iso="2026-01-15T00:49:46Z">2026-01-15 00:49</span></div><div class="content"><p>ai workforce management</p></div></div>
+<div class="message assistant" data-ts="1768438186174" data-ts-iso="2026-01-15T00:49:46Z"><div class="role-label">ChatGPT <span class="msg-time ts-display" data-ts="1768438186174" data-ts-iso="2026-01-15T00:49:46Z">2026-01-15 00:49</span></div><div class="content"><h2>AI Workforce Management (acquisition-optimized lens)</h2>
+<p>image_group{"query":["AI workforce management dashboard","AI employee productivity analytics","AI task allocation system","enterprise workforce analytics platform"]}</p>
+<p>Below is a <strong>focused expansion</strong> of *AI Workforce</p></div></div>
+<div class="message user" data-ts="1768438193109" data-ts-iso="2026-01-15T00:49:53Z"><div class="role-label">You <span class="msg-time ts-display" data-ts="1768438193109" data-ts-iso="2026-01-15T00:49:53Z">2026-01-15 00:49</span></div><div class="content"><p>“I want to design an acquisition-first startup around AI Workforce Management: a system that treats AI agents as employees with roles, permissions, performance metrics, and auditability. Optimize for Microsoft as the primary buyer, solo-founder MVP, low burn.”</p></div></div>
+<div class="message assistant" data-ts="1768438193212" data-ts-iso="2026-01-15T00:49:53Z"><div class="role-label">ChatGPT <span class="msg-time ts-display" data-ts="1768438193212" data-ts-iso="2026-01-15T00:49:53Z">2026-01-15 00:49</span></div><div class="content"><h2>AI Workforce Management — <strong>Acquisition-First Design (Microsoft-optimized)</strong></h2>
+<p>image_group{"query":["AI agent management dashboard","enterprise AI governance dashboard","AI workforce orchestration system","enterprise compliance audit dashboard"]}</p>
+<p>Below is a <strong>tight, acquisition-oriented blueprint</strong> for an <strong>AI Workforce Management</strong> startup that treats AI agents as employees — <strong>explicitly optimized for a Microsoft acquisition</strong>, <strong>solo-founder MVP</strong>, and <strong>near-zero burn</strong>.</p>
+<hr>
+<h2>1. Core Thesis (why Microsoft would care)</h2>
+<p><strong>Microsoft’s problem (2025–2027):</strong></p>
+<ul>
+<li>Explosion of <strong>Copilot agents</strong>, <strong>Azure OpenAI usage</strong>, and <strong>multi-agent systems</strong></li>
+<li>Enterprises demand:</li>
+</ul>
+<p>- <strong>Governance</strong>   - <strong>Auditability</strong>   - <strong>Role separation</strong>   - <strong>Cost & performance accountability</strong></p>
+<ul>
+<li>Microsoft wants <strong>control-plane software</strong>, not another model.</li>
+</ul>
+<p>👉 <strong>Your product = “Active Directory + Performance Management for AI Agents.”</strong></p>
+<p>That maps directly to:</p>
+<ul>
+<li><strong>entity["company","Microsoft","technology company"]</strong></li>
+<li><strong>entity["company","Azure","cloud computing platform"]</strong></li>
+<li><strong>entity["organization","Microsoft Entra ID","identity platform"]</strong></li>
+<li><strong>entity["product","Microsoft Copilot","ai assistant product"]</strong></li>
+</ul>
+<hr>
+<h2>2. What “AI Workforce Management” means (precisely)</h2>
+<blockquote><strong>A system of record and control plane for AI agents as if they were employees.</strong></blockquote>
+<p>Each AI agent has:</p>
+<table><thead><tr><th>Concept</th><th>AI Equivalent</th></tr></thead><tbody>
+<tr><td>Employee</td><td>AI Agent</td></tr>
+<tr><td>Job Title</td><td>Role</td></tr>
+<tr><td>Manager</td><td>Supervisor Agent / Human</td></tr>
+<tr><td>Permissions</td><td>Tool + data access</td></tr>
+<tr><td>KPIs</td><td>Cost, accuracy, latency, success</td></tr>
+<tr><td>HR File</td><td>Audit log</td></tr>
+<tr><td>Termination</td><td>Disable / revoke keys</td></tr>
+</tbody></table>
+<p>This framing is <strong>extremely Microsoft-native</strong>.</p>
+<hr>
+<h2>3. MVP: the <em>smallest</em> thing Microsoft would buy</h2>
+<h3>MVP name (internal)</h3>
+<p><strong>“AI Agent Directory & Audit Layer”</strong></p>
+<h3>MVP does ONLY 5 things</h3>
+<ol>
+<li><strong>Agent Registry</strong></li>
+</ol>
+<p>- Create agents    - Assign role (e.g. “Support Triage Agent”)    - Owner (team / app)</p>
+<ol>
+<li><strong>Role-Based Permissions</strong></li>
+</ol>
+<p>- Which tools an agent can call    - Which APIs, prompts, or datasets    - Simple policy file (JSON / YAML)</p>
+<ol>
+<li><strong>Execution Logging (Audit First)</strong></li>
+</ol>
+<p>- Every request    - Inputs / outputs    - Tool calls    - Model used    - Timestamp + request ID</p>
+<ol>
+<li><strong>Performance Metrics</strong></li>
+</ol>
+<p>- Cost per task    - Success / failure    - Latency    - Retry count</p>
+<ol>
+<li><strong>Kill Switch</strong></li>
+</ol>
+<p>- Disable agent instantly    - Revoke tokens    - Freeze execution</p>
+<p>🚫 <strong>No autonomy</strong> 🚫 <strong>No planning</strong> 🚫 <strong>No fancy orchestration</strong></p>
+<p>This is <strong>governance software</strong>, not an agent framework.</p>
+<hr>
+<h2>4. Why Microsoft (specifically) would acquire this</h2>
+<h3>Strategic alignment</h3>
+<p>Microsoft already owns:</p>
+<ul>
+<li>Models</li>
+<li>Tools</li>
+<li>IDEs</li>
+<li>Cloud</li>
+<li>Identity</li>
+<li>Enterprise trust</li>
+</ul>
+<p>They <strong>lack a clean “AI employee” abstraction</strong>.</p>
+<p>Your product becomes:</p>
+<table><thead><tr><th>Your Product</th><th>Microsoft Mapping</th></tr></thead><tbody>
+<tr><td>Agent registry</td><td>Entra ID for agents</td></tr>
+<tr><td>Roles</td><td>Azure RBAC</td></tr>
+<tr><td>Logs</td><td>Azure Monitor</td></tr>
+<tr><td>Metrics</td><td>Azure Cost Management</td></tr>
+<tr><td>Policies</td><td>Purview</td></tr>
+</tbody></table>
+<p>This is <strong>pure platform glue</strong> — Microsoft’s favorite M&A target.</p>
+<hr>
+<h2>5. Solo-Founder MVP Architecture (low burn)</h2>
+<h3>Tech stack (deliberately boring)</h3>
+<table><thead><tr><th>Layer</th><th>Choice</th></tr></thead><tbody>
+<tr><td>Backend</td><td>.NET or Node (Azure-native)</td></tr>
+<tr><td>DB</td><td>Postgres</td></tr>
+<tr><td>Auth</td><td>Entra ID / OAuth</td></tr>
+<tr><td>Agent calls</td><td>OpenAI-compatible proxy</td></tr>
+<tr><td>UI</td><td>Minimal admin dashboard</td></tr>
+<tr><td>Hosting</td><td>Azure App Service</td></tr>
+</tbody></table>
+<p>💰 <strong>Monthly cost</strong>: $50–150   🧠 <strong>Engineering load</strong>: 4–6 weeks</p>
+<hr>
+<h2>6. What NOT to build (critical)</h2>
+<p>To stay acquisition-clean:</p>
+<p>❌ Agent reasoning frameworks   ❌ Prompt IDEs   ❌ RAG builders   ❌ Model marketplaces   ❌ Workflow designers</p>
+<p>Microsoft already has all of these or will.</p>
+<p>You are <strong>complementary</strong>, not competitive.</p>
+<hr>
+<h2>7. Initial wedge users (for credibility, not scale)</h2>
+<p>You don’t need revenue scale — you need <strong>logos + narrative</strong>.</p>
+<p>Best early users:</p>
+<ul>
+<li>Mid-market SaaS using:</li>
+</ul>
+<p>- Azure OpenAI   - Internal agents   - Compliance pressure</p>
+<ul>
+<li>Regulated teams:</li>
+</ul>
+<p>- Finance   - Healthcare   - Gov contractors</p>
+<p><strong>Pitch:</strong></p>
+<blockquote>“We help you pass your AI audit.”</blockquote>
+<hr>
+<h2>8. Acquisition signals Microsoft looks for</h2>
+<p>You want these <strong>signals</strong>, not ARR:</p>
+<ol>
+<li>Enterprises using it as <strong>system of record</strong></li>
+<li>Auditors referencing your logs</li>
+<li>Security teams owning the product</li>
+<li>“We can’t turn this off” feedback</li>
+<li>Natural Entra ID integration requests</li>
+</ol>
+<p>That’s when Microsoft buys.</p>
+<hr>
+<h2>9. Exit positioning (how you describe it)</h2>
+<p><strong>Not:</strong></p>
+<blockquote>“We build AI agents.”</blockquote>
+<p><strong>Instead:</strong></p>
+<blockquote>“We provide governance, identity, and performance management for enterprise AI agents.”</blockquote>
+<p>That language is <strong>straight out of Microsoft board decks</strong>.</p>
+<hr>
+<h2>10. Next step (recommended)</h2>
+<p>If you want, next I can:</p>
+<ol>
+<li>Design the <strong>exact MVP schema</strong> (tables + fields)</li>
+<li>Draft a <strong>Microsoft-style product one-pager</strong></li>
+<li>Create an <strong>Azure Marketplace listing spec</strong></li>
+<li>Map this to <strong>Microsoft internal orgs</strong> likely to acquire it</li>
+<li>Stress-test this idea against <em>why Microsoft would NOT buy it</em></li>
+</ol>
+<p>Just tell me which one to do next.</p></div></div>
+<div class="message user" data-ts="1768438491765" data-ts-iso="2026-01-15T00:54:51Z"><div class="role-label">You <span class="msg-time ts-display" data-ts="1768438491765" data-ts-iso="2026-01-15T00:54:51Z">2026-01-15 00:54</span></div><div class="content"><p>let's remember these next steps, first can you do a deep dive on the market? open source solutions, tech startups in the same space, etc... I want to get an idea of competition before wasting time fleshing it out</p></div></div>
+<div class="message assistant" data-ts="1768438500380" data-ts-iso="2026-01-15T00:55:00Z"><div class="role-label">ChatGPT <span class="msg-time ts-display" data-ts="1768438500380" data-ts-iso="2026-01-15T00:55:00Z">2026-01-15 00:55</span></div><div class="content"><p>Remembered next steps for this idea: define MVP schema (tables/fields), draft Microsoft-style one-pager, create Azure Marketplace listing spec, map to likely Microsoft acquirer orgs, stress-test why Microsoft would/wouldn’t buy; and first do a deep market/competition dive (open source + startups) before fleshing out.</p></div></div>
+<div class="message assistant" data-ts="1768438516939" data-ts-iso="2026-01-15T00:55:16Z"><div class="role-label">ChatGPT <span class="msg-time ts-display" data-ts="1768438516939" data-ts-iso="2026-01-15T00:55:16Z">2026-01-15 00:55</span></div><div class="content"><p>Absolutely — and yes, I’ll remember the next steps (saved).</p>
+<p>Here’s a <strong>competition-first market deep dive</strong> for “AI Workforce Management / agents-as-employees (roles, permissions, metrics, auditability)” with a <strong>Microsoft-acquisition lens</strong>.</p>
+<hr>
+<h2>The market is already split into 4 adjacent battlegrounds</h2>
+<h3>1) Microsoft’s own “agents as identities” direction (your biggest competitive risk)</h3>
+<p>Microsoft is explicitly moving toward <strong>agent identity + governance</strong> via <strong>Entra Agent ID</strong> (and related “control plane” messaging). Microsoft’s own guidance emphasizes that orgs must <strong>identify deployed agents, document purpose/permissions, and demonstrate governance oversight</strong>. citeturn0search3</p>
+<p><strong>Implication:</strong> your idea is <em>aligned</em>, but also means <strong>Microsoft may build</strong> much of the “registry + permissions” layer themselves.</p>
+<p><strong>Where the gap <em>might</em> still exist:</strong> cross-platform/hybrid, non-Microsoft agent ecosystems, downstream secrets/tool access sprawl, multi-cloud audit normalization (more on that below).</p>
+<hr>
+<h3>2) Identity/Security vendors rushing into “AI agent governance”</h3>
+<p>This is the hottest competitive cluster because CISOs have budget.</p>
+<ul>
+<li><strong>Okta</strong> announced “Okta for AI Agents” positioning around <strong>visibility, centralized control, and lifecycle governance</strong> for agents. citeturn2search1turn2search13  </li>
+<li><strong>CyberArk</strong> has launched “Secure AI Agents,” positioning around visibility + securing agent access with identity controls (their core wedge). citeturn2search2turn2search14  </li>
+<li><strong>Oasis Security</strong> is very directly marketing “Agentic Access Management” and explicitly frames itself as filling what Microsoft doesn’t cover outside the MS estate. citeturn2search16turn2search4turn2search0  </li>
+</ul>
+<p><strong>Implication:</strong> If your product smells like “agent governance for enterprises,” you’re competing with companies that already sell into security and identity teams.</p>
+<hr>
+<h3>3) LLM Gateways / Proxies (routing + policy + spend)</h3>
+<p>These products sit directly in your earlier “API proxy” world, and they already do a chunk of “agent accountability” <em>via traffic control</em>.</p>
+<ul>
+<li><strong>LiteLLM</strong>: OpenAI-compatible proxy/gateway with cost tracking, guardrails, load balancing, logging, budgets per key/user. citeturn1search8turn1search11  </li>
+<li><strong>Helicone</strong>: “AI Gateway & LLM observability,” including routing/fallback patterns. citeturn0search6turn0search10  </li>
+<li><strong>Portkey</strong>: gateway + observability + governance/guardrails + prompt tooling. citeturn1search17turn1search5turn1search1  </li>
+</ul>
+<p><strong>Implication:</strong> If your MVP is “proxy + logs + metrics,” you’ll be seen as <strong>another AI gateway</strong> unless you have a <strong>distinct identity/HR abstraction</strong> (agent directory, manager chain, attestation, lifecycle) that gateways don’t strongly own.</p>
+<hr>
+<h3>4) LLM Observability / Tracing / Evals (the dev-facing wedge)</h3>
+<p>This space is crowded and increasingly open-source friendly:</p>
+<ul>
+<li><strong>Langfuse</strong> (open source): tracing/metrics/prompt mgmt/evals. citeturn0search0turn0search8  </li>
+<li><strong>LangSmith</strong>: agent tracing + monitoring + alerting. citeturn0search1turn0search5  </li>
+<li><strong>Arize Phoenix</strong> (open source): LLM tracing & evaluation. citeturn1search2turn1search18  </li>
+<li><strong>OpenLLMetry / Traceloop</strong>: OpenTelemetry-based observability for LLM apps (plus vendor export). citeturn1search7turn1search10turn1search3  </li>
+</ul>
+<p><strong>Implication:</strong> If your KPI/performance story is dev-centric (traces, evals), you’ll get compared to these immediately. The winning move here is <strong>compliance + audit + identity + access control</strong> rather than “debugging agents.”</p>
+<hr>
+<h2>Open-source reality check</h2>
+<p>For a solo-founder MVP, open source is both threat and tool:</p>
+<p><strong>Threat:</strong> Open source covers “logging/tracing/evals” extremely well (Langfuse/Phoenix/OpenLLMetry). citeturn0search8turn1search18turn1search7   <strong>Opportunity:</strong> You can <em>compose</em> open source for telemetry, but differentiate with:</p>
+<ul>
+<li><strong>agent identity model</strong></li>
+<li><strong>policy + approvals</strong></li>
+<li><strong>lifecycle</strong></li>
+<li><strong>audit exports</strong> (eDiscovery/SIEM-style)</li>
+<li><strong>attestation</strong> (“this agent is allowed to do X with tool Y”)</li>
+</ul>
+<hr>
+<h2>So… is this idea already “taken”?</h2>
+<h3>The honest competitive picture</h3>
+<ul>
+<li><strong>If you build “agent registry + RBAC + logs + dashboard”</strong> → Microsoft + security vendors are converging there fast. citeturn0search3turn2search1turn2search2  </li>
+<li><strong>If you build “proxy + routing + spend”</strong> → gateways own this. citeturn1search8turn0search10turn1search17  </li>
+<li><strong>If you build “tracing + evals”</strong> → observability platforms own this (many OSS). citeturn0search8turn1search18turn1search7  </li>
+</ul>
+<h3>Where a real wedge might still exist (acquisition-optimized)</h3>
+<p>A Microsoft-aligned wedge that is <em>not obviously solved</em> is:</p>
+<p><strong>“Cross-platform Agent Governance that maps into Entra/Purview/Sentinel.”</strong>   Meaning: you govern agents <strong>outside</strong> Copilot Studio / Azure AI Foundry as well (IDE agents, internal scripts, vendor tools, MCP tool access, long-lived secrets), then <strong>export controls + evidence</strong> into Microsoft’s security stack.</p>
+<p>This is very close to the “hybrid gaps” narrative that vendors like Oasis are already pushing. citeturn2search0turn2search4   So the question becomes: can you do it <strong>narrower + simpler + cheaper</strong> with an MVP that lands logos?</p>
+<hr>
+<h2>Recommendation: how to validate fast <em>before</em> building</h2>
+<p>Here are the <strong>3 fastest competition-killer validations</strong>:</p>
+<p>1) <strong>Read Microsoft’s Entra Agent ID / Agent governance positioning and list what it <em>doesn’t</em> cover for non-Microsoft agents</strong> (IDE agents, MCP toolchains, secrets outside Entra, multi-cloud). citeturn0search3turn0news45   2) <strong>Compare your MVP against LiteLLM/Helicone/Portkey</strong> and ensure you’re not “just a gateway.” citeturn1search8turn0search10turn1search17   3) <strong>Compare your governance story against Okta/CyberArk/Oasis</strong> and pick a slice they won’t bother with (e.g., “agent audit evidence pack for compliance teams” or “agent-to-tool permissioning with approval workflows”). citeturn2search1turn2search2turn2search16</p>
+<p>If you want, I’ll turn this into a <strong>decision matrix</strong> (Build / Pivot / Kill) and propose <strong>3 tight MVP wedges</strong> that avoid direct collisions.</p>
+<p>navlistRecent identity + agent-governance movesturn0news45,turn2news38,turn2news39,turn2news40</p></div></div>
+</div>
+</body>
+</html>
