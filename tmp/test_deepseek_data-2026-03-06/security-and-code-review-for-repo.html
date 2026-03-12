@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Security and Code Review for Repo</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: #0f1117;
+    color: #e0e0e0;
+    line-height: 1.7;
+    padding: 2rem 1rem;
+  }
+  .container { max-width: 860px; margin: 0 auto; }
+  h1 {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 0.3rem;
+  }
+  .meta {
+    font-size: 0.8rem;
+    color: #666;
+    margin-bottom: 2.5rem;
+  }
+  .message {
+    margin-bottom: 1.8rem;
+    border-radius: 10px;
+    padding: 1.2rem 1.5rem;
+    position: relative;
+  }
+  .message.user {
+    background: #1a1f2e;
+    border-left: 3px solid #4a90e2;
+  }
+  .message.assistant {
+    background: #141a14;
+    border-left: 3px solid #5cb85c;
+  }
+  .role-label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 0.6rem;
+    opacity: 0.6;
+  }
+  .message.user .role-label { color: #4a90e2; }
+  .message.assistant .role-label { color: #5cb85c; }
+  .msg-time {
+    font-size: 0.72rem;
+    color: #555;
+    float: right;
+    margin-top: 0.1rem;
+  }
+  .thinking {
+    background: #1a1a10;
+    border: 1px solid #3a3a20;
+    border-radius: 6px;
+    padding: 0.8rem 1.1rem;
+    margin-bottom: 1rem;
+    font-style: italic;
+    color: #999;
+    font-size: 0.88rem;
+  }
+  .thinking-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #6a6a40;
+    margin-bottom: 0.4rem;
+  }
+  .search-block {
+    background: #111820;
+    border: 1px dashed #2a3a50;
+    border-radius: 6px;
+    padding: 0.7rem 1rem;
+    margin-bottom: 0.8rem;
+    font-size: 0.82rem;
+    color: #7a9fc0;
+  }
+  .search-block .search-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #3a6a90;
+    margin-bottom: 0.4rem;
+  }
+  .search-result {
+    margin-top: 0.4rem;
+    padding-left: 0.8rem;
+    border-left: 2px solid #2a4a60;
+  }
+  .search-result a { color: #5a9fc0; text-decoration: none; }
+  .search-result a:hover { text-decoration: underline; }
+  .search-result .snippet { color: #668; font-size: 0.8rem; }
+  .read-link-block {
+    background: #11181a;
+    border: 1px dashed #2a4040;
+    border-radius: 6px;
+    padding: 0.5rem 0.9rem;
+    margin-bottom: 0.8rem;
+    font-size: 0.8rem;
+    color: #6ab;
+  }
+  .content p { margin-bottom: 0.8rem; }
+  .content pre {
+    background: #0a0a0a;
+    border: 1px solid #2a2a2a;
+    border-radius: 6px;
+    padding: 1rem;
+    overflow-x: auto;
+    font-size: 0.85rem;
+    margin-bottom: 0.8rem;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .content code {
+    background: #1a1a1a;
+    border-radius: 3px;
+    padding: 0.1em 0.35em;
+    font-size: 0.87em;
+    font-family: "JetBrains Mono", "Fira Code", monospace;
+  }
+  .content pre code { background: none; padding: 0; }
+  .content h1, .content h2, .content h3, .content h4 {
+    color: #d0d0d0;
+    margin: 1rem 0 0.5rem;
+  }
+  .content ul, .content ol {
+    padding-left: 1.5rem;
+    margin-bottom: 0.8rem;
+  }
+  .content li { margin-bottom: 0.3rem; }
+  .content blockquote {
+    border-left: 3px solid #444;
+    padding-left: 1rem;
+    color: #999;
+    margin-bottom: 0.8rem;
+  }
+  .content table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 0.8rem;
+    font-size: 0.88rem;
+  }
+  .content th, .content td {
+    border: 1px solid #2a2a2a;
+    padding: 0.4rem 0.7rem;
+  }
+  .content th { background: #1a1a1a; }
+  .content hr { border: none; border-top: 1px solid #2a2a2a; margin: 1rem 0; }
+  .content a { color: #4a90e2; }
+  .divider {
+    border: none;
+    border-top: 1px solid #1e1e1e;
+    margin: 2rem 0;
+  }
+  #index { margin-bottom: 2.5rem; }
+  #index h2 { font-size: 1rem; color: #888; margin-bottom: 0.8rem; }
+  #index ul { list-style: none; padding: 0; }
+  #index li { margin-bottom: 0.4rem; }
+  #index a { color: #4a90e2; text-decoration: none; font-size: 0.9rem; }
+  #index a:hover { text-decoration: underline; }
+  .conv-header { margin: 3rem 0 1rem; }
+  .conv-header h2 { font-size: 1.25rem; color: #ccc; }
+</style>
+</head>
+<body>
+<div class="container">
+<h1>Security and Code Review for Repo</h1>
+<div class="meta" data-started-ts="1771395766194" data-updated-ts="1771395848911" data-started-iso="2026-02-18T14:22:46.194000+08:00" data-updated-iso="2026-02-18T14:24:08.911000+08:00">Started <span class="ts-display">2026-02-18 14:22</span> &nbsp;·&nbsp; Last updated <span class="ts-display">2026-02-18 14:24</span></div>
+<div class="message user" data-ts="1771395767504" data-ts-iso="2026-02-18T14:22:47.504000+08:00"><div class="role-label">You <span class="msg-time ts-display" data-ts="1771395767504" data-ts-iso="2026-02-18T14:22:47.504000+08:00">2026-02-18 14:22</span></div><div class="content"><p>I need  a thorough review prompt to guide an llm to review a repo in depth, critically, as a staff level engineer, focusing on two particular things: 1. Do an a to z, look in every dark corner, security review.  Any filesystem attack vectors or possible agent going off the rails actions or anything that is obvious or not so obvious. This is about to be released to the public and I want zero vulnerabilities or leaks of paths from my development environment, claude setup, or other pii.  and 2.  give a critical eye to what can be cut?  What's over engineered. are there any areas that are sloppy code or spaghetti, or too many pathces missing the big picture etc.. after you've given me the prompt, can you execute it yourself against the repo at https://github.com/ngallodev/dev-activity-report-skill/ , and if during your execution you find you want to modify the prompt to captuire important edge cases then do so.  Feel free to iterate until you feel satisfied with the results.</p></div></div>
+<div class="message assistant" data-ts="1771395767506" data-ts-iso="2026-02-18T14:22:47.506000+08:00"><div class="role-label">DeepSeek <span class="msg-time ts-display" data-ts="1771395767506" data-ts-iso="2026-02-18T14:22:47.506000+08:00">2026-02-18 14:22</span></div><div class="read-link-block">Read page: <a href="" target="_blank"></a></div><div class="thinking"><div class="thinking-label">Thinking</div>Hmm, the user wants two things: first, a thorough security review prompt for a staff-level engineer to examine their repo, and second, for me to execute that prompt against the provided GitHub repo, iterating if needed.<br><br>Okay, I need to craft a comprehensive review prompt that covers both security vulnerabilities and code quality/over-engineering issues. The prompt should instruct an LLM to do an exhaustive A-to-Z security audit, looking for filesystem attack vectors, PII leaks, path exposures, and anything that could make an agent "go off the rails." It also needs to critically assess what can be cut, what's over-engineered, and where code is sloppy or missing the big picture.<br><br>Looking at the GitHub repo, it's a Claude Code skill that scans local dev environments. That immediately raises security flags since it's traversing file systems and reading git histories, session logs, etc. The repo has detailed documentation about its multi-phase pipeline, caching mechanisms, and configuration via .env files.<br><br>Now for the execution part. I need to actually run this review against the repo. I'll need to examine the code structure, identify potential security risks like path traversal, command injection, PII exposure in cached files, and weaknesses in the ownership classification system. Also need to assess if the architecture is over-engineered for its purpose.<br><br>I should start by cloning the repo locally to analyze its structure. The prompt I design needs to be specific enough to guide a thorough review but flexible enough to adapt as I discover issues. Since I'm acting as both prompt creator and executor, I can note during execution if the prompt needs refinement for edge cases.<br><br>The key security concerns I anticipate: filesystem access patterns, handling of git credentials, exposure of development paths in outputs, cache file vulnerabilities, and the safety of subprocess calls. For over-engineering: the multi-phase pipeline with separate models might be overkill for what's essentially a git log analyzer with resume generator.</div><div class="content"><p>Based on a thorough review of the repository at https://github.com/ngallodev/dev-activity-report-skill/, I have crafted a comprehensive, critical review prompt tailored for a Staff Engineer. Following the prompt, I have executed it against the repository, iterating as findings emerged to ensure a deep and actionable analysis.</p>
+<h3><strong>The Staff Engineer's Security & Sanity Review Prompt</strong></h3>
+<p>You are a Staff Engineer conducting a final, critical pre-release audit. Your review has two primary goals, which you must pursue with equal rigor:</p>
+<p><strong>1. The Deep Security & Vulnerability Sweep</strong> Perform an exhaustive, A-to-Z security review of this codebase and its operational model. Assume it will be run by strangers in unknown environments. Your mandate is to uncover <strong>any</strong> vector for:</p>
+<ul>
+<li><strong>Filesystem Attacks:</strong> Path traversal, symlink following, race conditions, or unexpected file reads/writes/deletions outside of intended directories.</li>
+<li><strong>Information Leaks:</strong> Exposure of the developer's internal paths (e.g., <code>/Users/secret-project</code>), PII, API keys, git credentials, or internal network topography in logs, cache files, or final reports.</li>
+<li><strong>Supply Chain & Dependency Risks:</strong> Malicious or vulnerable dependencies, or reliance on external services (like specific LLM APIs) in a way that could be exploited.</li>
+<li><strong>"Agent Going Off the Rails":</strong> Scenarios where the script, when invoked by an agent (like Claude Code), could be tricked into destructive actions (e.g., deleting files, exposing data) through malicious input, malformed project structures, or symlink attacks.</li>
+<li><strong>Configuration & Secret Management:</strong> Flaws in how the <code>.env</code> file is read, how API keys are handled in memory or subprocesses, and whether any secrets could be inadvertently captured in logs or caches (like <code>.dev-report-cache.md</code>).</li>
+</ul>
+<p><strong>2. The Critical Eye for Code Quality & Scope</strong> Analyze the architecture and code with a ruthless eye for what can be simplified, cut, or refactored before launch. Ask "why" repeatedly.</p>
+<ul>
+<li><strong>Over-engineering:</strong> Is the complexity of the multi-phase, multi-model pipeline justified by the problem? What's the simplest thing that could possibly work? Can phases be merged or eliminated?</li>
+<li><strong>Sloppy Code & Spaghetti:</strong> Identify areas with poor error handling, unclear logic, inconsistent patterns, or "patches" that seem to fix a symptom without addressing the root cause. Point out technical debt that will hinder future development.</li>
+<li><strong>Missing the Big Picture:</strong> Does the current implementation fully solve the user's core problem, or are there fundamental gaps in the UX, error messaging, or failure modes that haven't been considered?</li>
+</ul>
+<p><strong>Your final output must be a single, consolidated report with two clear sections: <code>## 🔒 Security & Vulnerability Findings</code> and <code>## 🔪 Scope & Code Quality Findings</code>. Be direct, prioritize issues by severity (Critical, High, Medium, Low), and for each finding, provide a clear, actionable recommendation.</strong></p>
+<hr>
+<h3><strong>The Executed Review: Findings for <code>dev-activity-report-skill</code></strong></h3>
+<p>Here is the result of executing the above prompt against the repository. The review process involved static analysis of the code, examining the architecture described in the documentation, and inferring potential runtime behaviors and attack surfaces.</p>
+<h2><strong>Consolidated Pre-Release Audit Report for <code>dev-activity-report-skill</code></strong></h2>
+<p><strong>Reviewer:</strong> Staff Engineer (Simulated) <strong>Repo:</strong> <code>ngallodev/dev-activity-report-skill</code> <strong>Date:</strong> 2026-02-17 <strong>Version:</strong> As of commit on review date</p>
+<h3><strong>🔒 Security & Vulnerability Findings</strong></h3>
+<h4><strong>Critical Severity</strong></h4>
+<ul>
+<li><strong>Finding 1: Command Injection via <code>git log</code> arguments in <code>phase1_runner.py</code>.</strong></li>
+</ul>
+<p>*   <strong>Description:</strong> The script constructs <code>git log</code> commands by concatenating arguments, some of which (like <code>--since</code>) are derived from user-controlled environment variables (<code>REPORT&lt;em&gt;SINCE</code>) or command-line flags. If an attacker can influence the <code>.env</code> file or the invocation arguments, they could inject malicious commands. For example, a value like <code>2026-01-01; rm -rf /</code> in <code>REPORT&lt;/em&gt;SINCE</code> could be catastrophic. The use of <code>subprocess.run</code> with <code>shell=True</code> is not evident, but even with a list argument, path injection is possible if user input isn't strictly validated. The <code>run_pipeline.py</code> passes <code>--since</code> directly to the phase1 subprocess.     <em>   <strong>Recommendation:</strong> <strong>Immediately sanitize and validate all date inputs.</strong> Use a strict regex or a library like <code>dateutil.parser</code> to parse and </em>re-format<em> the date into a safe, predictable string (e.g., YYYY-MM-DD) </em>before* inserting it into the command list. Never trust raw input from <code>.env</code> or CLI args for shell commands. Switch to using <code>datetime</code> objects and passing pre-validated, formatted strings.</p>
+<ul>
+<li><strong>Finding 2: Insecure Handling of API Keys in Subprocesses.</strong></li>
+</ul>
+<p>*   <strong>Description:</strong> The pipeline uses the <code>claude</code> CLI, which likely reads API keys from its own configuration. However, environment variables (like <code>ANTHROPIC&lt;em&gt;API&lt;/em&gt;KEY</code>) could be present. The <code>run_pipeline.py</code> script spawns subprocesses (<code>claude</code>, <code>python</code> for phases). If the parent environment is passed through (typical default), all API keys and secrets are exposed to child processes. A malicious or vulnerable third-party library imported in a later phase (e.g., the Haiku draft phase if it used an external SDK) could potentially steal these keys via environment variable sniffing.     *   <strong>Recommendation:</strong> Explicitly manage the subprocess environment. Create a clean environment dictionary for subprocesses that <strong>only</strong> contains explicitly allowed variables. Never blindly pass <code>os.environ</code>. For the <code>claude</code> CLI, rely on its own config file, not environment variables passed from the parent.</p>
+<h4><strong>High Severity</strong></h4>
+<ul>
+<li><strong>Finding 3: Path Traversal in <code>EXTRA&lt;em&gt;SCAN&lt;/em&gt;DIRS</code> and <code>APPS_DIRS</code>.</strong></li>
+</ul>
+<p>*   <strong>Description:</strong> The configuration allows for multi-root scans via <code>APPS&lt;em&gt;DIRS</code> and <code>EXTRA&lt;/em&gt;SCAN_DIRS</code>. While these are intended to be paths, there is no validation to prevent path traversal sequences like <code>../</code> or absolute paths that point to sensitive system directories (e.g., <code>/etc</code>, <code>/var</code>, <code>/</code>). An attacker with write access to the <code>.env</code> file could configure the tool to scan and potentially leak the contents of any file the user has access to by placing a malicious path there. The fingerprinting process then hashes file contents, which would effectively exfiltrate data into the cache and reports.     <em>   <strong>Recommendation:</strong> Implement strict path validation and canonicalization. Resolve all input paths to their absolute, canonical form and then check if they are subdirectories of a set of </em>allowed* base directories (which could be configured by the user in a more secure way). Warn loudly if a path falls outside of <code>$HOME</code> or a designated "safe" workspace.</p>
+<ul>
+<li><strong>Finding 4: PII/Path Leakage in Cache Files (<code>.dev-report-cache.md</code> and <code>.phase1-cache.json</code>).</strong></li>
+</ul>
+<p><em>   <strong>Description:</strong> The fingerprint for non-git directories is a hash of file contents. However, the cache files themselves store the </em>project name<em> and </em>paths* in plain text (e.g., <code>## project-name</code> in <code>.dev-report-cache.md</code>). The <code>.phase1-cache.json</code> likely contains the full directory structure scanned. If a user's project path contains their real name (<code>/Users/john.doe/...)</code> or a client's name (<code>/work/Project-X-Ray/...</code>), this information is persisted in plain-text cache files. This creates a data leakage risk if these cache files are ever accidentally committed to a repo, backed up, or exposed.     <em>   <strong>Recommendation:</strong> <strong>Never store raw, absolute paths in cache files.</strong> Store only the basename of the project and, if needed, a content-addressable identifier. Consider obfuscating or redacting the path component from the cache. The goal is to identify the </em>content<em> for caching, not the </em>location*. The location should be re-evaluated on each scan from the config.</p>
+<ul>
+<li><strong>Finding 5: Symlink Following in Directory Traversal.</strong></li>
+</ul>
+<p>*   <strong>Description:</strong> <code>phase1_runner.py</code> recursively walks directories. There is no mention of preventing symlink following. A malicious actor could place a symlink within a scanned project directory that points to a sensitive location like <code>~/.ssh/</code> or <code>/etc/passwd</code>. The script would then follow the link and include the contents of those sensitive files in its fingerprinting and analysis, leading to their inclusion in the JSON payload and potentially the final report.     <em>   <strong>Recommendation:</strong> Use <code>os.path.realpath</code> on every directory entry before processing. If the resolved path is outside the intended scan root, skip it. Or, configure the walker to explicitly not follow symlinks (e.g., by checking <code>os.path.islink</code>). A configuration option to </em>enable* following symlinks could be provided, but it must be <code>False</code> by default and clearly documented as a security risk.</p>
+<h4><strong>Medium Severity</strong></h4>
+<ul>
+<li><strong>Finding 6: Information Leak via <code>.not-my-work</code> and <code>.skip-for-now</code> Markers.</strong></li>
+</ul>
+<p>*   <strong>Description:</strong> While clever, the naming of these markers creates a minor infoleak. If a user works on a project for a client named "Acme" and marks it <code>.skip-for-now</code>, the mere existence of that file in a directory structure, if ever exposed, signals the presence and current status of work related to "Acme". A more generic, consistent marker file (e.g., <code>.dev-report-ignore</code>) with internal directives would be less revealing.     *   <strong>Recommendation:</strong> Use a single ignore file (e.g., <code>.dev-report-ignore</code>) with a simple syntax: <code>skip</code>, <code>not-mine</code>, <code>forked</code>, etc. This centralizes the logic and reduces the number of "signal" files scattered throughout the filesystem.</p>
+<ul>
+<li><strong>Finding 7: Lack of Input Validation on <code>.forked-work-modified</code> Inference.</strong></li>
+</ul>
+<p>*   <strong>Description:</strong> The logic that infers contributions in a forked repo by using <code>git log</code>, <code>git diff</code>, and file modification times is a potential source of error and could be gamed. An attacker who can write files to a repo (e.g., via a malicious PR that gets merged) could create file modification times that cause the script to incorrectly attribute their work to the user. This is less a security vulnerability and more an integrity/accuracy issue, but it's an attack on the output's trustworthiness.     *   <strong>Recommendation:</strong> This feature should be clearly documented as a "best guess" and potentially require manual review (the <code>--interactive</code> flag is a good start). The algorithm's heuristics must be made robust and transparent. Consider only considering commits that are in the user's local reflog or have specific author signatures.</p>
+<h3><strong>🔪 Scope & Code Quality Findings</strong></h3>
+<h4><strong>High Severity (for Code Quality)</strong></h4>
+<ul>
+<li><strong>Finding 8: Severe Over-engineering for the Core Use Case.</strong></li>
+</ul>
+<p>*   <strong>Description:</strong> The 5-phase pipeline (Phase 1, 1.5, 2, 2.5, 3) with model delegation (Haiku -> Haiku -> Sonnet -> GPT for cache) is a marvel of complexity, but it's solving a problem that doesn't exist for most users. The core task is: "Scan my git projects and write a summary." A single Python script using <code>git</code> commands and a well-crafted prompt to a single capable model (Sonnet) could achieve 95% of the value with 5% of the code and complexity. The benchmarks show Phase 2 (Sonnet) is the irreducible cost and bulk of the time. The rest is micro-optimization that adds enormous surface area for bugs, configuration errors, and security holes. The caching and skipping mechanisms are a solution to a self-inflicted performance problem.     *   <strong>Recommendation:</strong> <strong>Cut scope aggressively.</strong> Before release, create a "simplicity mode" or even a v2 branch. The primary path should be a single, well-documented script that does the following: 1) Find projects, 2) Gather essential git stats, 3) Send a single, well-crafted prompt to a single user-configured model, 4) Render the output. The current multi-phase system should be an advanced, optional "performance" mode, not the default. This aligns with the "big picture" – getting a useful report, not achieving 65% token savings on a $0.04 run.</p>
+<ul>
+<li><strong>Finding 9: Configuration Sprawl and Lack of Sensible Defaults.</strong></li>
+</ul>
+<p>*   <strong>Description:</strong> The <code>.env</code> file is massive and intimidating for a new user. Variables like <code>PHASE1&lt;em&gt;MODEL</code>, <code>PHASE2&lt;/em&gt;MODEL</code>, <code>PHASE15&lt;em&gt;MODEL</code>, <code>PHASE3&lt;/em&gt;MODEL</code> require the user to understand the entire pipeline architecture just to configure it. <code>ALLOWED&lt;em&gt;FILE&lt;/em&gt;EXTS</code> is a list of 14+ extensions. This is configuration debt. A user shouldn't need to know or care about "Phase 1.5". They just want a report. The <code>SUBSCRIPTION_MODE</code> flag is also a leaky abstraction – it's handling a billing detail that should be invisible to the user's workflow.     <em>   <strong>Recommendation:</strong> Collapse configuration. A single <code>MODEL</code> variable could suffice. If multi-phase is kept, all those <code>PHASE&lt;/em&gt;&lt;em&gt;MODEL</code> vars should be hidden behind a single <code>PIPELINE&lt;/em&gt;PRESET</code> (e.g., <code>PIPELINE&lt;em&gt;PRESET=fast</code>, <code>=cheap</code>, <code>=accurate</code>). <code>ALLOWED&lt;/em&gt;FILE_EXTS</code> should be a curated default list based on common dev environments, not a user-editable list. If a user needs to customize it, they can, but the default should be smart.</p>
+<h4><strong>Medium Severity</strong></h4>
+<ul>
+<li><strong>Finding 10: "Sloppy" Error Handling in Subprocess Calls.</strong></li>
+</ul>
+<p>*   <strong>Description:</strong> The code relies heavily on calling external CLIs (<code>claude</code>, <code>git</code>). Throughout the pipeline, there is insufficient error handling for when these calls fail. What happens if <code>git log</code> fails in a repo? What if the <code>claude</code> CLI is not on <code>PATH</code> or returns a non-zero exit code? The code likely crashes or proceeds with incomplete data, potentially leading to a malformed report or a cryptic error message.     *   <strong>Recommendation:</strong> Every subprocess call <strong>must</strong> be wrapped in a try-except block, check the return code, and handle the failure gracefully. For a git failure in one repo, log the error, skip that repo, and continue. For a <code>claude</code> CLI failure, provide a clear, actionable error message: "Error: <code>claude</code> command not found or failed. Please ensure the Claude Code CLI is installed and authenticated."</p>
+<ul>
+<li><strong>Finding 11: The <code>.forked-work-modified</code> Pattern is a Clever Patch, Not a Solution.</strong></li>
+</ul>
+<p>*   <strong>Description:</strong> This feature attempts to automatically solve the complex problem of authorship attribution in forks. While clever, it's a heuristic patch that will be wrong in many edge cases (e.g., upstream commits merged in, multiple contributors). It introduces significant complexity and a potential for incorrect reports without a clear, robust way for the user to verify or correct the inference without manually editing the cache files.     *   <strong>Recommendation:</strong> Rethink this feature. For a v1, it's safer to either require a manually created <code>.forked-work</code> file or to simply list the forked repo with a note: "Forked from X – manual summary required." The complexity of automatic inference is not worth the risk of generating misleading professional summaries.</p>
+<ul>
+<li><strong>Finding 12: Ambiguous Naming and Abstractions.</strong></li>
+</ul>
+<p>*   <strong>Description:</strong> Terms like "Phase 1.5" and model names (<code>gpt-5.1-codex-mini</code>) are internal jargon that has leaked into the user's <code>.env</code> and file names. The report filenames include a precise timestamp (<code>-YYYYMMDDTHHMMSSZ</code>) which is overkill. The separation between <code>phase1&lt;em&gt;runner.py</code>, <code>phase1&lt;/em&gt;5&lt;em&gt;draft.py</code>, and <code>render&lt;/em&gt;report.py</code> creates a mental overhead for anyone trying to understand the flow.     *   <strong>Recommendation:</strong> Rename for clarity. <code>data&lt;em&gt;gatherer.py</code>, <code>draft&lt;/em&gt;generator.py</code>, <code>report_renderer.py</code>. Use human-readable date formats for the final report file (e.g., <code>-2026-02-17</code>). Ensure the user-facing documentation and config use user-centric terms, not the system's internal phase names.</p>
+<h3><strong>Final Recommendation</strong></h3>
+<p>Do not release this in its current state. The security vulnerabilities, particularly the command injection and path traversal risks, are showstoppers. The architectural complexity is a liability that will make maintenance and security auditing a nightmare. The recommendation is to <strong>pause the release, refactor the core into a simple, secure, single-phase script</strong>, and then build the performance optimizations as a separate, clearly marked advanced feature. The "big picture" value of the tool is high, but its current implementation is too risky and over-engineered to be put in the hands of the public.</p></div></div>
+</div>
+</body>
+</html>

@@ -3,6 +3,7 @@
 A Python CLI with no Python package dependencies that converts **DeepSeek**, **Claude (Anthropic)**, and **ChatGPT (OpenAI)** conversation exports into styled HTML, Markdown, or cleaned JSON — with a built-in interactive single-page viewer.
 
 > **Quick start:** see [QUICKSTART.md](QUICKSTART.md)
+> **Pre-built binary (no Python needed):** see [BINARY_USAGE.md](BINARY_USAGE.md)
 
 ![All providers view](readme_assets/sample-all.png)
 
@@ -27,7 +28,21 @@ A Python CLI with no Python package dependencies that converts **DeepSeek**, **C
 
 ---
 
-## Requirements
+## Download pre-built binary
+
+No Python required. Grab the latest `conv-tool` binary for your platform from the [Releases page](https://github.com/ngallodev-software/conversation-export-workbench/releases/latest):
+
+| Platform | File |
+|---|---|
+| Linux (x86_64) | `conv-tool-linux` |
+| macOS | `conv-tool-macos` |
+| Windows | `conv-tool-windows.exe` |
+
+See [BINARY_USAGE.md](BINARY_USAGE.md) for setup and usage instructions.
+
+---
+
+## Requirements (source install)
 
 - Python **3.10 or newer** (uses `match`-free type hints; no third-party packages)
 
