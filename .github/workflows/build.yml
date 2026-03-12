@@ -12,14 +12,14 @@ jobs:
       matrix:
         include:
           - os: ubuntu-latest
-            artifact: conv-tool-linux
-            binary: dist/conv-tool
+            platform: linux
+            extension: ""
           - os: macos-latest
-            artifact: conv-tool-macos
-            binary: dist/conv-tool
+            platform: macos
+            extension: ""
           - os: windows-latest
-            artifact: conv-tool-windows
-            binary: dist/conv-tool.exe
+            platform: windows
+            extension: ".exe"
 
     runs-on: ${{ matrix.os }}
 
@@ -36,11 +36,17 @@ jobs:
       - name: Build binary
         run: pyinstaller conv-tool.spec
 
+      - name: Prepare versioned binary
+        shell: bash
+        run: |
+          version="${GITHUB_REF_NAME:-dev}"
+          cp "dist/conv-tool${{ matrix.extension }}" "dist/conv-tool-${version}-${{ matrix.platform }}${{ matrix.extension }}"
+
       - name: Upload artifact
         uses: actions/upload-artifact@v6
         with:
-          name: ${{ matrix.artifact }}
-          path: ${{ matrix.binary }}
+          name: conv-tool-${{ github.ref_name || 'dev' }}-${{ matrix.platform }}
+          path: dist/conv-tool-${{ github.ref_name || 'dev' }}-${{ matrix.platform }}${{ matrix.extension }}
 
   release:
     needs: build
@@ -57,15 +63,17 @@ jobs:
           path: artifacts
 
       - name: Rename binaries for release
+        shell: bash
         run: |
-          mv artifacts/conv-tool-linux/conv-tool   artifacts/conv-tool-linux
-          mv artifacts/conv-tool-macos/conv-tool   artifacts/conv-tool-macos
-          mv artifacts/conv-tool-windows/conv-tool.exe artifacts/conv-tool-windows.exe
+          version="${GITHUB_REF_NAME}"
+          mv "artifacts/conv-tool-${version}-linux/conv-tool-${version}-linux" "artifacts/conv-tool-${version}-linux"
+          mv "artifacts/conv-tool-${version}-macos/conv-tool-${version}-macos" "artifacts/conv-tool-${version}-macos"
+          mv "artifacts/conv-tool-${version}-windows/conv-tool-${version}-windows.exe" "artifacts/conv-tool-${version}-windows.exe"
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            artifacts/conv-tool-linux
-            artifacts/conv-tool-macos
-            artifacts/conv-tool-windows.exe
+            artifacts/conv-tool-${{ github.ref_name }}-linux
+            artifacts/conv-tool-${{ github.ref_name }}-macos
+            artifacts/conv-tool-${{ github.ref_name }}-windows.exe
