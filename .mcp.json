@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "jcodemunch": {
+      "command": "/home/nate/.local/bin/jcodemunch-mcp"
+    },
+    "chrome-devtools": {
+      "command": "/home/nate/.nvm/versions/node/v22.19.0/bin/npx",
+      "args": [
+        "-y",
+        "chrome-devtools-mcp"
+      ]
+    }
+  }
+}

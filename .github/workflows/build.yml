@@ -1,0 +1,71 @@
+name: Build conv-tool binaries
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            artifact: conv-tool-linux
+            binary: dist/conv-tool
+          - os: macos-latest
+            artifact: conv-tool-macos
+            binary: dist/conv-tool
+          - os: windows-latest
+            artifact: conv-tool-windows
+            binary: dist/conv-tool.exe
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install pyinstaller
+
+      - name: Build binary
+        run: pyinstaller conv-tool.spec
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: ${{ matrix.binary }}
+
+  release:
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Rename binaries for release
+        run: |
+          mv artifacts/conv-tool-linux/conv-tool   artifacts/conv-tool-linux
+          mv artifacts/conv-tool-macos/conv-tool   artifacts/conv-tool-macos
+          mv artifacts/conv-tool-windows/conv-tool.exe artifacts/conv-tool-windows.exe
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            artifacts/conv-tool-linux
+            artifacts/conv-tool-macos
+            artifacts/conv-tool-windows.exe
