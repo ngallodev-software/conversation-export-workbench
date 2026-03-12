@@ -54,7 +54,9 @@
       "Bash(echo \"=== hexstrike remaining routes ===\" && jq '.routes[] | \"\\\\\\(.method\\) \\\\\\(.path\\) -> \\\\\\(.handler\\)\"' /tmp/cbm-test/patched-hex-arch.json && echo \"\" && echo \"=== hexstrike remaining api-layer packages ===\" && jq '.layers[] | select\\(.layer == \"api\"\\) | \"\\\\\\(.name\\): \\\\\\(.reason\\)\"' /tmp/cbm-test/patched-hex-arch.json | head -5)",
       "Bash(echo \"=== hexstrike baseline routes ===\" && jq '.routes[] | \"\\\\\\(.method\\) \\\\\\(.path\\) -> \\\\\\(.handler\\)\"' /tmp/cbm-test/baseline-hex-arch.json)",
       "Bash(echo \"=== CBM baseline routes ===\" && jq '.routes[] | \"\\\\\\(.method\\) \\\\\\(.path\\) -> \\\\\\(.handler\\)\"' /tmp/cbm-test/baseline-cbm-arch.json)",
-      "Bash(rm -f ~/.cache/codebase-memory-mcp/lump-apps-*.db* && cp ~/.cache/codebase-memory-mcp/baseline-snapshot/*.db ~/.cache/codebase-memory-mcp/ 2>/dev/null; echo \"DBs restored\")"
+      "Bash(rm -f ~/.cache/codebase-memory-mcp/lump-apps-*.db* && cp ~/.cache/codebase-memory-mcp/baseline-snapshot/*.db ~/.cache/codebase-memory-mcp/ 2>/dev/null; echo \"DBs restored\")",
+      "Bash(gh release:*)",
+      "Bash(gh api:*)"
     ]
   },
   "enableAllProjectMcpServers": true,
