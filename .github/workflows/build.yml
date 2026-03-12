@@ -66,14 +66,15 @@ jobs:
         shell: bash
         run: |
           version="${GITHUB_REF_NAME}"
-          mv "artifacts/conv-tool-${version}-linux/conv-tool-${version}-linux" "artifacts/conv-tool-${version}-linux"
-          mv "artifacts/conv-tool-${version}-macos/conv-tool-${version}-macos" "artifacts/conv-tool-${version}-macos"
-          mv "artifacts/conv-tool-${version}-windows/conv-tool-${version}-windows.exe" "artifacts/conv-tool-${version}-windows.exe"
+          mkdir -p release-assets
+          cp "artifacts/conv-tool-${version}-linux/conv-tool-${version}-linux" "release-assets/conv-tool-${version}-linux"
+          cp "artifacts/conv-tool-${version}-macos/conv-tool-${version}-macos" "release-assets/conv-tool-${version}-macos"
+          cp "artifacts/conv-tool-${version}-windows/conv-tool-${version}-windows.exe" "release-assets/conv-tool-${version}-windows.exe"
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            artifacts/conv-tool-${{ github.ref_name }}-linux
-            artifacts/conv-tool-${{ github.ref_name }}-macos
-            artifacts/conv-tool-${{ github.ref_name }}-windows.exe
+            release-assets/conv-tool-${{ github.ref_name }}-linux
+            release-assets/conv-tool-${{ github.ref_name }}-macos
+            release-assets/conv-tool-${{ github.ref_name }}-windows.exe
