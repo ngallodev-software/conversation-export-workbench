@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stash-Win: Send URLs for youtube-dl</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: #0f1117;
+    color: #e0e0e0;
+    line-height: 1.7;
+    padding: 2rem 1rem;
+  }
+  .container { max-width: 860px; margin: 0 auto; }
+  h1 {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 0.3rem;
+  }
+  .meta {
+    font-size: 0.8rem;
+    color: #666;
+    margin-bottom: 2.5rem;
+  }
+  .message {
+    margin-bottom: 1.8rem;
+    border-radius: 10px;
+    padding: 1.2rem 1.5rem;
+    position: relative;
+  }
+  .message.user {
+    background: #1a1f2e;
+    border-left: 3px solid #4a90e2;
+  }
+  .message.assistant {
+    background: #141a14;
+    border-left: 3px solid #5cb85c;
+  }
+  .role-label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 0.6rem;
+    opacity: 0.6;
+  }
+  .message.user .role-label { color: #4a90e2; }
+  .message.assistant .role-label { color: #5cb85c; }
+  .msg-time {
+    font-size: 0.72rem;
+    color: #555;
+    float: right;
+    margin-top: 0.1rem;
+  }
+  .thinking {
+    background: #1a1a10;
+    border: 1px solid #3a3a20;
+    border-radius: 6px;
+    padding: 0.8rem 1.1rem;
+    margin-bottom: 1rem;
+    font-style: italic;
+    color: #999;
+    font-size: 0.88rem;
+  }
+  .thinking-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #6a6a40;
+    margin-bottom: 0.4rem;
+  }
+  .search-block {
+    background: #111820;
+    border: 1px dashed #2a3a50;
+    border-radius: 6px;
+    padding: 0.7rem 1rem;
+    margin-bottom: 0.8rem;
+    font-size: 0.82rem;
+    color: #7a9fc0;
+  }
+  .search-block .search-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #3a6a90;
+    margin-bottom: 0.4rem;
+  }
+  .search-result {
+    margin-top: 0.4rem;
+    padding-left: 0.8rem;
+    border-left: 2px solid #2a4a60;
+  }
+  .search-result a { color: #5a9fc0; text-decoration: none; }
+  .search-result a:hover { text-decoration: underline; }
+  .search-result .snippet { color: #668; font-size: 0.8rem; }
+  .read-link-block {
+    background: #11181a;
+    border: 1px dashed #2a4040;
+    border-radius: 6px;
+    padding: 0.5rem 0.9rem;
+    margin-bottom: 0.8rem;
+    font-size: 0.8rem;
+    color: #6ab;
+  }
+  .content p { margin-bottom: 0.8rem; }
+  .content pre {
+    background: #0a0a0a;
+    border: 1px solid #2a2a2a;
+    border-radius: 6px;
+    padding: 1rem;
+    overflow-x: auto;
+    font-size: 0.85rem;
+    margin-bottom: 0.8rem;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .content code {
+    background: #1a1a1a;
+    border-radius: 3px;
+    padding: 0.1em 0.35em;
+    font-size: 0.87em;
+    font-family: "JetBrains Mono", "Fira Code", monospace;
+  }
+  .content pre code { background: none; padding: 0; }
+  .content h1, .content h2, .content h3, .content h4 {
+    color: #d0d0d0;
+    margin: 1rem 0 0.5rem;
+  }
+  .content ul, .content ol {
+    padding-left: 1.5rem;
+    margin-bottom: 0.8rem;
+  }
+  .content li { margin-bottom: 0.3rem; }
+  .content blockquote {
+    border-left: 3px solid #444;
+    padding-left: 1rem;
+    color: #999;
+    margin-bottom: 0.8rem;
+  }
+  .content table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 0.8rem;
+    font-size: 0.88rem;
+  }
+  .content th, .content td {
+    border: 1px solid #2a2a2a;
+    padding: 0.4rem 0.7rem;
+  }
+  .content th { background: #1a1a1a; }
+  .content hr { border: none; border-top: 1px solid #2a2a2a; margin: 1rem 0; }
+  .content a { color: #4a90e2; }
+  .divider {
+    border: none;
+    border-top: 1px solid #1e1e1e;
+    margin: 2rem 0;
+  }
+  #index { margin-bottom: 2.5rem; }
+  #index h2 { font-size: 1rem; color: #888; margin-bottom: 0.8rem; }
+  #index ul { list-style: none; padding: 0; }
+  #index li { margin-bottom: 0.4rem; }
+  #index a { color: #4a90e2; text-decoration: none; font-size: 0.9rem; }
+  #index a:hover { text-decoration: underline; }
+  .conv-header { margin: 3rem 0 1rem; }
+  .conv-header h2 { font-size: 1.25rem; color: #ccc; }
+</style>
+</head>
+<body>
+<div class="container">
+<h1>Stash-Win: Send URLs for youtube-dl</h1>
+<div class="meta" data-started-ts="1707911089734" data-updated-ts="1707911221999" data-started-iso="2024-02-14T11:44:49Z" data-updated-iso="2024-02-14T11:47:01Z">Started <span class="ts-display">2024-02-14 11:44</span> &nbsp;·&nbsp; Last updated <span class="ts-display">2024-02-14 11:47</span></div>
+<div class="message user" data-ts="1707911089735" data-ts-iso="2024-02-14T11:44:49Z"><div class="role-label">You <span class="msg-time ts-display" data-ts="1707911089735" data-ts-iso="2024-02-14T11:44:49Z">2024-02-14 11:44</span></div><div class="content"><p>how would I be able to send urls to a stash-win installation so that youtube-dl could download the fiels</p></div></div>
+<div class="message assistant" data-ts="1707911103045" data-ts-iso="2024-02-14T11:45:03Z"><div class="role-label">ChatGPT <span class="msg-time ts-display" data-ts="1707911103045" data-ts-iso="2024-02-14T11:45:03Z">2024-02-14 11:45</span></div><div class="content"><p>Stash is a web interface for the youtube-dl software that allows you to manage and interact with youtube-dl through a graphical user interface. If you have Stash installed on your Windows system, you can send URLs to it for downloading videos using youtube-dl.</p>
+<p>Here's a general guide on how you can send URLs to Stash-Win:</p>
+<ol>
+<li><strong>Install Stash-Win:</strong></li>
+</ol>
+<p>Make sure you have Stash-Win installed on your Windows machine. You can find installation instructions on the official Stash GitHub repository: https://github.com/d0u9/stash</p>
+<ol>
+<li><strong>Start Stash-Win:</strong></li>
+</ol>
+<p>Open the Stash-Win application on your Windows machine. This usually involves running the Stash-Win executable.</p>
+<ol>
+<li><strong>Access the Stash-Win Interface:</strong></li>
+</ol>
+<p>Stash-Win typically runs as a local web server on your machine. Open your web browser and navigate to the URL provided by Stash-Win. This is often something like <code>http://localhost:PORT</code> where PORT is the port number Stash is running on.</p>
+<ol>
+<li><strong>Add URLs to Stash:</strong></li>
+</ol>
+<p>Once you're in the Stash-Win interface, look for an option to add URLs. This might be a button or a field where you can paste URLs. Different versions of Stash-Win may have slightly different interfaces, so refer to the documentation for the specific version you're using.</p>
+<ol>
+<li><strong>Configure youtube-dl Options:</strong></li>
+</ol>
+<p>Stash-Win usually allows you to configure various youtube-dl options. Make sure to set any specific options or preferences you want for downloading videos.</p>
+<ol>
+<li><strong>Start Download:</strong></li>
+</ol>
+<p>After adding URLs and configuring options, look for a button or option to start the download process. Stash-Win will use youtube-dl in the background to download the videos.</p>
+<p>Remember that the steps might vary slightly depending on the version of Stash-Win you're using, so always refer to the official documentation or any instructions provided by the developers.</p>
+<p>If you encounter any issues or have specific questions about Stash-Win, you may want to check the official GitHub repository or community forums for support.</p></div></div>
+<div class="message user" data-ts="1707911209305" data-ts-iso="2024-02-14T11:46:49Z"><div class="role-label">You <span class="msg-time ts-display" data-ts="1707911209305" data-ts-iso="2024-02-14T11:46:49Z">2024-02-14 11:46</span></div><div class="content"><p>this is incorrect. is there a web service I can run that will accept a list of urls and send the urls to youtube-dl for downloading</p></div></div>
+<div class="message assistant" data-ts="1707911221913" data-ts-iso="2024-02-14T11:47:01Z"><div class="role-label">ChatGPT <span class="msg-time ts-display" data-ts="1707911221913" data-ts-iso="2024-02-14T11:47:01Z">2024-02-14 11:47</span></div><div class="content"><p>I apologize for the confusion in my previous response. If you are looking for a web service that can accept a list of URLs and send them to youtube-dl for downloading, you might consider using a tool like "youtube-dl-webui."</p>
+<p>Here are general steps to set up a web service for this purpose:</p>
+<ol>
+<li><strong>Install youtube-dl-webui:</strong></li>
+</ol>
+<p>You can find the youtube-dl-webui project on GitHub. Clone the repository or download the release, and follow the installation instructions provided in the repository.</p>
+<p>GitHub repository: https://github.com/yt-dlp/yt-dlp-webui</p>
+<ol>
+<li><strong>Configure youtube-dl-webui:</strong></li>
+</ol>
+<p>After installation, you may need to configure youtube-dl-webui to specify the appropriate settings, such as the path to youtube-dl and any other options you want to set.</p>
+<ol>
+<li><strong>Run the Web Service:</strong></li>
+</ol>
+<p>Start the youtube-dl-webui service. This will usually launch a web server that you can access through a web browser.</p>
+<ol>
+<li><strong>Access the Web Interface:</strong></li>
+</ol>
+<p>Open your web browser and navigate to the URL where the youtube-dl-webui service is running. This is typically something like <code>http://localhost:PORT</code>, where PORT is the port number specified during configuration.</p>
+<ol>
+<li><strong>Add URLs:</strong></li>
+</ol>
+<p>Once in the web interface, there should be an option to add URLs. You can paste the list of URLs you want to download into the provided field.</p>
+<ol>
+<li><strong>Start Downloads:</strong></li>
+</ol>
+<p>Look for a button or option to start the download process. youtube-dl-webui will use youtube-dl in the background to process the URLs and download the videos.</p>
+<p>Please note that the steps may vary slightly depending on the specific tool or version you are using, so refer to the documentation provided by the youtube-dl-webui project for accurate and up-to-date instructions.</p>
+<p>Remember to comply with YouTube's terms of service and copyright regulations when using tools like youtube-dl to download content.</p></div></div>
+</div>
+</body>
+</html>

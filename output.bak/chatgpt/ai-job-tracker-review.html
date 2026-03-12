@@ -1,0 +1,1483 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Job Tracker Review</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: #0f1117;
+    color: #e0e0e0;
+    line-height: 1.7;
+    padding: 2rem 1rem;
+  }
+  .container { max-width: 860px; margin: 0 auto; }
+  h1 {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 0.3rem;
+  }
+  .meta {
+    font-size: 0.8rem;
+    color: #666;
+    margin-bottom: 2.5rem;
+  }
+  .message {
+    margin-bottom: 1.8rem;
+    border-radius: 10px;
+    padding: 1.2rem 1.5rem;
+    position: relative;
+  }
+  .message.user {
+    background: #1a1f2e;
+    border-left: 3px solid #4a90e2;
+  }
+  .message.assistant {
+    background: #141a14;
+    border-left: 3px solid #5cb85c;
+  }
+  .role-label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 0.6rem;
+    opacity: 0.6;
+  }
+  .message.user .role-label { color: #4a90e2; }
+  .message.assistant .role-label { color: #5cb85c; }
+  .msg-time {
+    font-size: 0.72rem;
+    color: #555;
+    float: right;
+    margin-top: 0.1rem;
+  }
+  .thinking {
+    background: #1a1a10;
+    border: 1px solid #3a3a20;
+    border-radius: 6px;
+    padding: 0.8rem 1.1rem;
+    margin-bottom: 1rem;
+    font-style: italic;
+    color: #999;
+    font-size: 0.88rem;
+  }
+  .thinking-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #6a6a40;
+    margin-bottom: 0.4rem;
+  }
+  .search-block {
+    background: #111820;
+    border: 1px dashed #2a3a50;
+    border-radius: 6px;
+    padding: 0.7rem 1rem;
+    margin-bottom: 0.8rem;
+    font-size: 0.82rem;
+    color: #7a9fc0;
+  }
+  .search-block .search-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #3a6a90;
+    margin-bottom: 0.4rem;
+  }
+  .search-result {
+    margin-top: 0.4rem;
+    padding-left: 0.8rem;
+    border-left: 2px solid #2a4a60;
+  }
+  .search-result a { color: #5a9fc0; text-decoration: none; }
+  .search-result a:hover { text-decoration: underline; }
+  .search-result .snippet { color: #668; font-size: 0.8rem; }
+  .read-link-block {
+    background: #11181a;
+    border: 1px dashed #2a4040;
+    border-radius: 6px;
+    padding: 0.5rem 0.9rem;
+    margin-bottom: 0.8rem;
+    font-size: 0.8rem;
+    color: #6ab;
+  }
+  .content p { margin-bottom: 0.8rem; }
+  .content pre {
+    background: #0a0a0a;
+    border: 1px solid #2a2a2a;
+    border-radius: 6px;
+    padding: 1rem;
+    overflow-x: auto;
+    font-size: 0.85rem;
+    margin-bottom: 0.8rem;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .content code {
+    background: #1a1a1a;
+    border-radius: 3px;
+    padding: 0.1em 0.35em;
+    font-size: 0.87em;
+    font-family: "JetBrains Mono", "Fira Code", monospace;
+  }
+  .content pre code { background: none; padding: 0; }
+  .content h1, .content h2, .content h3, .content h4 {
+    color: #d0d0d0;
+    margin: 1rem 0 0.5rem;
+  }
+  .content ul, .content ol {
+    padding-left: 1.5rem;
+    margin-bottom: 0.8rem;
+  }
+  .content li { margin-bottom: 0.3rem; }
+  .content blockquote {
+    border-left: 3px solid #444;
+    padding-left: 1rem;
+    color: #999;
+    margin-bottom: 0.8rem;
+  }
+  .content table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 0.8rem;
+    font-size: 0.88rem;
+  }
+  .content th, .content td {
+    border: 1px solid #2a2a2a;
+    padding: 0.4rem 0.7rem;
+  }
+  .content th { background: #1a1a1a; }
+  .content hr { border: none; border-top: 1px solid #2a2a2a; margin: 1rem 0; }
+  .content a { color: #4a90e2; }
+  .divider {
+    border: none;
+    border-top: 1px solid #1e1e1e;
+    margin: 2rem 0;
+  }
+  #index { margin-bottom: 2.5rem; }
+  #index h2 { font-size: 1rem; color: #888; margin-bottom: 0.8rem; }
+  #index ul { list-style: none; padding: 0; }
+  #index li { margin-bottom: 0.4rem; }
+  #index a { color: #4a90e2; text-decoration: none; font-size: 0.9rem; }
+  #index a:hover { text-decoration: underline; }
+  .conv-header { margin: 3rem 0 1rem; }
+  .conv-header h2 { font-size: 1.25rem; color: #ccc; }
+</style>
+</head>
+<body>
+<div class="container">
+<h1>AI Job Tracker Review</h1>
+<div class="meta" data-started-ts="1770977517262" data-updated-ts="1770978310035" data-started-iso="2026-02-13T10:11:57Z" data-updated-iso="2026-02-13T10:25:10Z">Started <span class="ts-display">2026-02-13 10:11</span> &nbsp;·&nbsp; Last updated <span class="ts-display">2026-02-13 10:25</span></div>
+<div class="message user" data-ts="1770977516712" data-ts-iso="2026-02-13T10:11:56Z"><div class="role-label">You <span class="msg-time ts-display" data-ts="1770977516712" data-ts-iso="2026-02-13T10:11:56Z">2026-02-13 10:11</span></div><div class="content"><p>I'm a senior engineer returning from a 1-year gap, building an AI-augmented job application tracker as a portfolio piece to demonstrate AI engineering competency. I need to ship a functional MVP in 5-7 days that I can actually use for my job search, while also making it impressive to hiring managers.</p>
+<p>I've attached my execution plan below. Please review it critically and help me:</p>
+<ol>
+<li><strong>IDENTIFY GAPS</strong>: What technical, architectural, or AI/ML considerations am I missing? Look for:</li>
+</ol>
+<p>- Hidden complexity I underestimated    - Missing infrastructure/observability    - AI-specific pitfalls (hallucination, prompt injection, evaluation bias)    - .NET 9 features I should showcase but missed</p>
+<ol>
+<li><strong>SIMPLIFY FOR SPEED</strong>: What can I cut or defer without hurting the "AI engineering" portfolio narrative? I need to ship Day 3 core functionality by Day 3, not Day 5.</li>
+</ol>
+<ol>
+<li><strong>STRENGTHEN THE AI NARRATIVE</strong>: Which 2-3 patterns (RAG, evals, function calling, etc.) should I emphasize most to signal "this person understands production AI systems" vs "this person calls OpenAI in a controller"?</li>
+</ol>
+<ol>
+<li><strong>SUGGEST SPECIFIC PROMPTS</strong>: For the prompt chains (JD extraction, gap analysis, suggestion generation), provide battle-tested prompts or prompt engineering techniques that reduce hallucination and improve structured output reliability.</li>
+</ol>
+<ol>
+<li><strong>EVALUATION STRATEGY</strong>: How do I demonstrate that my AI features actually work without waiting weeks to see if I get interviews? What proxy metrics can I implement in 1 day?</li>
+</ol>
+<ol>
+<li><strong>DEPLOYMENT & COST REALISM</strong>: With estimated usage (me, daily, ~10 job analyses/day), what will this cost in OpenAI credits? What's the cheapest path to a live demo that doesn't fall over?</li>
+</ol>
+<ol>
+<li><strong>PORTFOLIO POSITIONING</strong>: Given my gap year, should I emphasize "senior engineering judgment" (resilience, testing, observability) or "cutting-edge AI skills" (agents, multi-modal, fine-tuning)? Or a specific mix?</li>
+</ol>
+<ol>
+<li><strong>INTERVIEW PREP</strong>: What are the top 5 questions a staff engineer interviewer will ask about this project, and what's my 30-second answer for each?</li>
+</ol>
+<p>CONTEXT:</p>
+<ul>
+<li>Stack: .NET 9 Minimal API, React, SQLite, OpenAI API</li>
+<li>Running Claude Code locally + launching Codex instances for parallel tasks</li>
+<li>Target roles: AI Engineer, Applied AI, Senior Full-Stack with AI differentiation</li>
+<li>Must be functional for personal use AND impressive to hiring managers</li>
+</ul>
+<p>EXECUTION PLAN: uploaded:</p></div></div>
+<div class="message assistant" data-ts="1770977526562" data-ts-iso="2026-02-13T10:12:06Z"><div class="role-label">ChatGPT <span class="msg-time ts-display" data-ts="1770977526562" data-ts-iso="2026-02-13T10:12:06Z">2026-02-13 10:12</span></div><div class="content"><p>Below is a critical review of your plan, optimized for <strong>shipping a genuinely usable Day-3 MVP by Day 3</strong>, while still reading as “this person knows production AI systems” to a staff+ interviewer.</p>
+<p>I’m referencing your attached plan throughout. fileciteturn0file0</p>
+<hr>
+<h2>1) Identify gaps: hidden complexity + missing AI/infra concerns</h2>
+<h3>Hidden complexity you’re underestimating</h3>
+<ul>
+<li><strong>Resume “apply edits” is harder than it looks</strong>  </li>
+</ul>
+<p>Your suggestion schema requires <code>original_text</code> to match exactly. In practice, whitespace/punctuation drift will cause “patch apply” failures. You’ll need:   - a deterministic matching strategy (normalize whitespace + fuzzy anchor windows)   - a fallback (“suggested diff” display only; user manually applies)</p>
+<ul>
+<li><strong>ATS scoring credibility risk</strong>  </li>
+</ul>
+<p>“Format checks: standard fonts / no tables” is not reliably inferable from pasted text. In your scope (paste text only), keep ATS to <em>text-only heuristics</em> or it’ll look hand-wavy.</p>
+<ul>
+<li><strong>Vector search in SQLite is a time sink</strong>  </li>
+</ul>
+<p>sqlite-vec / extensions + deployment quirks will eat your schedule. You can still tell a RAG story without true vector DB (see simplifications).</p>
+<h3>Missing infrastructure / observability (minimum viable “senior” signals)</h3>
+<ul>
+<li><strong>End-to-end tracing for LLM chains</strong>: correlation IDs per analysis run; log step timings and token usage by step (Extraction vs Gap vs Suggest).  </li>
+</ul>
+<p><em>This is the fastest way to look “production-minded.”</em> You already plan request logging—make it queryable in UI (“Analysis Run Details”).</p>
+<ul>
+<li><strong>Prompt + schema versioning</strong>: store <code>prompt&lt;em&gt;version</code>, <code>schema&lt;/em&gt;version</code>, <code>model</code>, <code>temperature</code>, and <code>chain_step</code> with every result (for reproducibility + evals).</li>
+<li><strong>Rate limiting + cost guardrails</strong>: per-day token budget; hard stop or “switch to mini model” when exceeded.</li>
+<li><strong>PII handling</strong>: resumes include phone/email/address. At least implement a “redaction pass” before logging prompts/responses to DB (or log hashes).</li>
+</ul>
+<h3>AI-specific pitfalls to address explicitly</h3>
+<ul>
+<li><strong>Prompt injection from job descriptions</strong>  </li>
+</ul>
+<p>JDs can contain “ignore previous instructions.” Treat JD text as untrusted input. Put it behind a strict extraction instruction and <strong>never</strong> allow it to influence tool choice or system rules.</p>
+<ul>
+<li><strong>Schema compliance failure</strong>  </li>
+</ul>
+<p>Even with structured outputs, you’ll get occasional nulls / partials. Plan for:   - JSON parse retries with “repair” prompt   - validation + “ask user to re-run” UX</p>
+<ul>
+<li><strong>Evaluation bias / self-fulfilling metrics</strong>  </li>
+</ul>
+<p>If your “ATS score” is partly produced by the LLM, you can accidentally “grade your own homework.” Make ATS score deterministic where possible, and reserve the LLM for suggestions.</p>
+<h3>.NET 9 features you can showcase better (without extra scope)</h3>
+<ul>
+<li><strong>TypedResults & typed endpoints</strong> (Minimal API improvements are explicitly documented in ASP.NET Core 9) citeturn0search3  </li>
+<li><strong>TimeProvider</strong>: you already plan it—make it real: inject into retry/circuit breaker + timestamping for deterministic tests.  </li>
+<li><strong>KeyedServices</strong>: use it for a <em>real</em> “provider selection” story (OpenAI primary + “FakeLLM” for tests, not just stubs).  </li>
+<li><strong>Streaming</strong>: keep <code>IAsyncEnumerable</code> but only for one place (suggestions streaming), not everywhere.</li>
+</ul>
+<hr>
+<h2>2) Simplify for speed: what to cut/defer (ship Day-3 core by Day 3)</h2>
+<p>If Day-3 is non-negotiable, <strong>cut anything that requires “distributed systems” thinking</strong> until after the MVP is in your hands.</p>
+<h3>Cut/Defer (doesn’t hurt portfolio narrative)</h3>
+<ul>
+<li><strong>Background job queue (3.5)</strong> → defer  </li>
+</ul>
+<p>Use synchronous analysis with a 10–20s timeout + a “Run analysis” button. Add a lightweight “analysis_runs” table for history; that’s enough.</p>
+<ul>
+<li><strong>RAG via sqlite-vec (4.1)</strong> → defer  </li>
+</ul>
+<p>Replace with “Similar applications” computed using <strong>embedding cosine in-memory</strong> across your <em>small dataset</em> (you’ll have <200 apps). Store embeddings in SQLite as blobs; do linear scan.</p>
+<ul>
+<li><strong>Auth stub (1.6)</strong> → keep minimal (one user), but don’t burn time on JWT middleware scaffolding unless it’s trivial.</li>
+<li><strong>Timeline/notes polish</strong> → defer  </li>
+</ul>
+<p>Keep stage as an enum + freeform notes field. No need for rich timeline UI.</p>
+<h3>Day-3 MVP “must ship” slice (tight)</h3>
+<ol>
+<li>CRUD: jobs + resumes  </li>
+<li>“Analyze” endpoint: JD + resume → <strong>(a) extracted reqs (b) gap list (c) 3–5 edits</strong>  </li>
+<li>Store results + show a single “analysis view” page  </li>
+<li>“Apply” creates a new resume version (even if it’s just “copy + user manually edits”)</li>
+</ol>
+<p>That’s enough to be usable daily.</p>
+<hr>
+<h2>3) Strengthen the AI narrative: pick 2–3 patterns to emphasize</h2>
+<p>To signal “production AI systems,” I’d emphasize:</p>
+<h3>Pattern A — <strong>Structured outputs + validation + repair loop</strong></h3>
+<p>This screams “I’ve run LLMs in production.”</p>
+<ul>
+<li>strict schema</li>
+<li>validate</li>
+<li>automatic repair prompt on failure</li>
+<li>store prompt/model/schema version</li>
+</ul>
+<h3>Pattern B — <strong>Evals + instrumentation (offline, fast)</strong></h3>
+<p>Not “we’ll see if I get interviews.” Instead:</p>
+<ul>
+<li>golden test set of 10–20 JDs + your base resume</li>
+<li>run nightly / on-demand</li>
+<li>track schema pass rate, missing-skill precision, suggestion specificity score</li>
+</ul>
+<h3>Pattern C — <strong>Cost + reliability engineering</strong></h3>
+<ul>
+<li>caching (embeddings + extraction results by JD hash)</li>
+<li>token budgeting</li>
+<li>retry + circuit breaker (Polly)</li>
+<li>“degrade gracefully” model routing (4o → 4o-mini/cheaper) when budget hit</li>
+</ul>
+<p>RAG is cool, but it’s the <strong>most expensive</strong> in schedule for least MVP payoff—do the “linear embedding scan” version first, then call it “RAG-lite”.</p>
+<hr>
+<h2>4) Specific prompts: battle-tested chains that reduce hallucination</h2>
+<p>Below are prompts designed to:</p>
+<ul>
+<li>treat JD/resume as untrusted data  </li>
+<li>enforce grounded extraction  </li>
+<li>produce structured, patchable outputs</li>
+</ul>
+<h3>Step 1 — JD extraction (grounded, strict)</h3>
+<p><strong>System</strong></p>
+<ul>
+<li>You are an information extraction engine.</li>
+<li>Only extract what is explicitly supported by the job description.</li>
+<li>If a field is not supported, output null or [].</li>
+</ul>
+<p><strong>User</strong> Return <strong>only valid JSON</strong> that matches this schema: <pre><code class="language-json">{   "role_title": "string|null",   "seniority_level": "junior|mid|senior|staff|principal|null",   "required_skills": [{"skill":"string","evidence":"string"}],   "preferred_skills": [{"skill":"string","evidence":"string"}],   "responsibilities": [{"item":"string","evidence":"string"}],   "years_experience": "number|null",   "keywords": ["string"] } </code></pre></p>
+<p>Rules:</p>
+<ul>
+<li>Every skill/responsibility MUST include a short evidence quote (<=20 words) copied from the JD.</li>
+<li>Normalize skill names (e.g., "K8s" -> "Kubernetes").</li>
+<li>Do NOT invent years of experience; only extract if explicitly stated.</li>
+</ul>
+<p>Job description: <<< {jd_text} >>> <pre><code>Why this works: forcing evidence quotes massively reduces hallucination and makes review easy.</p>
+<h3>Step 2 — Gap analysis (deterministic bias)</h3>
+<p>Have the LLM produce <em>candidates</em>, then you compute final scores deterministically.</p>
+<p><strong>User</strong> You will be given: 1) JD requirements JSON (with evidence) 2) Resume text</p>
+<p>Task: produce JSON: </code></pre>json {   "matches": [{"skill":"string","resume_evidence":"string|null","status":"match|partial|missing"}],   "missing_required": ["string"],   "missing_preferred": ["string"],   "notes": ["string"] } <pre><code> Rules:</p>
+<ul>
+<li>A "match" requires a resume quote (&lt;=25 words) that supports it.</li>
+<li>If you cannot find a quote, mark as missing (do not guess).</li>
+<li>Do not add skills that are not in the JD JSON.</li>
+</ul>
+<p>JD JSON: {jd_json}</p>
+<p>Resume: &lt;&lt;&lt; {resume_text} &gt;&gt;&gt; </code></pre></p>
+<h3>Step 3 — Suggestions as “patch candidates” (robust)</h3>
+<p>Instead of “exact original_text”, use <strong>anchors</strong> to survive formatting drift.</p>
+<p><strong>Tool schema</strong> <pre><code class="language-json">{   "suggestions":[     {       "section":"summary|experience|skills|projects|other",       "anchor_before":"string",       "anchor_after":"string",       "replacement_text":"string",       "reasoning":"string",       "impact":"high|medium|low",       "adds_keywords":["string"]     }   ] } </code></pre></p>
+<p><strong>Prompt</strong></p>
+<ul>
+<li>Generate 3–5 suggestions.</li>
+<li>Each suggestion must:</li>
+</ul>
+<p>- add at least one missing keyword   - be truthful (don’t fabricate experience)   - be anchored with before/after snippets taken verbatim from the resume</p>
+<p>This avoids brittle exact matching and makes “apply” feasible.</p>
+<hr>
+<h2>5) Evaluation strategy: prove it works in 1 day (proxy metrics)</h2>
+<p>Create a tiny “Eval” page with a fixed dataset you curate (10–20 JDs).</p>
+<p><strong>Implement these fast metrics:</strong></p>
+<ol>
+<li><strong>Schema pass rate</strong>: % of runs that validate on first try; % after repair.</li>
+<li><strong>Groundedness score</strong> (cheap heuristic):  </li>
+</ol>
+<p>- For JD extraction: every skill has evidence quote (required).      - For gap matches: every “match” has resume evidence quote (required).</p>
+<ol>
+<li><strong>Suggestion specificity score</strong>: % suggestions that include valid anchors + add keywords.</li>
+<li><strong>Stability test</strong>: run the same JD twice → diff size should be small (controls hallucination drift).</li>
+<li><strong>Latency + cost per chain step</strong>: p50/p95 duration + tokens per step.</li>
+</ol>
+<p>This demonstrates engineering rigor <strong>without waiting for interviews</strong>.</p>
+<hr>
+<h2>6) Deployment & cost realism (10 analyses/day)</h2>
+<h3>OpenAI cost estimate (rough but realistic)</h3>
+<p>Assume per analysis you do:</p>
+<ul>
+<li>JD extraction: ~2k input, ~500 output</li>
+<li>Gap + suggestions: ~3k input, ~800 output</li>
+<li>Embeddings: JD + resume, say ~3k tokens total</li>
+</ul>
+<p>Total per analysis: ~5k input, ~1.3k output, ~3k embed tokens.</p>
+<p>Using <strong>chatgpt-4o-latest</strong> pricing: <strong>$5 / 1M input</strong>, <strong>$15 / 1M output</strong> citeturn1view1   Embeddings <strong>text-embedding-3-small</strong>: <strong>$0.02 / 1M tokens</strong> citeturn1view1turn0search7</p>
+<p>Cost per analysis:</p>
+<ul>
+<li>input: 5,000 × $5 / 1,000,000 = <strong>$0.025</strong></li>
+<li>output: 1,300 × $15 / 1,000,000 = <strong>$0.0195</strong></li>
+<li>embeddings: 3,000 × $0.02 / 1,000,000 = <strong>$0.00006</strong></li>
+</ul>
+<p>≈ <strong>$0.045 per analysis</strong>   At <strong>10/day → ~$0.45/day → ~$13–$15/month</strong>.</p>
+<p>Biggest lever: reduce output tokens (shorter suggestions) and cache extraction by JD hash.</p>
+<h3>Cheapest path to live demo that won’t fall over</h3>
+<ul>
+<li><strong>Fly.io</strong> is fine for a demo; you pay for VM + storage. Their docs describe VM pricing based on CPU/RAM presets plus RAM, and persistent storage separately. citeturn0search2turn0search12  </li>
+<li>For speed + simplicity, consider:</li>
+</ul>
+<p>- Single container (API serves built React)   - SQLite on a persistent volume   - Environment variables for OpenAI key   - Add request timeouts and concurrency limits (to avoid “thundering herd” if someone demos repeatedly)</p>
+<p>If you’re worried about SQLite-on-Fly complexity: deploy API + DB locally for interviews, and host a <strong>read-only</strong> demo mode (seeded data) publicly.</p>
+<hr>
+<h2>7) Portfolio positioning (gap year): judgment vs cutting-edge</h2>
+<p>Go <strong>70% senior engineering judgment / 30% modern AI</strong>.</p>
+<p>Hiring managers already assume you can “call an LLM.” The differentiator is:</p>
+<ul>
+<li>reliability & reproducibility</li>
+<li>evals & measurement</li>
+<li>cost controls</li>
+<li>safe handling of untrusted inputs</li>
+</ul>
+<p>Your README should headline: 1) <strong>Prompt/schema versioning + eval harness</strong>   2) <strong>Resilience: retry/circuit breaker/caching + budgets</strong>   3) <strong>Structured outputs with repair loop</strong>   Then mention RAG as “optional enhancement.”</p>
+<hr>
+<h2>8) Staff engineer interview: top 5 questions + 30s answers</h2>
+<p>1) <strong>“How do you know the model outputs are correct?”</strong>   <strong>Answer:</strong> “I force grounded extraction with evidence quotes, validate structured outputs against JSON schema, and run a repair loop on failures. I also maintain a small golden eval set and track schema pass rate, groundedness, and suggestion specificity over time.”</p>
+<p>2) <strong>“What do you do about prompt injection / untrusted inputs?”</strong>   <strong>Answer:</strong> “Job descriptions are treated as untrusted data. The system prompt forbids instruction following from the JD, extraction requires evidence quotes, and the model can only emit tool outputs matching a strict schema.”</p>
+<p>3) <strong>“How do you control cost and latency?”</strong>   <strong>Answer:</strong> “I log tokens per chain step, cache embeddings and JD extractions by content hash, enforce a daily token budget, and degrade to a cheaper model when needed. I track p50/p95 latency per step so I can target the slowest part.”</p>
+<p>4) <strong>“What happens when OpenAI is down or flaky?”</strong>   <strong>Answer:</strong> “Polly retries with exponential backoff, a circuit breaker to prevent cascading failures, and a user-visible ‘analysis failed—retry’ state. Results are stored as analysis runs, so partial progress is visible and re-runnable.”</p>
+<p>5) <strong>“If you had to productionize this for many users, what changes?”</strong>   <strong>Answer:</strong> “Real auth + tenancy, background job queue, proper vector store, PII redaction + encrypted storage, and a more robust eval pipeline. The architecture already supports provider abstraction and versioned prompts/results to make that evolution straightforward.”</p>
+<hr>
+<h3>If you only change 3 things in your plan for maximum Day-3 success</h3>
+<p>1) Replace exact text replacement with <strong>anchor-based patches</strong> (prevents apply failures).   2) Make <strong>evals + run logging</strong> part of Day-3, not Day-5 (it’s your strongest “AI engineer” signal).   3) Do “RAG-lite” via <strong>linear embedding scan</strong> first; don’t integrate sqlite-vec until after MVP.</p>
+<p>If you want, I can rewrite your plan into a <strong>Day-1 / Day-2 / Day-3 “must ship” checklist</strong> with exact endpoints + DB tables + acceptance tests, keeping your original structure but compressing scope.</p></div></div>
+<div class="message user" data-ts="1770977859816" data-ts-iso="2026-02-13T10:17:39Z"><div class="role-label">You <span class="msg-time ts-display" data-ts="1770977859816" data-ts-iso="2026-02-13T10:17:39Z">2026-02-13 10:17</span></div><div class="content"><p>1, please re-wrtie the plan inlcuding your suggestions and anything relevant I havent thought of.  include your interview advice as well.   lets remove the "apply suggestions/edits" and just have a olist of missiig requirements/skills. please optimize for cost, and for each task recomend codex with an appropriate model, as well as claude code with an appropriate model.</p></div></div>
+<div class="message assistant" data-ts="1770977860485" data-ts-iso="2026-02-13T10:17:40Z"><div class="role-label">ChatGPT <span class="msg-time ts-display" data-ts="1770977860485" data-ts-iso="2026-02-13T10:17:40Z">2026-02-13 10:17</span></div><div class="content"><p>Perfect. Removing “apply edits” is the correct call for a 5–7 day MVP.   That removes the most brittle UX surface and lets you focus on <strong>AI evaluation, grounding, cost control, and production discipline</strong> — which is what hiring managers care about.</p>
+<p>Below is a <strong>rewritten, compressed, interview-optimized execution plan</strong>.</p>
+<p>This is optimized for:</p>
+<ul>
+<li>Ship usable core by <strong>Day 3</strong></li>
+<li>Strong “production AI engineer” signal</li>
+<li>Low OpenAI cost (~$10–20/month for your usage)</li>
+<li>Minimal infrastructure complexity</li>
+<li>Clear interview talking points</li>
+</ul>
+<hr>
+<h1>🎯 Project Reframe</h1>
+<h2>Product</h2>
+<p><strong>AI-Augmented Job Application Tracker</strong></p>
+<ul>
+<li>Track job applications</li>
+<li>Analyze JD vs Resume</li>
+<li>Extract requirements</li>
+<li>Identify missing required & preferred skills</li>
+<li>Score coverage (deterministic + grounded)</li>
+<li>Log runs, costs, and reliability metrics</li>
+<li>Provide evaluation dashboard</li>
+</ul>
+<p>No auto-editing.   No background jobs.   No heavy vector DB.</p>
+<hr>
+<h1>🏗 Architecture Overview (Final Version)</h1>
+<h3>Stack</h3>
+<ul>
+<li>.NET 9 Minimal API</li>
+<li>React (Vite)</li>
+<li>SQLite</li>
+<li>OpenAI API</li>
+<li>Polly (retry/circuit breaker)</li>
+</ul>
+<h3>Core AI Patterns (what you emphasize in interviews)</h3>
+<ol>
+<li><strong>Structured Outputs + JSON Schema Validation + Repair Loop</strong></li>
+<li><strong>Grounded Extraction (evidence quotes required)</strong></li>
+<li><strong>Eval Harness + Observability (schema pass rate, latency, token usage)</strong></li>
+<li><strong>Cost Controls (hash-based caching + model routing)</strong></li>
+</ol>
+<p>No agents. No orchestration hype. Just clean, disciplined AI engineering.</p>
+<hr>
+<h1>📅 5–7 Day Execution Plan</h1>
+<hr>
+<h1>DAY 1 — Foundation (Production-Ready Skeleton)</h1>
+<h2>1. Solution Structure</h2>
+<p><pre><code>src/   Api/   Domain/   Infrastructure/   AI/   Eval/   Web/ </code></pre></p>
+<h3>Interfaces</h3>
+<p><pre><code class="language-csharp">public interface ILlmClient {     Task&lt;LlmResult&lt;T&gt;&gt; CompleteStructuredAsync&lt;T&gt;(...); }</p>
+<p>public interface IEmbeddingClient {     Task&lt;float[]&gt; EmbedAsync(string text); } </code></pre></p>
+<p>Use <strong>KeyedServices (.NET 9)</strong> to allow:</p>
+<ul>
+<li>OpenAI client</li>
+<li>FakeLLM (for tests)</li>
+<li>Future provider switch</li>
+</ul>
+<hr>
+<h2>2. Database Schema (Minimal + Interview-Ready)</h2>
+<h3>Tables</h3>
+<h3>jobs</h3>
+<ul>
+<li>id</li>
+<li>title</li>
+<li>company</li>
+<li>description_text</li>
+<li>description_hash</li>
+</ul>
+<h3>resumes</h3>
+<ul>
+<li>id</li>
+<li>name</li>
+<li>content</li>
+<li>content_hash</li>
+</ul>
+<h3>analyses</h3>
+<ul>
+<li>id</li>
+<li>job_id</li>
+<li>resume_id</li>
+<li>model</li>
+<li>prompt_version</li>
+<li>schema_version</li>
+<li>input_tokens</li>
+<li>output_tokens</li>
+<li>latency_ms</li>
+<li>created_at</li>
+<li>status (success / failed)</li>
+</ul>
+<h3>analysis_results</h3>
+<ul>
+<li>analysis_id</li>
+<li>required<em>skills</em>json</li>
+<li>missing<em>required</em>json</li>
+<li>missing<em>preferred</em>json</li>
+<li>coverage_score</li>
+<li>groundedness_score</li>
+</ul>
+<h3>llm_logs</h3>
+<ul>
+<li>analysis_id</li>
+<li>step_name</li>
+<li>raw_response</li>
+<li>parse_success</li>
+<li>repair_attempted</li>
+</ul>
+<p>This table structure alone signals senior judgment.</p>
+<hr>
+<h2>3. Observability (MVP but real)</h2>
+<p>Add:</p>
+<ul>
+<li>Correlation ID per analysis</li>
+<li>Token usage logging</li>
+<li>Latency logging per step</li>
+<li>Schema validation failures logged</li>
+</ul>
+<p>This is a major interview signal.</p>
+<hr>
+<h2>4. AI Client Implementation</h2>
+<h3>Model choice (cost-optimized)</h3>
+<ul>
+<li>Extraction + Gap: <code>gpt-4o-mini</code></li>
+<li>Embeddings: <code>text-embedding-3-small</code></li>
+</ul>
+<p>Avoid full 4o unless debugging.</p>
+<hr>
+<h3>🧠 Codex + Claude Recommendations (Day 1)</h3>
+<table><thead><tr><th>Task</th><th>Codex Model</th><th>Claude Code Model</th></tr></thead><tbody>
+<tr><td>Project scaffolding</td><td>gpt-4.1</td><td>Claude 3.5 Sonnet</td></tr>
+<tr><td>DB schema + EF config</td><td>gpt-4.1</td><td>Claude 3.5 Sonnet</td></tr>
+<tr><td>Minimal API endpoints</td><td>gpt-4.1</td><td>Claude 3.5 Sonnet</td></tr>
+<tr><td>Polly integration</td><td>gpt-4.1</td><td>Claude 3.5 Sonnet</td></tr>
+</tbody></table>
+<p>Use Codex for:</p>
+<ul>
+<li>Boilerplate generation</li>
+<li>EF migrations</li>
+<li>DTO scaffolding</li>
+</ul>
+<p>Use Claude Code for:</p>
+<ul>
+<li>Architecture review</li>
+<li>Interface refinements</li>
+<li>Refactoring</li>
+</ul>
+<hr>
+<h1>DAY 2 — AI Core (Grounded + Reliable)</h1>
+<hr>
+<h2>1. Step 1: JD Extraction (Grounded)</h2>
+<h3>Structured Prompt (Versioned)</h3>
+<ul>
+<li>Requires evidence quotes</li>
+<li>Nulls allowed</li>
+<li>No inference allowed</li>
+</ul>
+<p>You validate JSON schema on return. If invalid:</p>
+<ul>
+<li>Run repair prompt once</li>
+<li>If still invalid → fail gracefully</li>
+</ul>
+<hr>
+<h2>2. Step 2: Gap Analysis</h2>
+<p>Input:</p>
+<ul>
+<li>JD JSON</li>
+<li>Resume text</li>
+</ul>
+<p>Output:</p>
+<ul>
+<li>matches with resume evidence quotes</li>
+<li>missing_required</li>
+<li>missing_preferred</li>
+</ul>
+<p>No hallucinated skills allowed.</p>
+<hr>
+<h2>3. Deterministic Scoring</h2>
+<p>Coverage score =</p>
+<p><pre><code>(required<em>matched / total</em>required) * 100 </code></pre></p>
+<p>Groundedness score =</p>
+<ul>
+<li>% of matches containing resume evidence quotes</li>
+<li>% of required skills containing JD evidence</li>
+</ul>
+<p>This avoids “LLM grading itself.”</p>
+<hr>
+<h2>4. Caching (Cost Optimization)</h2>
+<p>Before calling LLM:</p>
+<ul>
+<li>Hash JD text</li>
+<li>Hash resume text</li>
+<li>If identical pair exists → return cached analysis</li>
+</ul>
+<p>This reduces cost massively during iteration.</p>
+<hr>
+<h3>🧠 Codex + Claude Recommendations (Day 2)</h3>
+<table><thead><tr><th>Task</th><th>Codex</th><th>Claude</th></tr></thead><tbody>
+<tr><td>JSON schema definitions</td><td>gpt-4.1</td><td>Claude 3.5 Sonnet</td></tr>
+<tr><td>Prompt writing</td><td>gpt-4o-mini</td><td>Claude 3.5 Sonnet (better for prompts)</td></tr>
+<tr><td>Schema validation logic</td><td>gpt-4.1</td><td>Claude 3.5 Sonnet</td></tr>
+<tr><td>Repair loop implementation</td><td>gpt-4.1</td><td>Claude 3.5 Sonnet</td></tr>
+<tr><td>Caching layer</td><td>gpt-4.1</td><td>Claude 3.5 Sonnet</td></tr>
+</tbody></table>
+<p>Use Claude for prompt iteration. Use Codex for typed C# integration.</p>
+<hr>
+<h1>DAY 3 — Ship MVP</h1>
+<hr>
+<h2>1. Frontend Minimal</h2>
+<p>Pages:</p>
+<ul>
+<li>Jobs list</li>
+<li>Resumes list</li>
+<li>Analysis page</li>
+<li>Analysis run detail page (VERY important for interviews)</li>
+</ul>
+<p>Display:</p>
+<ul>
+<li>Extracted required skills</li>
+<li>Missing required</li>
+<li>Missing preferred</li>
+<li>Coverage score</li>
+<li>Groundedness score</li>
+<li>Token usage</li>
+<li>Latency</li>
+</ul>
+<p>This page is your demo gold.</p>
+<hr>
+<h2>2. Eval Harness (1-Day Implementation)</h2>
+<p>Create:</p>
+<p><pre><code>/eval/run </code></pre></p>
+<p>Have 10 static JD fixtures.</p>
+<p>Metrics:</p>
+<ul>
+<li>Schema pass rate</li>
+<li>Avg coverage stability (run twice diff)</li>
+<li>Avg latency</li>
+<li>Avg cost per run</li>
+</ul>
+<p>Persist results in DB.</p>
+<p>This is extremely impressive in interviews.</p>
+<hr>
+<h3>🧠 Codex + Claude Recommendations (Day 3)</h3>
+<table><thead><tr><th>Task</th><th>Codex</th><th>Claude</th></tr></thead><tbody>
+<tr><td>React scaffolding</td><td>gpt-4.1</td><td>Claude 3.5 Sonnet</td></tr>
+<tr><td>Data tables</td><td>gpt-4.1</td><td>Claude 3.5 Sonnet</td></tr>
+<tr><td>Eval dashboard logic</td><td>gpt-4.1</td><td>Claude 3.5 Sonnet</td></tr>
+<tr><td>UI polish</td><td>gpt-4o-mini</td><td>Claude 3.5 Sonnet</td></tr>
+</tbody></table>
+<hr>
+<h1>DAY 4–5 — Reliability + Interview Polish</h1>
+<hr>
+<h2>1. Resilience</h2>
+<ul>
+<li>Polly retry (exponential backoff)</li>
+<li>Circuit breaker</li>
+<li>Timeout</li>
+<li>Model fallback (4o-mini → smaller fallback)</li>
+</ul>
+<hr>
+<h2>2. Security Considerations</h2>
+<ul>
+<li>Treat JD as untrusted input</li>
+<li>Never allow tool selection from user content</li>
+<li>Redact email/phone before logging prompts</li>
+</ul>
+<hr>
+<h2>3. Deployment</h2>
+<p>Simplest:</p>
+<ul>
+<li>Single Docker container</li>
+<li>SQLite file on persistent volume</li>
+<li>Fly.io or Railway</li>
+<li>Hard rate limit per IP</li>
+<li>Concurrency limit to 2–3</li>
+</ul>
+<p>Estimated cost:</p>
+<ul>
+<li>~$15/month OpenAI</li>
+<li>~$5–10 hosting</li>
+</ul>
+<hr>
+<h1>📊 Cost Estimate (Realistic)</h1>
+<p>Per analysis: ~$0.04–$0.05</p>
+<p>10 per day: ~$0.50/day ~$15/month</p>
+<p>With caching: Likely under $10/month.</p>
+<hr>
+<h1>🎤 Interview Positioning Strategy</h1>
+<p>You are returning from a gap year.</p>
+<p>Do NOT oversell agents. Do NOT oversell bleeding edge.</p>
+<p>Emphasize:</p>
+<h3>70% Senior Engineering Judgment</h3>
+<ul>
+<li>Eval harness</li>
+<li>Observability</li>
+<li>Cost control</li>
+<li>Retry/circuit breaker</li>
+<li>Schema validation + repair</li>
+<li>Deterministic scoring</li>
+</ul>
+<h3>30% Modern AI</h3>
+<ul>
+<li>Structured outputs</li>
+<li>Embeddings</li>
+<li>Model routing</li>
+<li>Grounded extraction</li>
+<li>Injection awareness</li>
+</ul>
+<hr>
+<h1>🔥 Top 5 Staff-Level Questions + 30s Answers</h1>
+<hr>
+<h3>1. “How do you prevent hallucinations?”</h3>
+<p>"I require evidence quotes for every extracted requirement and for every resume match. If the model cannot provide textual evidence, it must mark the skill missing. Outputs are validated against a strict JSON schema, and I run a repair loop if parsing fails."</p>
+<hr>
+<h3>2. “How do you evaluate model performance?”</h3>
+<p>"I maintain a golden dataset of 10–20 JDs and run automated evals measuring schema pass rate, groundedness, latency, and coverage stability across runs. This allows me to detect regressions when prompts or models change."</p>
+<hr>
+<h3>3. “How do you control cost?”</h3>
+<p>"I hash JD + resume pairs and cache results. I use 4o-mini for extraction, log token usage per step, and enforce a daily token budget. If budget is exceeded, the system degrades to a cheaper model."</p>
+<hr>
+<h3>4. “What happens when the API fails?”</h3>
+<p>"Polly retry with exponential backoff and a circuit breaker prevent cascading failures. Partial analysis runs are persisted, so users can retry without losing context."</p>
+<hr>
+<h3>5. “How would you scale this to many users?”</h3>
+<p>"I would introduce multi-tenancy, move to Postgres + proper vector store, background job processing, encrypted PII storage, and a more formal evaluation pipeline. The current architecture isolates the LLM layer, so provider replacement and scaling are straightforward."</p>
+<hr>
+<h1>🧠 Final Advice</h1>
+<p>If you ship:</p>
+<ul>
+<li>Structured output + repair</li>
+<li>Eval dashboard</li>
+<li>Token + latency logging</li>
+<li>Caching</li>
+<li>Deterministic scoring</li>
+</ul>
+<p>You will look like:</p>
+<blockquote>A senior engineer who understands how to ship AI systems responsibly.</blockquote>
+<p>Not:</p>
+<blockquote>Someone who built a ChatGPT wrapper.</blockquote>
+<hr>
+<p>If you'd like, next I can:</p>
+<ul>
+<li>Write your README in “Staff Engineer tone”</li>
+<li>Or give you a literal 3-day hour-by-hour execution checklist.</li>
+</ul></div></div>
+<div class="message user" data-ts="1770978165388" data-ts-iso="2026-02-13T10:22:45Z"><div class="role-label">You <span class="msg-time ts-display" data-ts="1770978165388" data-ts-iso="2026-02-13T10:22:45Z">2026-02-13 10:22</span></div><div class="content"><p>turn this into a markdown file. but first dive deeply into day one and spec out as many tasks as you can.  lets parallelize where possible.  I'd like a solid list of tasks for day one.  And then give me a detailed prompt that I can use in claude code to review this plan and create a multiagent parallel implementation plan</p></div></div>
+<div class="message assistant" data-ts="1770978167010" data-ts-iso="2026-02-13T10:22:47Z"><div class="role-label">ChatGPT <span class="msg-time ts-display" data-ts="1770978167010" data-ts-iso="2026-02-13T10:22:47Z">2026-02-13 10:22</span></div><div class="content"><p>Here’s a <strong>Day 1 deep-dive task list</strong> (parallelized), plus a <strong>Claude Code “multi-agent implementation plan” prompt</strong> you can paste directly.</p>
+<p>I’m formatting this as Markdown-ready content (you can save as <code>DAY1-plan.md</code>). I’ll give you the full file content now; after you review, we can append Day 2/3 similarly.</p>
+<p><pre><code class="language-markdown"># AI-Augmented Job Application Tracker — Day 1 Plan (Parallelized)</p>
+<p>Goal for Day 1: A production-quality skeleton that compiles, runs locally, persists to SQLite, exposes CRUD endpoints, and has real observability scaffolding (correlation IDs, structured logs, error handling). <strong>No AI calls required today</strong> beyond interface contracts.</p>
+<p>Deliverable by end of Day 1:</p>
+<ul>
+<li>.NET 9 Minimal API service running with SQLite (EF Core migrations applied)</li>
+<li>Core tables created: <code>jobs</code>, <code>resumes</code>, <code>analyses</code>, <code>analysis&lt;em&gt;results</code>, <code>llm&lt;/em&gt;logs</code></li>
+<li>CRUD endpoints for jobs &amp; resumes (tested)</li>
+<li>Structured logging with per-request correlation ID + basic metrics</li>
+<li>Clean architecture boundaries (Domain / Infrastructure / API / AI)</li>
+<li>Dockerfile + local <code>docker compose</code> (optional but recommended)</li>
+</ul>
+<hr>
+<h2>0) Parallelization Map (Run these lanes simultaneously)</h2>
+<h3>Lane A — Backend Skeleton + API</h3>
+<p>Owner: Codex (gpt-4.1)   Output: solution structure, endpoints, error handling</p>
+<h3>Lane B — Database + EF Core + Migrations</h3>
+<p>Owner: Codex (gpt-4.1)   Output: entity models, DbContext, migrations, SQLite config</p>
+<h3>Lane C — Observability + Reliability Plumbing</h3>
+<p>Owner: Claude Code (Claude 3.5 Sonnet)   Output: logging strategy, correlation ID middleware, Polly policies scaffolding, token/cost logging model</p>
+<h3>Lane D — Frontend Scaffold (Optional on Day 1)</h3>
+<p>Owner: Codex (gpt-4.1)   Output: Vite React shell, API client, basic pages stub (Jobs/Resumes)</p>
+<h3>Lane E — “AI Layer Contract” (Interfaces + DTOs only)</h3>
+<p>Owner: Claude Code (Claude 3.5 Sonnet)   Output: <code>ILlmClient</code>, <code>IEmbeddingClient</code>, prompt/schema version fields, validation primitives</p>
+<hr>
+<h2>1) Repo + Solution Setup (Lane A)</h2>
+<h3>1.1 Create solution structure</h3>
+<p><strong>Tasks</strong></p>
+<ul>
+<li>Create .NET 9 solution with projects:</li>
+</ul>
+<p>- <code>Tracker.Api</code> (Minimal API)   - <code>Tracker.Domain</code>   - <code>Tracker.Infrastructure</code>   - <code>Tracker.AI</code> (interfaces + future OpenAI client)   - <code>Tracker.Eval</code> (empty for now)</p>
+<ul>
+<li>Add references:</li>
+</ul>
+<p>- Api -&gt; Domain, Infrastructure, AI   - Infrastructure -&gt; Domain   - AI -&gt; Domain</p>
+<p><strong>Acceptance</strong></p>
+<ul>
+<li><code>dotnet build</code> succeeds</li>
+<li>project references are clean and circular-free</li>
+</ul>
+<p><strong>Codex model</strong>: gpt-4.1   <strong>Claude model</strong>: Claude 3.5 Sonnet (review architecture)</p>
+<hr>
+<h2>2) Domain Model + DTOs (Lane A + B)</h2>
+<h3>2.1 Define core entities in <code>Tracker.Domain</code></h3>
+<p><strong>Entities</strong></p>
+<ul>
+<li><code>Job</code></li>
+</ul>
+<p>- <code>Id</code> (Guid)   - <code>Title</code>, <code>Company</code> (string)   - <code>DescriptionText</code> (string)   - <code>DescriptionHash</code> (string)   - <code>CreatedAt</code>, <code>UpdatedAt</code> (DateTimeOffset)</p>
+<ul>
+<li><code>Resume</code></li>
+</ul>
+<p>- <code>Id</code>   - <code>Name</code>   - <code>Content</code>   - <code>ContentHash</code>   - <code>CreatedAt</code>, <code>UpdatedAt</code></p>
+<ul>
+<li><code>Analysis</code></li>
+</ul>
+<p>- <code>Id</code>   - <code>JobId</code>, <code>ResumeId</code>   - <code>Status</code> (enum: <code>Success</code>, <code>Failed</code>, <code>Running</code>)   - <code>Model</code>, <code>PromptVersion</code>, <code>SchemaVersion</code> (string)   - <code>InputTokens</code>, <code>OutputTokens</code> (int)   - <code>LatencyMs</code> (int)   - <code>CreatedAt</code></p>
+<ul>
+<li><code>AnalysisResult</code></li>
+</ul>
+<p>- <code>AnalysisId</code>   - <code>RequiredSkillsJson</code> (string)   - <code>MissingRequiredJson</code> (string)   - <code>MissingPreferredJson</code> (string)   - <code>CoverageScore</code> (decimal)   - <code>GroundednessScore</code> (decimal)</p>
+<ul>
+<li><code>LlmLog</code></li>
+</ul>
+<p>- <code>Id</code>   - <code>AnalysisId</code>   - <code>StepName</code>   - <code>RawResponse</code>   - <code>ParseSuccess</code> (bool)   - <code>RepairAttempted</code> (bool)   - <code>CreatedAt</code></p>
+<p><strong>Acceptance</strong></p>
+<ul>
+<li>All entities compile</li>
+<li>Enums + basic validations exist (e.g., non-null strings)</li>
+</ul>
+<p><strong>Codex</strong>: gpt-4.1   <strong>Claude</strong>: Claude 3.5 Sonnet (domain cleanliness)</p>
+<h3>2.2 API DTOs &amp; request models</h3>
+<p><strong>Tasks</strong></p>
+<ul>
+<li>Create request DTOs:</li>
+</ul>
+<p>- <code>CreateJobRequest</code>, <code>UpdateJobRequest</code>   - <code>CreateResumeRequest</code>, <code>UpdateResumeRequest</code></p>
+<ul>
+<li>Create response DTOs:</li>
+</ul>
+<p>- <code>JobDto</code>, <code>ResumeDto</code> (include timestamps)</p>
+<ul>
+<li>Add mapping helpers (manual or Mapster; manual is fine for Day 1)</li>
+</ul>
+<p><strong>Acceptance</strong></p>
+<ul>
+<li>Endpoints return DTOs not EF entities</li>
+</ul>
+<p><strong>Codex</strong>: gpt-4.1</p>
+<hr>
+<h2>3) SQLite + EF Core Setup (Lane B)</h2>
+<h3>3.1 EF Core + SQLite packages</h3>
+<p><strong>Tasks</strong></p>
+<ul>
+<li>Add:</li>
+</ul>
+<p>- <code>Microsoft.EntityFrameworkCore</code>   - <code>Microsoft.EntityFrameworkCore.Sqlite</code>   - <code>Microsoft.EntityFrameworkCore.Design</code></p>
+<ul>
+<li>Create <code>TrackerDbContext</code> in <code>Tracker.Infrastructure</code></li>
+</ul>
+<p><strong>Acceptance</strong></p>
+<ul>
+<li><code>dotnet ef migrations add InitialCreate</code> works</li>
+<li><code>dotnet ef database update</code> creates SQLite file successfully</li>
+</ul>
+<p><strong>Codex</strong>: gpt-4.1</p>
+<h3>3.2 DbContext configuration</h3>
+<p><strong>Tasks</strong></p>
+<ul>
+<li>Configure table names explicitly (<code>jobs</code>, <code>resumes</code>, etc.)</li>
+<li>Configure indexes:</li>
+</ul>
+<p>- <code>jobs.description_hash</code>   - <code>resumes.content_hash</code>   - <code>analyses(job&lt;em&gt;id, resume&lt;/em&gt;id, created_at)</code></p>
+<ul>
+<li>Configure constraints:</li>
+</ul>
+<p>- Required fields   - Max lengths where sane</p>
+<ul>
+<li>Use <code>DateTimeOffset</code> consistently</li>
+</ul>
+<p><strong>Acceptance</strong></p>
+<ul>
+<li>Generated migration includes indexes + constraints</li>
+</ul>
+<p><strong>Codex</strong>: gpt-4.1   <strong>Claude</strong>: Claude 3.5 Sonnet (review for future-proofing)</p>
+<hr>
+<h2>4) Minimal API Endpoints (Lane A)</h2>
+<h3>4.1 Health + Version endpoints</h3>
+<p><strong>Tasks</strong></p>
+<ul>
+<li><code>/healthz</code> returns 200</li>
+<li><code>/version</code> returns commit hash/build version (env var or assembly version)</li>
+</ul>
+<p><strong>Acceptance</strong></p>
+<ul>
+<li>curl endpoints work</li>
+</ul>
+<p><strong>Codex</strong>: gpt-4.1</p>
+<h3>4.2 Jobs CRUD</h3>
+<p><strong>Endpoints</strong></p>
+<ul>
+<li><code>GET /api/jobs</code></li>
+<li><code>GET /api/jobs/{id}</code></li>
+<li><code>POST /api/jobs</code></li>
+<li><code>PUT /api/jobs/{id}</code></li>
+<li><code>DELETE /api/jobs/{id}</code></li>
+</ul>
+<p><strong>Logic</strong></p>
+<ul>
+<li>Compute <code>DescriptionHash</code> on create/update (SHA-256 of normalized text)</li>
+<li><code>UpdatedAt</code> maintained</li>
+</ul>
+<p><strong>Acceptance</strong></p>
+<ul>
+<li>Create -&gt; read -&gt; update -&gt; list -&gt; delete works end-to-end</li>
+<li>Hash changes on update</li>
+</ul>
+<p><strong>Codex</strong>: gpt-4.1</p>
+<h3>4.3 Resumes CRUD</h3>
+<p>Same pattern as Jobs.</p>
+<ul>
+<li>Compute <code>ContentHash</code> via SHA-256 on create/update</li>
+</ul>
+<p><strong>Codex</strong>: gpt-4.1</p>
+<hr>
+<h2>5) Observability + Error Handling (Lane C)</h2>
+<h3>5.1 Correlation ID Middleware</h3>
+<p><strong>Tasks</strong></p>
+<ul>
+<li>Accept incoming <code>X-Correlation-Id</code> or generate new GUID</li>
+<li>Attach to:</li>
+</ul>
+<p>- response header   - <code>ILogger</code> scope   - any structured log fields</p>
+<p><strong>Acceptance</strong></p>
+<ul>
+<li>Logs contain correlation ID for each request</li>
+<li>Response includes <code>X-Correlation-Id</code></li>
+</ul>
+<p><strong>Claude</strong>: Claude 3.5 Sonnet</p>
+<h3>5.2 Structured logging setup</h3>
+<p><strong>Tasks</strong></p>
+<ul>
+<li>Use built-in logging or Serilog (pick one; built-in is faster)</li>
+<li>Log per request:</li>
+</ul>
+<p>- method/path/status   - elapsed ms   - correlation ID</p>
+<ul>
+<li>Log exceptions as structured with stack</li>
+</ul>
+<p><strong>Acceptance</strong></p>
+<ul>
+<li>A failing endpoint produces a JSON-ish structured log (or clearly structured fields)</li>
+<li>No sensitive content logged by default</li>
+</ul>
+<p><strong>Claude</strong>: Claude 3.5 Sonnet</p>
+<h3>5.3 Global exception handling</h3>
+<p><strong>Tasks</strong></p>
+<ul>
+<li>Central exception handler returning:</li>
+</ul>
+<p>- <code>ProblemDetails</code> (RFC7807)   - correlation ID included</p>
+<ul>
+<li>Map common errors:</li>
+</ul>
+<p>- validation errors (400)   - not found (404)</p>
+<p><strong>Acceptance</strong></p>
+<ul>
+<li>Unhandled exception returns ProblemDetails payload</li>
+</ul>
+<p><strong>Claude</strong>: Claude 3.5 Sonnet   <strong>Codex</strong>: gpt-4.1 (implementation)</p>
+<hr>
+<h2>6) Reliability Plumbing (Scaffold only) (Lane C)</h2>
+<p>Day 1 goal is just scaffolding so Day 2 AI calls are safe.</p>
+<h3>6.1 Polly policies (registered, not used yet)</h3>
+<p><strong>Policies</strong></p>
+<ul>
+<li>Timeout policy (e.g., 20s)</li>
+<li>Retry policy (2 retries exponential backoff)</li>
+<li>Circuit breaker (open after N failures)</li>
+</ul>
+<p><strong>Acceptance</strong></p>
+<ul>
+<li>Policies compile and are registered in DI</li>
+<li>No behavior regressions to CRUD</li>
+</ul>
+<p><strong>Claude</strong>: Claude 3.5 Sonnet   <strong>Codex</strong>: gpt-4.1 (wiring)</p>
+<hr>
+<h2>7) AI Layer Contract (No provider calls yet) (Lane E)</h2>
+<h3>7.1 Interfaces + result envelopes</h3>
+<p><strong>Tasks</strong></p>
+<ul>
+<li>Define:</li>
+</ul>
+<p>- <code>ILlmClient.CompleteStructuredAsync&lt;T&gt;(...)</code>   - <code>IEmbeddingClient.EmbedAsync(text)</code></p>
+<ul>
+<li>Define <code>LlmCallMetadata</code>:</li>
+</ul>
+<p>- model   - prompt_version   - schema_version   - input<em>tokens / output</em>tokens   - latency_ms</p>
+<ul>
+<li>Define <code>LlmResult&lt;T&gt;</code>:</li>
+</ul>
+<p>- <code>Value</code> (T?)   - <code>RawText</code>   - <code>ParseSuccess</code>   - <code>RepairAttempted</code>   - <code>Metadata</code></p>
+<p><strong>Acceptance</strong></p>
+<ul>
+<li>Contracts compile</li>
+<li>Easy to store metadata into <code>analyses</code> + <code>llm_logs</code> later</li>
+</ul>
+<p><strong>Claude</strong>: Claude 3.5 Sonnet</p>
+<h3>7.2 Hash utilities (shared)</h3>
+<p><strong>Tasks</strong></p>
+<ul>
+<li>Text normalization (trim, normalize whitespace, unify newline)</li>
+<li>SHA-256 hash helper</li>
+</ul>
+<p><strong>Acceptance</strong></p>
+<ul>
+<li>Stable hashes across equivalent whitespace formatting</li>
+</ul>
+<p><strong>Codex</strong>: gpt-4.1</p>
+<hr>
+<h2>8) Tests (Minimal but meaningful)</h2>
+<h3>8.1 API smoke tests</h3>
+<p><strong>Options</strong></p>
+<ul>
+<li>Fastest: <code>Tracker.Api</code> integration tests using <code>WebApplicationFactory</code></li>
+<li>Minimum set:</li>
+</ul>
+<p>- create job, list jobs   - create resume, list resumes   - update job, hash changes   - correlation ID present</p>
+<p><strong>Acceptance</strong></p>
+<ul>
+<li><code>dotnet test</code> passes</li>
+</ul>
+<p><strong>Codex</strong>: gpt-4.1   <strong>Claude</strong>: Claude 3.5 Sonnet (test strategy review)</p>
+<hr>
+<h2>9) Local Dev UX (Optional but recommended)</h2>
+<h3>9.1 Local run scripts</h3>
+<p><strong>Tasks</strong></p>
+<ul>
+<li><code>make run</code> or <code>./scripts/run-api.sh</code></li>
+<li><code>./scripts/reset-db.sh</code> (delete sqlite file + re-run migrations)</li>
+</ul>
+<p><strong>Acceptance</strong></p>
+<ul>
+<li>New machine can run in &lt;5 minutes</li>
+</ul>
+<p><strong>Codex</strong>: gpt-4.1</p>
+<h3>9.2 Dockerfile</h3>
+<p><strong>Tasks</strong></p>
+<ul>
+<li>Single Dockerfile for API</li>
+<li>Use environment variables for SQLite path + ASPNETCORE_URLS</li>
+</ul>
+<p><strong>Acceptance</strong></p>
+<ul>
+<li><code>docker build</code> + <code>docker run</code> succeeds</li>
+<li>DB persists if volume mounted</li>
+</ul>
+<p><strong>Codex</strong>: gpt-4.1</p>
+<hr>
+<h2>Day 1 Checklist (Minimum Ship)</h2>
+<ul>
+<li>[ ] Solution builds</li>
+<li>[ ] EF migration created + applied</li>
+<li>[ ] Jobs CRUD works</li>
+<li>[ ] Resumes CRUD works</li>
+<li>[ ] Correlation ID middleware works</li>
+<li>[ ] Global exception handler returns ProblemDetails</li>
+<li>[ ] Basic request logging includes latency + correlation ID</li>
+<li>[ ] 2–4 integration tests pass</li>
+</ul>
+<hr>
+<h2>Day 1 “Senior Engineer” Talking Points (Keep for interview)</h2>
+<ul>
+<li>I intentionally built a clean architecture boundary before AI integration to enable provider swaps and reliable testing.</li>
+<li>I treat all user-provided text as untrusted input and ensured safe logging + correlation IDs for reproducibility.</li>
+<li>I added observability primitives first (latency, correlation IDs), so AI steps can be profiled and costed from day one.</li>
+</ul>
+<hr>
+<h1>Claude Code Prompt — Multi-Agent Parallel Implementation Plan</h1>
+<p>Paste the following into Claude Code. It asks Claude to:</p>
+<ul>
+<li>Review the plan critically</li>
+<li>Identify missing tasks / hidden complexity</li>
+<li>Produce a multi-agent parallel plan with exact deliverables and task boundaries</li>
+<li>Output tasks in a format you can execute with Codex + Claude in parallel</li>
+</ul>
+<h2>Prompt</h2>
+<p>You are a staff-level engineer and program manager. I am building a .NET 9 + React + SQLite AI job application tracker. My Day 1 plan is pasted below.</p>
+<p>Your job: 1) Critique the plan for missing tasks, hidden complexity, and sequencing issues. 2) Produce a multi-agent parallel implementation plan for Day 1 ONLY. 3) Split work into 4–6 agents with clear ownership boundaries and minimal merge conflicts. 4) For each agent:    - list tasks in priority order    - list files they will create/modify    - define acceptance criteria    - call out integration points / contract-first interfaces 5) Identify the critical path and the earliest “vertical slice” I can demo by end of Day 1. 6) Recommend which tasks should be done by Codex (and which model) vs Claude Code (and which model), optimized for speed and correctness.</p>
+<p>Constraints:</p>
+<ul>
+<li>Must compile and run by end of Day 1.</li>
+<li>No AI provider calls on Day 1; only interfaces/contracts/scaffolding.</li>
+<li>Observability (correlation IDs, structured logs, error handling) must be included Day 1.</li>
+<li>Keep it minimal; avoid over-engineering.</li>
+<li>Output as Markdown with headings, checklists, and file lists.</li>
+</ul>
+<p>Here is the Day 1 plan:</p>
+<p>&lt;&lt;&lt; (PASTE DAY 1 MARKDOWN PLAN HERE) &gt;&gt;&gt;</p>
+<p>Now produce: A) A concise critique section (bullets) B) A multi-agent plan with agents labeled Agent 1..N C) A critical path section D) A merge strategy section (branching + PR order) E) A final “Day 1 Done” acceptance checklist </code></pre></p>
+<hr>
+<h2>Suggested Agent Breakdown (if you want one immediately)</h2>
+<ul>
+<li>Agent 1: API skeleton + Jobs/Resumes endpoints</li>
+<li>Agent 2: EF Core + migrations + SQLite configuration</li>
+<li>Agent 3: Observability + error handling + correlation ID middleware</li>
+<li>Agent 4: AI contracts + hashing utilities + metadata envelopes</li>
+<li>Agent 5 (optional): Integration tests + dev scripts + Dockerfile</li>
+</ul>
+<p><pre><code></p>
+<h3>Notes on model selection (quick)</h3>
+<ul>
+<li><strong>Codex</strong>: use <code>gpt-4.1</code> for C# scaffolding + EF Core + endpoint wiring.</li>
+<li><strong>Claude Code</strong>: use <strong>Claude 3.5 Sonnet</strong> for architecture critique, concurrency/merge strategy, prompt rigor, and observability patterns.</li>
+</ul>
+<p>If you want, I can also generate a <strong>Day 1 branch/PR order</strong> (e.g., “infra/db first, then api endpoints, then middleware, then tests”) to reduce conflicts. </code></pre></p></div></div>
+<div class="message user" data-ts="1770978259650" data-ts-iso="2026-02-13T10:24:19Z"><div class="role-label">You <span class="msg-time ts-display" data-ts="1770978259650" data-ts-iso="2026-02-13T10:24:19Z">2026-02-13 10:24</span></div><div class="content"><p>thats great.  Please turn the complete plan that you built earlier into a markdown file.</p></div></div>
+<div class="message assistant" data-ts="1770978260270" data-ts-iso="2026-02-13T10:24:20Z"><div class="role-label">ChatGPT <span class="msg-time ts-display" data-ts="1770978260270" data-ts-iso="2026-02-13T10:24:20Z">2026-02-13 10:24</span></div><div class="content"><p>Here is the complete rewritten plan as a clean, ready-to-commit Markdown document.</p>
+<p>You can save this as:</p>
+<p><pre><code>AI-Job-Tracker-Execution-Plan.md </code></pre></p>
+<hr>
+<p><pre><code class="language-markdown"># AI-Augmented Job Application Tracker</p>
+<h2>5–7 Day Execution Plan (Production-Focused, Cost-Optimized)</h2>
+<p>Author: Nathan Gallo   Target Roles: AI Engineer, Applied AI, Senior Full-Stack (AI Differentiated)   Primary Goal: Ship a functional, production-minded MVP in 5–7 days that is both usable for real job applications and impressive to hiring managers.</p>
+<hr>
+<h1>🎯 Product Definition</h1>
+<p>A job application tracker with AI-powered job description analysis.</p>
+<p>Core Capabilities:</p>
+<ul>
+<li>Track jobs and resumes</li>
+<li>Extract structured requirements from job descriptions</li>
+<li>Compare JD vs resume</li>
+<li>Identify missing required and preferred skills</li>
+<li>Compute deterministic coverage score</li>
+<li>Compute groundedness score</li>
+<li>Log model usage, latency, schema compliance</li>
+<li>Provide evaluation dashboard</li>
+</ul>
+<p>Explicitly removed:</p>
+<ul>
+<li>No auto-editing or resume rewriting</li>
+<li>No background job queue</li>
+<li>No heavy vector DB</li>
+<li>No agent orchestration</li>
+</ul>
+<p>This is a disciplined AI system, not a ChatGPT wrapper.</p>
+<hr>
+<h1>🏗 Architecture Overview</h1>
+<h2>Stack</h2>
+<ul>
+<li>.NET 9 Minimal API</li>
+<li>React (Vite)</li>
+<li>SQLite</li>
+<li>OpenAI API</li>
+<li>Polly (retry + circuit breaker)</li>
+</ul>
+<h2>Core AI Engineering Patterns (Portfolio Signal)</h2>
+<ol>
+<li>Structured Outputs + JSON Schema Validation + Repair Loop</li>
+<li>Grounded Extraction (evidence quotes required)</li>
+<li>Eval Harness + Observability</li>
+<li>Cost Controls (hash caching + token logging)</li>
+<li>Deterministic scoring instead of LLM self-grading</li>
+</ol>
+<hr>
+<h1>📅 Execution Plan</h1>
+<hr>
+<h1>DAY 1 — Foundation &amp; Production Skeleton</h1>
+<p>Goal: A production-quality backend skeleton that compiles, runs, persists to SQLite, and has observability scaffolding.</p>
+<p>No AI provider calls yet.</p>
+<h2>Solution Structure</h2>
+<p></code></pre> src/   Tracker.Api   Tracker.Domain   Tracker.Infrastructure   Tracker.AI   Tracker.Eval   Web <pre><code></p>
+<h3>Interfaces</h3>
+<p></code></pre>csharp public interface ILlmClient {     Task<LlmResult<T>> CompleteStructuredAsync<T>(...); }</p>
+<p>public interface IEmbeddingClient {     Task<float[]> EmbedAsync(string text); } <pre><code> Use .NET 9 KeyedServices to allow:</p>
+<ul>
+<li>OpenAI implementation</li>
+<li>FakeLLM for tests</li>
+<li>Future provider swap</li>
+</ul>
+<hr>
+<h2>Database Schema</h2>
+<h3>jobs</h3>
+<ul>
+<li>id</li>
+<li>title</li>
+<li>company</li>
+<li>description_text</li>
+<li>description_hash</li>
+<li>created_at</li>
+<li>updated_at</li>
+</ul>
+<h3>resumes</h3>
+<ul>
+<li>id</li>
+<li>name</li>
+<li>content</li>
+<li>content_hash</li>
+<li>created_at</li>
+<li>updated_at</li>
+</ul>
+<h3>analyses</h3>
+<ul>
+<li>id</li>
+<li>job_id</li>
+<li>resume_id</li>
+<li>status</li>
+<li>model</li>
+<li>prompt_version</li>
+<li>schema_version</li>
+<li>input_tokens</li>
+<li>output_tokens</li>
+<li>latency_ms</li>
+<li>created_at</li>
+</ul>
+<h3>analysis_results</h3>
+<ul>
+<li>analysis_id</li>
+<li>required<em>skills</em>json</li>
+<li>missing<em>required</em>json</li>
+<li>missing<em>preferred</em>json</li>
+<li>coverage_score</li>
+<li>groundedness_score</li>
+</ul>
+<h3>llm_logs</h3>
+<ul>
+<li>id</li>
+<li>analysis_id</li>
+<li>step_name</li>
+<li>raw_response</li>
+<li>parse_success</li>
+<li>repair_attempted</li>
+<li>created_at</li>
+</ul>
+<hr>
+<h2>Day 1 Technical Requirements</h2>
+<ul>
+<li>EF Core + SQLite configured</li>
+<li>Migrations created and applied</li>
+<li>CRUD endpoints for jobs</li>
+<li>CRUD endpoints for resumes</li>
+<li>Correlation ID middleware</li>
+<li>Structured request logging</li>
+<li>Global exception handler (ProblemDetails)</li>
+<li>Polly policies registered (not used yet)</li>
+<li>Basic integration tests</li>
+<li>Hash utilities (SHA-256)</li>
+<li>Dockerfile (optional but recommended)</li>
+</ul>
+<hr>
+<h2>Observability (Day 1)</h2>
+<p>Per request:</p>
+<ul>
+<li>Correlation ID</li>
+<li>Path</li>
+<li>Status</li>
+<li>Latency</li>
+</ul>
+<p>No PII logged by default.</p>
+<hr>
+<h2>Day 1 Acceptance Criteria</h2>
+<ul>
+<li>dotnet build succeeds</li>
+<li>EF migration applies cleanly</li>
+<li>Jobs + Resumes CRUD work end-to-end</li>
+<li>Correlation ID present in logs and response header</li>
+<li>Global error handler returns RFC7807 payload</li>
+<li>Integration tests pass</li>
+</ul>
+<hr>
+<h1>DAY 2 — AI Core (Grounded + Deterministic)</h1>
+<p>Goal: Implement structured JD extraction + gap analysis with schema validation and repair loop.</p>
+<hr>
+<h2>Step 1: JD Extraction</h2>
+<p>Model: gpt-4o-mini</p>
+<p>Strict JSON schema requiring:</p>
+<ul>
+<li>role_title</li>
+<li>required_skills (with evidence quotes)</li>
+<li>preferred_skills (with evidence quotes)</li>
+<li>responsibilities (with evidence quotes)</li>
+<li>years_experience</li>
+<li>keywords</li>
+</ul>
+<p>Rules:</p>
+<ul>
+<li>Every skill must include a &lt;=20 word evidence quote</li>
+<li>Null allowed if not explicitly stated</li>
+<li>No inference allowed</li>
+</ul>
+<hr>
+<h2>Step 2: Gap Analysis</h2>
+<p>Input:</p>
+<ul>
+<li>Extracted JD JSON</li>
+<li>Resume text</li>
+</ul>
+<p>Output:</p>
+<ul>
+<li>matches (with resume evidence quotes)</li>
+<li>missing_required</li>
+<li>missing_preferred</li>
+</ul>
+<p>Rule: No resume quote = must mark missing.</p>
+<hr>
+<h2>Schema Validation + Repair Loop</h2>
+<p>Flow:</p>
+<ol>
+<li>Call LLM</li>
+<li>Attempt JSON parse + schema validation</li>
+<li>If invalid:</li>
+</ol>
+<p>- Run repair prompt once</p>
+<ol>
+<li>If still invalid:</li>
+</ol>
+<p>- Mark analysis failed</p>
+<p>Store:</p>
+<ul>
+<li>parse_success</li>
+<li>repair_attempted</li>
+</ul>
+<hr>
+<h2>Deterministic Scoring</h2>
+<p>Coverage Score:</p>
+<p></code></pre> (required<em>matched / total</em>required) * 100 <pre><code> Groundedness Score:</p>
+<ul>
+<li>% required skills with JD evidence</li>
+<li>% matches with resume evidence</li>
+</ul>
+<p>No LLM-based scoring allowed.</p>
+<hr>
+<h2>Cost Optimization</h2>
+<p>Before calling LLM:</p>
+<ul>
+<li>Hash JD text</li>
+<li>Hash resume text</li>
+<li>If identical pair already analyzed → return cached result</li>
+</ul>
+<p>Model usage:</p>
+<ul>
+<li>Extraction + Gap: gpt-4o-mini</li>
+<li>Embeddings (future use): text-embedding-3-small</li>
+</ul>
+<p>Estimated cost: ~$0.04–$0.05 per analysis   ~$15/month at 10/day</p>
+<hr>
+<h1>DAY 3 — MVP Ship</h1>
+<p>Goal: Usable end-to-end system.</p>
+<hr>
+<h2>Frontend Pages</h2>
+<ul>
+<li>Jobs list</li>
+<li>Resumes list</li>
+<li>Run analysis button</li>
+<li>Analysis detail page</li>
+</ul>
+<p>Analysis page shows:</p>
+<ul>
+<li>Required skills</li>
+<li>Missing required</li>
+<li>Missing preferred</li>
+<li>Coverage score</li>
+<li>Groundedness score</li>
+<li>Token usage</li>
+<li>Latency</li>
+<li>Parse success flag</li>
+</ul>
+<p>This page is the interview demo centerpiece.</p>
+<hr>
+<h2>Eval Harness</h2>
+<p>Create <code>/eval/run</code></p>
+<p>Use 10 static JD fixtures.</p>
+<p>Metrics:</p>
+<ul>
+<li>Schema pass rate</li>
+<li>Groundedness rate</li>
+<li>Coverage stability (run twice diff)</li>
+<li>Avg latency</li>
+<li>Avg cost per run</li>
+</ul>
+<p>Persist results in DB.</p>
+<hr>
+<h1>DAY 4–5 — Reliability + Interview Polish</h1>
+<hr>
+<h2>Resilience</h2>
+<ul>
+<li>Polly retry (2 attempts)</li>
+<li>Exponential backoff</li>
+<li>Circuit breaker</li>
+<li>Timeout</li>
+<li>Optional model fallback</li>
+</ul>
+<hr>
+<h2>Security</h2>
+<ul>
+<li>Treat JD text as untrusted input</li>
+<li>Never allow user text to influence tool selection</li>
+<li>Redact email/phone before logging prompts</li>
+</ul>
+<hr>
+<h2>Deployment</h2>
+<p>Simplest approach:</p>
+<ul>
+<li>Single Docker container</li>
+<li>SQLite persistent volume</li>
+<li>Fly.io or Railway</li>
+<li>Rate limit per IP</li>
+<li>Limit concurrency</li>
+</ul>
+<hr>
+<h1>💰 Cost Estimate</h1>
+<p>Per analysis:</p>
+<ul>
+<li>~5k input tokens</li>
+<li>~1.3k output tokens</li>
+</ul>
+<p>Using 4o-mini pricing:</p>
+<p>≈ $0.04–$0.05 per run</p>
+<p>10/day:</p>
+<p>≈ $0.50/day   ≈ $15/month</p>
+<p>With caching:</p>
+<p>Likely under $10/month.</p>
+<hr>
+<h1>🎤 Interview Positioning Strategy</h1>
+<p>Emphasize:</p>
+<h2>70% Senior Engineering Judgment</h2>
+<ul>
+<li>Eval harness</li>
+<li>Observability</li>
+<li>Deterministic scoring</li>
+<li>Schema validation + repair</li>
+<li>Cost control</li>
+<li>Retry + circuit breaker</li>
+</ul>
+<h2>30% Modern AI</h2>
+<ul>
+<li>Structured outputs</li>
+<li>Grounded extraction</li>
+<li>Embeddings</li>
+<li>Model routing</li>
+<li>Injection awareness</li>
+</ul>
+<p>Avoid over-indexing on agents.</p>
+<hr>
+<h1>🔥 Top 5 Interview Questions + 30-Second Answers</h1>
+<h3>1. How do you prevent hallucinations?</h3>
+<p>"I require evidence quotes for every extracted requirement and resume match. If the model cannot provide evidence, it must mark the skill missing. All outputs are validated against a strict JSON schema, with a repair loop for malformed responses."</p>
+<hr>
+<h3>2. How do you evaluate model performance?</h3>
+<p>"I maintain a golden dataset and measure schema pass rate, groundedness, latency, and coverage stability across runs. This allows detection of regressions when prompts or models change."</p>
+<hr>
+<h3>3. How do you control cost?</h3>
+<p>"I hash JD and resume pairs and cache results. I use 4o-mini for extraction, log token usage per step, and enforce a daily token budget."</p>
+<hr>
+<h3>4. What happens when the API fails?</h3>
+<p>"I use Polly retry with exponential backoff and a circuit breaker. Partial runs are persisted so users can retry without losing context."</p>
+<hr>
+<h3>5. How would you scale this?</h3>
+<p>"I would introduce multi-tenancy, move to Postgres and a proper vector store, add background jobs, encrypted PII storage, and expand the evaluation pipeline. The architecture isolates the LLM layer to enable this."</p>
+<hr>
+<h1>Final Goal</h1>
+<p>Ship something that demonstrates:</p>
+<ul>
+<li>Discipline</li>
+<li>Reliability</li>
+<li>Evaluation rigor</li>
+<li>Cost awareness</li>
+<li>Structured AI integration</li>
+</ul>
+<p>Not a wrapper. Not a demo. A real system. </code></pre></p>
+<hr>
+<p>If you'd like next, I can generate:</p>
+<ul>
+<li>A production-grade README</li>
+<li>A one-page “Architecture Overview” diagram description</li>
+<li>Or a hiring-manager-focused portfolio writeup that frames your gap year strategically.</li>
+</ul></div></div>
+</div>
+</body>
+</html>

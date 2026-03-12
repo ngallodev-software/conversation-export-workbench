@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Unanet HR interview preparation</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: #0f1117;
+    color: #e0e0e0;
+    line-height: 1.7;
+    padding: 2rem 1rem;
+  }
+  .container { max-width: 860px; margin: 0 auto; }
+  h1 {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 0.3rem;
+  }
+  .meta {
+    font-size: 0.8rem;
+    color: #666;
+    margin-bottom: 2.5rem;
+  }
+  .message {
+    margin-bottom: 1.8rem;
+    border-radius: 10px;
+    padding: 1.2rem 1.5rem;
+    position: relative;
+  }
+  .message.user {
+    background: #1a1f2e;
+    border-left: 3px solid #4a90e2;
+  }
+  .message.assistant {
+    background: #141a14;
+    border-left: 3px solid #5cb85c;
+  }
+  .role-label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 0.6rem;
+    opacity: 0.6;
+  }
+  .message.user .role-label { color: #4a90e2; }
+  .message.assistant .role-label { color: #5cb85c; }
+  .msg-time {
+    font-size: 0.72rem;
+    color: #555;
+    float: right;
+    margin-top: 0.1rem;
+  }
+  .thinking {
+    background: #1a1a10;
+    border: 1px solid #3a3a20;
+    border-radius: 6px;
+    padding: 0.8rem 1.1rem;
+    margin-bottom: 1rem;
+    font-style: italic;
+    color: #999;
+    font-size: 0.88rem;
+  }
+  .thinking-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #6a6a40;
+    margin-bottom: 0.4rem;
+  }
+  .search-block {
+    background: #111820;
+    border: 1px dashed #2a3a50;
+    border-radius: 6px;
+    padding: 0.7rem 1rem;
+    margin-bottom: 0.8rem;
+    font-size: 0.82rem;
+    color: #7a9fc0;
+  }
+  .search-block .search-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #3a6a90;
+    margin-bottom: 0.4rem;
+  }
+  .search-result {
+    margin-top: 0.4rem;
+    padding-left: 0.8rem;
+    border-left: 2px solid #2a4a60;
+  }
+  .search-result a { color: #5a9fc0; text-decoration: none; }
+  .search-result a:hover { text-decoration: underline; }
+  .search-result .snippet { color: #668; font-size: 0.8rem; }
+  .read-link-block {
+    background: #11181a;
+    border: 1px dashed #2a4040;
+    border-radius: 6px;
+    padding: 0.5rem 0.9rem;
+    margin-bottom: 0.8rem;
+    font-size: 0.8rem;
+    color: #6ab;
+  }
+  .content p { margin-bottom: 0.8rem; }
+  .content pre {
+    background: #0a0a0a;
+    border: 1px solid #2a2a2a;
+    border-radius: 6px;
+    padding: 1rem;
+    overflow-x: auto;
+    font-size: 0.85rem;
+    margin-bottom: 0.8rem;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .content code {
+    background: #1a1a1a;
+    border-radius: 3px;
+    padding: 0.1em 0.35em;
+    font-size: 0.87em;
+    font-family: "JetBrains Mono", "Fira Code", monospace;
+  }
+  .content pre code { background: none; padding: 0; }
+  .content h1, .content h2, .content h3, .content h4 {
+    color: #d0d0d0;
+    margin: 1rem 0 0.5rem;
+  }
+  .content ul, .content ol {
+    padding-left: 1.5rem;
+    margin-bottom: 0.8rem;
+  }
+  .content li { margin-bottom: 0.3rem; }
+  .content blockquote {
+    border-left: 3px solid #444;
+    padding-left: 1rem;
+    color: #999;
+    margin-bottom: 0.8rem;
+  }
+  .content table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 0.8rem;
+    font-size: 0.88rem;
+  }
+  .content th, .content td {
+    border: 1px solid #2a2a2a;
+    padding: 0.4rem 0.7rem;
+  }
+  .content th { background: #1a1a1a; }
+  .content hr { border: none; border-top: 1px solid #2a2a2a; margin: 1rem 0; }
+  .content a { color: #4a90e2; }
+  .divider {
+    border: none;
+    border-top: 1px solid #1e1e1e;
+    margin: 2rem 0;
+  }
+  #index { margin-bottom: 2.5rem; }
+  #index h2 { font-size: 1rem; color: #888; margin-bottom: 0.8rem; }
+  #index ul { list-style: none; padding: 0; }
+  #index li { margin-bottom: 0.4rem; }
+  #index a { color: #4a90e2; text-decoration: none; font-size: 0.9rem; }
+  #index a:hover { text-decoration: underline; }
+  .conv-header { margin: 3rem 0 1rem; }
+  .conv-header h2 { font-size: 1.25rem; color: #ccc; }
+</style>
+</head>
+<body>
+<div class="container">
+<h1>Unanet HR interview preparation</h1>
+<div class="meta" data-started-ts="1768301635528" data-updated-ts="1768301734476" data-started-iso="2026-01-13T10:53:55.528291Z" data-updated-iso="2026-01-13T10:55:34.476455Z">Started <span class="ts-display">2026-01-13 10:53</span> &nbsp;·&nbsp; Last updated <span class="ts-display">2026-01-13 10:55</span></div>
+<div class="message user" data-ts="1768301636729" data-ts-iso="2026-01-13T10:53:56.729747Z"><div class="role-label">You <span class="msg-time ts-display" data-ts="1768301636729" data-ts-iso="2026-01-13T10:53:56.729747Z">2026-01-13 10:53</span></div><div class="content"><p>I have an initial 20 minute video interview with an HR person at unanet for this role https://unanet.com/about/careers?gh<em>jid=7535646003&gh</em>src=dvtgr6363us  .</p></div></div>
+<div class="message assistant" data-ts="1768301673883" data-ts-iso="2026-01-13T10:54:33.883794Z"><div class="role-label">Claude <span class="msg-time ts-display" data-ts="1768301673883" data-ts-iso="2026-01-13T10:54:33.883794Z">2026-01-13 10:54</span></div><div class="thinking"><div class="thinking-label">Thinking</div>The user is asking for help preparing for a 20-minute video interview with HR at Unanet for a specific job role. They've provided a link to the job posting. I should fetch this URL to see what the role is and provide relevant interview preparation advice.<br><br>Let me fetch the URL to see the job details.</div>
+<div class="content"><p>I'll help you prepare for your interview at Unanet! Let me pull up the job posting to see what role you're interviewing for.</p></div>
+<div class="thinking"><div class="thinking-label">Thinking</div>The page I fetched shows the general careers page for Unanet, but it doesn't show the specific job posting details. The URL has parameters for a specific job (gh_jid=7535646003), but the page content is showing the general careers page overview rather than the specific role details.<br><br>I should try to search for more information about this specific job posting, or let me try to fetch a more direct Greenhouse URL since they seem to use Greenhouse for their applicant tracking system (the "gh_jid" parameter suggests this).<br><br>Let me try searching for this job ID to find the actual job description.</div>
+<div class="content"><p>I can see this is a Unanet careers page, but the specific job details aren't showing up. Let me search for that specific job posting to find out what role you're interviewing for.</p></div>
+<div class="thinking"><div class="thinking-label">Thinking</div>I found a reference to the Greenhouse URL in the search results (job-boards.greenhouse.io/unanet/jobs/7535646003). Let me try fetching that directly to get the actual job posting details.</div>
+<div class="content"><p>Let me try the direct Greenhouse job posting URL:</p></div>
+<div class="thinking"><div class="thinking-label">Thinking</div>The page is redirecting to the general careers page instead of showing the specific job. The job listing may no longer be active or the URL format is different. Let me try searching with a different approach to find what job this was.</div>
+<div class="content"><p>The specific job posting isn't loading directly. Could you share the job title from your application or email confirmation? That way I can help you prepare more effectively.</p>
+<p>In the meantime, here's what I can tell you about Unanet and preparing for your HR screening interview:</p>
+<h2>About Unanet</h2>
+<p>Unanet is a leading provider of ERP and CRM solutions for Government Contractors (GovCon), Architecture, Engineering & Construction (AEC), and Professional Services. They serve over 3,200 project-driven organizations with software that helps turn information into actionable insights.</p>
+<p><strong>Company Culture & Values:</strong></p>
+<ul>
+<li>Remote-first workplace (all US-based roles)</li>
+<li>Strong emphasis on work-life integration</li>
+<li>Core values: Team collaboration, Customer-focused, Driven, Ownership, Doing the right thing</li>
+</ul>
+<p><strong>Benefits highlight:</strong> Equity ownership, open PTO, 401(k) match, work-from-home stipend, wellness stipend, pet insurance</p>
+<h2>Typical HR Screening Topics (20 minutes)</h2>
+<p><strong>About You:</strong></p>
+<ul>
+<li>Walk me through your background/resume</li>
+<li>Why are you interested in Unanet?</li>
+<li>What attracts you to this specific role?</li>
+<li>What are your salary expectations? (They practice pay transparency)</li>
+</ul>
+<p><strong>About Your Fit:</strong></p>
+<ul>
+<li>What do you know about our company/products?</li>
+<li>Why are you looking to make a change?</li>
+<li>What's your ideal work environment?</li>
+<li>Are you comfortable working fully remote?</li>
+</ul>
+<p><strong>Logistics:</strong></p>
+<ul>
+<li>Availability to start</li>
+<li>Any questions about benefits or the process</li>
+</ul>
+<h2>Tips for Your 20-Minute Screening</h2>
+<ol>
+<li><strong>Have 2-3 good questions ready</strong> - They explicitly say "ask questions!" Research is expected</li>
+<li><strong>Be ready to talk about remote work</strong> - This is central to their culture</li>
+<li><strong>Connect your experience to project-driven businesses</strong> if relevant</li>
+<li><strong>Show enthusiasm</strong> - They value passion for the role</li>
+</ol>
+<p>Can you share the role title so I can give you more targeted prep?</p></div></div>
+<div class="message user" data-ts="1768301700792" data-ts-iso="2026-01-13T10:55:00.792868Z"><div class="role-label">You <span class="msg-time ts-display" data-ts="1768301700792" data-ts-iso="2026-01-13T10:55:00.792868Z">2026-01-13 10:55</span></div><div class="content"><p>here is the text of the job posting</p></div></div>
+<div class="message assistant" data-ts="1768301734476" data-ts-iso="2026-01-13T10:55:34.476455Z"><div class="role-label">Claude <span class="msg-time ts-display" data-ts="1768301734476" data-ts-iso="2026-01-13T10:55:34.476455Z">2026-01-13 10:55</span></div><div class="thinking"><div class="thinking-label">Thinking</div>Great! Now I have the full job posting. This is for a Principal Software Engineer - Tech Lead role focusing on .NET Core and Angular. Let me prepare comprehensive interview prep for this 20-minute HR screening.<br><br>Key things to note:<br>- Role: Principal Software Engineer - Tech Lead<br>- Tech stack: .NET Core, Angular, SQL Server, AWS/Azure/GCP<br>- Salary: $160,000 - $175,000<br>- Remote-first, anywhere in US<br>- They want someone who can lead tech stack, mentor, and still code 70% of the time<br>- Focus on SaaS, Agile, full-stack development<br>- They value modernizing legacy systems and cross-timezone collaboration<br><br>For a 20-minute HR screening, I should focus on:<br>1. Understanding the role and company fit<br>2. Salary expectations alignment<br>3. Technical background verification (high level)<br>4. Cultural fit with remote-first, Agile environment<br>5. Questions to ask<br><br>Let me structure this in a practical, actionable way.</div>
+<div class="content"><p>Perfect! This is for a <strong>Principal Software Engineer - Tech Lead</strong> role focusing on .NET Core/Angular. Here's your targeted prep for the 20-minute HR screening:</p>
+<h2>Key Points to Emphasize</h2>
+<p><strong>Role Alignment:</strong></p>
+<ul>
+<li>You're interested in the balance of 70% hands-on coding + 30% leadership</li>
+<li>The tech lead aspect appeals to you - driving architecture while staying technical</li>
+<li>Excited about modernizing systems and building scalable SaaS solutions</li>
+</ul>
+<p><strong>Technical Fit (High Level):</strong></p>
+<ul>
+<li>Highlight your .NET Core and modern JavaScript framework experience</li>
+<li>Mention any experience with cloud platforms (AWS/Azure/GCP)</li>
+<li>If applicable, note any experience leading technical decisions or mentoring</li>
+</ul>
+<p><strong>Culture Fit:</strong></p>
+<ul>
+<li>Emphasize comfort with remote-first work and async collaboration</li>
+<li>Show alignment with their values (especially "We are a Team" and "We Own our Success")</li>
+<li>Express interest in Agile environments and cross-functional collaboration</li>
+</ul>
+<h2>Likely HR Screening Questions</h2>
+<p><strong>1. "Walk me through your background"</strong></p>
+<ul>
+<li>Keep it to 2-3 minutes</li>
+<li>Focus on: full-stack experience, leadership/mentoring, and any legacy modernization work</li>
+<li>Connect your experience to their needs (SaaS, complex business rules, scale)</li>
+</ul>
+<p><strong>2. "Why Unanet? Why this role?"</strong> Strong answer framework:</p>
+<ul>
+<li>Product-driven company serving project-based businesses (interesting domain)</li>
+<li>Remote-first culture aligns with your work style</li>
+<li>The Tech Lead balance - stay technical while influencing architecture</li>
+<li>Opportunity to work on modernization and scaling challenges</li>
+</ul>
+<p><strong>3. "What are your salary expectations?"</strong></p>
+<ul>
+<li>Their range: <strong>$160K-$175K</strong> + equity + discretionary bonus</li>
+<li>They practice pay transparency, so be direct</li>
+<li>If this range works: "The posted range of $160-175K aligns well with my expectations, and I'm flexible based on the total compensation package"</li>
+</ul>
+<p><strong>4. "Tell me about your experience with [remote work/Agile/leading teams]"</strong></p>
+<ul>
+<li>Be ready with specific examples</li>
+<li>Emphasize async communication and collaboration across time zones</li>
+</ul>
+<p><strong>5. "What interests you about the Tech Lead role specifically?"</strong></p>
+<ul>
+<li>Mention the 70/30 split appeals to you</li>
+<li>You want to stay hands-on while influencing technical direction</li>
+<li>Enjoy mentoring and code reviews</li>
+</ul>
+<h2>Your Questions to Ask (Choose 2-3)</h2>
+<p><strong>About the Role:</strong></p>
+<ul>
+<li>"What's driving the need for this role right now? Is this a new position or a replacement?"</li>
+<li>"What does success look like in the first 90 days?" (They outline this clearly in the JD)</li>
+<li>"What's the biggest technical challenge the team is facing?"</li>
+</ul>
+<p><strong>About the Team:</strong></p>
+<ul>
+<li>"How large is the engineering team, and what's the structure?"</li>
+<li>"Can you tell me about the Team Lead I'd be partnering with?"</li>
+<li>"How distributed is the team across time zones?"</li>
+</ul>
+<p><strong>About the Tech/Process:</strong></p>
+<ul>
+<li>"What's the current state of the tech stack, and what modernization efforts are underway?"</li>
+<li>"How does Product Management collaborate with Engineering?"</li>
+</ul>
+<p><strong>About Next Steps:</strong></p>
+<ul>
+<li>"What does the interview process look like after this conversation?"</li>
+<li>"What's your timeline for filling this role?"</li>
+</ul>
+<h2>Red Flags to Avoid</h2>
+<p>❌ Don't get too technical in an HR screen - save deep technical discussions for later rounds ❌ Don't just focus on coding - emphasize leadership and collaboration ❌ Don't be vague about salary - they're transparent, so match that energy ❌ Don't forget to ask questions - they explicitly value candidates who research and engage</p>
+<h2>Quick Company Facts to Reference</h2>
+<ul>
+<li>Serves 3,200+ project-driven organizations in GovCon, AEC, Professional Services</li>
+<li>Recent awards: Inc. 5000, Top Workplace for Diversity & Inclusion, Best Remote-First Places to Work</li>
+<li>CEO: Craig Halliday</li>
+<li>Mission: "Unlock productivity for project-based businesses"</li>
+</ul>
+<h2>Your 30-Second Elevator Pitch</h2>
+<p>Practice something like: <em>"I'm a full-stack engineer with [X] years of experience in .NET and modern JavaScript frameworks. I've been particularly focused on [modernizing legacy systems/scaling applications/leading technical teams] and I'm drawn to this role because it offers that ideal balance of hands-on development and technical leadership. The opportunity to work on complex SaaS solutions for project-driven businesses in a remote-first environment really aligns with where I want to take my career."</em></p>
+<h2>Final Tips for the 20-Minute Call</h2>
+<ol>
+<li><strong>Be conversational but professional</strong> - HR screens are about fit as much as qualifications</li>
+<li><strong>Show enthusiasm</strong> - they want to see you're genuinely interested</li>
+<li><strong>Take notes</strong> - shows engagement and helps with follow-up</li>
+<li><strong>Confirm next steps</strong> at the end of the call</li>
+<li><strong>Have your calendar ready</strong> in case they want to schedule the next interview</li>
+</ol>
+<p>Good luck! The fact that you've made it to the screening means they see potential. Use this time to confirm mutual fit and enthusiasm.</p></div></div>
+</div>
+</body>
+</html>

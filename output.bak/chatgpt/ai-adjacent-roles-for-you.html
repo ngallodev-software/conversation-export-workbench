@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI-Adjacent Roles for You</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: #0f1117;
+    color: #e0e0e0;
+    line-height: 1.7;
+    padding: 2rem 1rem;
+  }
+  .container { max-width: 860px; margin: 0 auto; }
+  h1 {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 0.3rem;
+  }
+  .meta {
+    font-size: 0.8rem;
+    color: #666;
+    margin-bottom: 2.5rem;
+  }
+  .message {
+    margin-bottom: 1.8rem;
+    border-radius: 10px;
+    padding: 1.2rem 1.5rem;
+    position: relative;
+  }
+  .message.user {
+    background: #1a1f2e;
+    border-left: 3px solid #4a90e2;
+  }
+  .message.assistant {
+    background: #141a14;
+    border-left: 3px solid #5cb85c;
+  }
+  .role-label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 0.6rem;
+    opacity: 0.6;
+  }
+  .message.user .role-label { color: #4a90e2; }
+  .message.assistant .role-label { color: #5cb85c; }
+  .msg-time {
+    font-size: 0.72rem;
+    color: #555;
+    float: right;
+    margin-top: 0.1rem;
+  }
+  .thinking {
+    background: #1a1a10;
+    border: 1px solid #3a3a20;
+    border-radius: 6px;
+    padding: 0.8rem 1.1rem;
+    margin-bottom: 1rem;
+    font-style: italic;
+    color: #999;
+    font-size: 0.88rem;
+  }
+  .thinking-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #6a6a40;
+    margin-bottom: 0.4rem;
+  }
+  .search-block {
+    background: #111820;
+    border: 1px dashed #2a3a50;
+    border-radius: 6px;
+    padding: 0.7rem 1rem;
+    margin-bottom: 0.8rem;
+    font-size: 0.82rem;
+    color: #7a9fc0;
+  }
+  .search-block .search-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #3a6a90;
+    margin-bottom: 0.4rem;
+  }
+  .search-result {
+    margin-top: 0.4rem;
+    padding-left: 0.8rem;
+    border-left: 2px solid #2a4a60;
+  }
+  .search-result a { color: #5a9fc0; text-decoration: none; }
+  .search-result a:hover { text-decoration: underline; }
+  .search-result .snippet { color: #668; font-size: 0.8rem; }
+  .read-link-block {
+    background: #11181a;
+    border: 1px dashed #2a4040;
+    border-radius: 6px;
+    padding: 0.5rem 0.9rem;
+    margin-bottom: 0.8rem;
+    font-size: 0.8rem;
+    color: #6ab;
+  }
+  .content p { margin-bottom: 0.8rem; }
+  .content pre {
+    background: #0a0a0a;
+    border: 1px solid #2a2a2a;
+    border-radius: 6px;
+    padding: 1rem;
+    overflow-x: auto;
+    font-size: 0.85rem;
+    margin-bottom: 0.8rem;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .content code {
+    background: #1a1a1a;
+    border-radius: 3px;
+    padding: 0.1em 0.35em;
+    font-size: 0.87em;
+    font-family: "JetBrains Mono", "Fira Code", monospace;
+  }
+  .content pre code { background: none; padding: 0; }
+  .content h1, .content h2, .content h3, .content h4 {
+    color: #d0d0d0;
+    margin: 1rem 0 0.5rem;
+  }
+  .content ul, .content ol {
+    padding-left: 1.5rem;
+    margin-bottom: 0.8rem;
+  }
+  .content li { margin-bottom: 0.3rem; }
+  .content blockquote {
+    border-left: 3px solid #444;
+    padding-left: 1rem;
+    color: #999;
+    margin-bottom: 0.8rem;
+  }
+  .content table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 0.8rem;
+    font-size: 0.88rem;
+  }
+  .content th, .content td {
+    border: 1px solid #2a2a2a;
+    padding: 0.4rem 0.7rem;
+  }
+  .content th { background: #1a1a1a; }
+  .content hr { border: none; border-top: 1px solid #2a2a2a; margin: 1rem 0; }
+  .content a { color: #4a90e2; }
+  .divider {
+    border: none;
+    border-top: 1px solid #1e1e1e;
+    margin: 2rem 0;
+  }
+  #index { margin-bottom: 2.5rem; }
+  #index h2 { font-size: 1rem; color: #888; margin-bottom: 0.8rem; }
+  #index ul { list-style: none; padding: 0; }
+  #index li { margin-bottom: 0.4rem; }
+  #index a { color: #4a90e2; text-decoration: none; font-size: 0.9rem; }
+  #index a:hover { text-decoration: underline; }
+  .conv-header { margin: 3rem 0 1rem; }
+  .conv-header h2 { font-size: 1.25rem; color: #ccc; }
+</style>
+</head>
+<body>
+<div class="container">
+<h1>AI-Adjacent Roles for You</h1>
+<div class="meta" data-started-ts="1772441790196" data-updated-ts="1772441818700" data-started-iso="2026-03-02T08:56:30Z" data-updated-iso="2026-03-02T08:56:58Z">Started <span class="ts-display">2026-03-02 08:56</span> &nbsp;·&nbsp; Last updated <span class="ts-display">2026-03-02 08:56</span></div>
+<div class="message user" data-ts="1772441786194" data-ts-iso="2026-03-02T08:56:26Z"><div class="role-label">You <span class="msg-time ts-display" data-ts="1772441786194" data-ts-iso="2026-03-02T08:56:26Z">2026-03-02 08:56</span></div><div class="content"><p>identify some specific roles that are within my reach of getting hired for.  The roles must be ai adjacent and be future proof for as long as possible, even if the role will morph as AI grows.  requirements: remote, pay average above 150k, can't be too much of a stretch for me to pick up the skills needed.  start with 5 roles, a brief description of each, including required skills, and nice to haves, and identify gaps between my current skillset and the role.</p></div></div>
+<div class="message assistant" data-ts="1772441790180" data-ts-iso="2026-03-02T08:56:30Z"><div class="role-label">ChatGPT <span class="msg-time ts-display" data-ts="1772441790180" data-ts-iso="2026-03-02T08:56:30Z">2026-03-02 08:56</span></div><div class="content"><p>I’m grounding this in what I know about you:</p>
+<ul>
+<li>10+ years senior .NET/backend</li>
+<li>Some system design exposure</li>
+<li>Currently building AI projects (RAG in progress, OSINT tool, dev-activity-report, multi-agent concepts)</li>
+<li>Interested in platform / AI-forward roles</li>
+<li>Remote only, $150k+ target</li>
+<li>You want realistic, not fantasy pivots</li>
+</ul>
+<p>Below are <strong>5 roles that are AI-adjacent, future-resilient, and not a wild stretch</strong>.</p>
+<hr>
+<h1>1️⃣ AI Platform Engineer (LLM Enablement / Internal AI Infra)</h1>
+<h3>What it is  </h3>
+<p>Builds internal tooling so product teams can safely use LLMs:</p>
+<ul>
+<li>API proxies  </li>
+<li>Model routing  </li>
+<li>Observability  </li>
+<li>RAG infrastructure  </li>
+<li>Guardrails & policy layers  </li>
+</ul>
+<h3>Required Skills</h3>
+<ul>
+<li>Strong backend engineering (.NET or Go/Node)</li>
+<li>REST APIs, distributed systems</li>
+<li>Cloud (Azure preferred for you)</li>
+<li>CI/CD</li>
+<li>Basic LLM integration (OpenAI/Azure OpenAI)</li>
+<li>Logging/metrics</li>
+</ul>
+<h3>Nice to Have</h3>
+<ul>
+<li>Vector DBs (Pinecone, Weaviate)</li>
+<li>Prompt evaluation frameworks</li>
+<li>LangChain / Semantic Kernel</li>
+<li>Kubernetes</li>
+<li>Cost tracking / model routing</li>
+</ul>
+<h3>Gap vs You</h3>
+<p>Small-to-moderate gap:</p>
+<ul>
+<li>Need deeper cloud infra (Azure especially)</li>
+<li>Need to productionize one AI system (not just prototypes)</li>
+<li>Need observability around LLM usage (latency, cost, eval metrics)</li>
+</ul>
+<p><strong>This is your strongest long-term bet.</strong>   High ceiling, very durable role.</p>
+<hr>
+<h1>2️⃣ Senior Backend Engineer – AI-Integrated Product Teams</h1>
+<h3>What it is  </h3>
+<p>You’re not the AI researcher — you’re the backend engineer embedding AI into features:</p>
+<ul>
+<li>Chat features</li>
+<li>Document analysis</li>
+<li>Recommendation engines</li>
+<li>AI copilots inside SaaS products</li>
+</ul>
+<h3>Required Skills</h3>
+<ul>
+<li>Senior backend (.NET solid)</li>
+<li>API design</li>
+<li>Auth & security</li>
+<li>Data modeling</li>
+<li>Calling LLM APIs</li>
+<li>Async & background jobs</li>
+</ul>
+<h3>Nice to Have</h3>
+<ul>
+<li>RAG implementation</li>
+<li>Prompt versioning</li>
+<li>Feature flagging AI rollouts</li>
+<li>A/B testing</li>
+</ul>
+<h3>Gap vs You</h3>
+<p>Very small. You mainly need:</p>
+<ul>
+<li>One polished AI feature in production-style architecture</li>
+<li>Better articulation of AI system design in interviews</li>
+</ul>
+<p>This is the <strong>fastest hire path</strong> for you at $150k+ remote.</p>
+<hr>
+<h1>3️⃣ AI DevEx / AI Tooling Engineer</h1>
+<h3>What it is  </h3>
+<p>Build tools that help developers use AI effectively:</p>
+<ul>
+<li>AI orchestration layers</li>
+<li>Multi-agent workflows</li>
+<li>IDE extensions</li>
+<li>Internal AI copilots</li>
+<li>Model evaluation dashboards</li>
+</ul>
+<p>This aligns with your multi-agent interest.</p>
+<h3>Required Skills</h3>
+<ul>
+<li>Backend engineering</li>
+<li>CLI tooling</li>
+<li>API wrappers</li>
+<li>Developer ergonomics mindset</li>
+<li>Git workflows</li>
+<li>CI integration</li>
+</ul>
+<h3>Nice to Have</h3>
+<ul>
+<li>VS Code extension dev</li>
+<li>Model benchmarking</li>
+<li>Prompt testing frameworks</li>
+<li>Dev telemetry</li>
+</ul>
+<h3>Gap vs You</h3>
+<p>Moderate but reachable. You need:</p>
+<ul>
+<li>One real shipped dev tool</li>
+<li>Cleaner system thinking around multi-agent orchestration</li>
+<li>Possibly TypeScript exposure if VS Code work</li>
+</ul>
+<p>This is future-resilient because AI dev tooling will grow, not shrink.</p>
+<hr>
+<h1>4️⃣ Applied AI Engineer (Non-Research)</h1>
+<h3>What it is  </h3>
+<p>Not training models.   But building applied AI pipelines:</p>
+<ul>
+<li>RAG systems</li>
+<li>Data ingestion + embedding pipelines</li>
+<li>Evaluation harnesses</li>
+<li>Model selection & routing</li>
+<li>Automation agents</li>
+</ul>
+<h3>Required Skills</h3>
+<ul>
+<li>Python comfort (this is key)</li>
+<li>Vector databases</li>
+<li>Embedding pipelines</li>
+<li>Prompt chaining</li>
+<li>Evaluation metrics</li>
+</ul>
+<h3>Nice to Have</h3>
+<ul>
+<li>ML basics</li>
+<li>Experiment tracking</li>
+<li>Batch pipelines</li>
+<li>Airflow/Prefect</li>
+</ul>
+<h3>Gap vs You</h3>
+<p>Biggest gap here:</p>
+<ul>
+<li>Python depth</li>
+<li>Data pipeline experience</li>
+<li>Production LLM evaluation frameworks</li>
+</ul>
+<p>This is doable in 3–6 months, but not immediate.</p>
+<hr>
+<h1>5️⃣ Cloud Platform Engineer (AI Workloads Focus)</h1>
+<h3>What it is  </h3>
+<p>Classic platform engineer — but optimizing for:</p>
+<ul>
+<li>GPU workloads</li>
+<li>AI deployment patterns</li>
+<li>Scaling inference</li>
+<li>Cost management</li>
+<li>CI/CD for AI services</li>
+</ul>
+<p>This role will survive AI shifts because infra always matters.</p>
+<h3>Required Skills</h3>
+<ul>
+<li>Kubernetes</li>
+<li>Terraform</li>
+<li>Cloud networking</li>
+<li>CI/CD</li>
+<li>Observability</li>
+</ul>
+<h3>Nice to Have</h3>
+<ul>
+<li>Azure ML</li>
+<li>GPU orchestration</li>
+<li>Model deployment patterns</li>
+<li>SRE experience</li>
+</ul>
+<h3>Gap vs You</h3>
+<p>Moderate-to-large gap:</p>
+<ul>
+<li>Kubernetes depth</li>
+<li>Infra as code maturity</li>
+<li>Production cloud scaling experience</li>
+</ul>
+<p>This path is strong long-term but slower ramp.</p>
+<hr>
+<h1>🔎 Ranked by Realistic Near-Term Hire Probability</h1>
+<ol>
+<li>Senior Backend Engineer (AI-Integrated Product)  </li>
+<li>AI Platform Engineer  </li>
+<li>AI DevEx / Tooling Engineer  </li>
+<li>Applied AI Engineer  </li>
+<li>Cloud AI Platform Engineer  </li>
+</ol>
+<hr>
+<h1>💰 Salary Reality Check</h1>
+<p>Remote $150k+ is realistic for:</p>
+<ul>
+<li>Senior Backend AI-integrated</li>
+<li>AI Platform Engineer</li>
+<li>Applied AI Engineer (if legit)</li>
+</ul>
+<p>DevEx and Cloud roles depend more on company tier.</p>
+<hr>
+<h1>🧠 Hard Truth</h1>
+<p>You should NOT:</p>
+<ul>
+<li>Try to become an ML researcher</li>
+<li>Try to outcompete PhDs</li>
+<li>Rebrand as “AI Scientist”</li>
+</ul>
+<p>You SHOULD:</p>
+<ul>
+<li>Lean into backend + AI enablement</li>
+<li>Position yourself as infrastructure-minded</li>
+<li>Show practical production thinking</li>
+</ul>
+<hr>
+<p>If you want, next step:</p>
+<p>We can:</p>
+<ul>
+<li>Pick one role</li>
+<li>Design a 60-day execution plan</li>
+<li>Identify 2 portfolio upgrades that make you interview-safe</li>
+<li>Build a positioning statement for your resume</li>
+</ul>
+<p>Which one feels most aligned and least overwhelming?</p></div></div>
+</div>
+</body>
+</html>

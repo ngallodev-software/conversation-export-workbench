@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Epstein Files Released Names List</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: #0f1117;
+    color: #e0e0e0;
+    line-height: 1.7;
+    padding: 2rem 1rem;
+  }
+  .container { max-width: 860px; margin: 0 auto; }
+  h1 {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 0.3rem;
+  }
+  .meta {
+    font-size: 0.8rem;
+    color: #666;
+    margin-bottom: 2.5rem;
+  }
+  .message {
+    margin-bottom: 1.8rem;
+    border-radius: 10px;
+    padding: 1.2rem 1.5rem;
+    position: relative;
+  }
+  .message.user {
+    background: #1a1f2e;
+    border-left: 3px solid #4a90e2;
+  }
+  .message.assistant {
+    background: #141a14;
+    border-left: 3px solid #5cb85c;
+  }
+  .role-label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 0.6rem;
+    opacity: 0.6;
+  }
+  .message.user .role-label { color: #4a90e2; }
+  .message.assistant .role-label { color: #5cb85c; }
+  .msg-time {
+    font-size: 0.72rem;
+    color: #555;
+    float: right;
+    margin-top: 0.1rem;
+  }
+  .thinking {
+    background: #1a1a10;
+    border: 1px solid #3a3a20;
+    border-radius: 6px;
+    padding: 0.8rem 1.1rem;
+    margin-bottom: 1rem;
+    font-style: italic;
+    color: #999;
+    font-size: 0.88rem;
+  }
+  .thinking-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #6a6a40;
+    margin-bottom: 0.4rem;
+  }
+  .search-block {
+    background: #111820;
+    border: 1px dashed #2a3a50;
+    border-radius: 6px;
+    padding: 0.7rem 1rem;
+    margin-bottom: 0.8rem;
+    font-size: 0.82rem;
+    color: #7a9fc0;
+  }
+  .search-block .search-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #3a6a90;
+    margin-bottom: 0.4rem;
+  }
+  .search-result {
+    margin-top: 0.4rem;
+    padding-left: 0.8rem;
+    border-left: 2px solid #2a4a60;
+  }
+  .search-result a { color: #5a9fc0; text-decoration: none; }
+  .search-result a:hover { text-decoration: underline; }
+  .search-result .snippet { color: #668; font-size: 0.8rem; }
+  .read-link-block {
+    background: #11181a;
+    border: 1px dashed #2a4040;
+    border-radius: 6px;
+    padding: 0.5rem 0.9rem;
+    margin-bottom: 0.8rem;
+    font-size: 0.8rem;
+    color: #6ab;
+  }
+  .content p { margin-bottom: 0.8rem; }
+  .content pre {
+    background: #0a0a0a;
+    border: 1px solid #2a2a2a;
+    border-radius: 6px;
+    padding: 1rem;
+    overflow-x: auto;
+    font-size: 0.85rem;
+    margin-bottom: 0.8rem;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .content code {
+    background: #1a1a1a;
+    border-radius: 3px;
+    padding: 0.1em 0.35em;
+    font-size: 0.87em;
+    font-family: "JetBrains Mono", "Fira Code", monospace;
+  }
+  .content pre code { background: none; padding: 0; }
+  .content h1, .content h2, .content h3, .content h4 {
+    color: #d0d0d0;
+    margin: 1rem 0 0.5rem;
+  }
+  .content ul, .content ol {
+    padding-left: 1.5rem;
+    margin-bottom: 0.8rem;
+  }
+  .content li { margin-bottom: 0.3rem; }
+  .content blockquote {
+    border-left: 3px solid #444;
+    padding-left: 1rem;
+    color: #999;
+    margin-bottom: 0.8rem;
+  }
+  .content table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 0.8rem;
+    font-size: 0.88rem;
+  }
+  .content th, .content td {
+    border: 1px solid #2a2a2a;
+    padding: 0.4rem 0.7rem;
+  }
+  .content th { background: #1a1a1a; }
+  .content hr { border: none; border-top: 1px solid #2a2a2a; margin: 1rem 0; }
+  .content a { color: #4a90e2; }
+  .divider {
+    border: none;
+    border-top: 1px solid #1e1e1e;
+    margin: 2rem 0;
+  }
+  #index { margin-bottom: 2.5rem; }
+  #index h2 { font-size: 1rem; color: #888; margin-bottom: 0.8rem; }
+  #index ul { list-style: none; padding: 0; }
+  #index li { margin-bottom: 0.4rem; }
+  #index a { color: #4a90e2; text-decoration: none; font-size: 0.9rem; }
+  #index a:hover { text-decoration: underline; }
+  .conv-header { margin: 3rem 0 1rem; }
+  .conv-header h2 { font-size: 1.25rem; color: #ccc; }
+</style>
+</head>
+<body>
+<div class="container">
+<h1>Epstein Files Released Names List</h1>
+<div class="meta" data-started-ts="1772647791857" data-updated-ts="1772648513778" data-started-iso="2026-03-05T02:09:51.857000+08:00" data-updated-iso="2026-03-05T02:21:53.778000+08:00">Started <span class="ts-display">2026-03-05 02:09</span> &nbsp;·&nbsp; Last updated <span class="ts-display">2026-03-05 02:21</span></div>
+<div class="message user" data-ts="1772647793898" data-ts-iso="2026-03-05T02:09:53.898000+08:00"><div class="role-label">You <span class="msg-time ts-display" data-ts="1772647793898" data-ts-iso="2026-03-05T02:09:53.898000+08:00">2026-03-05 02:09</span></div><div class="content"><p>what names are on the epstein list - or in the epstein files that have been released</p></div></div>
+<div class="message assistant" data-ts="1772647793899" data-ts-iso="2026-03-05T02:09:53.899000+08:00"><div class="role-label">DeepSeek <span class="msg-time ts-display" data-ts="1772647793899" data-ts-iso="2026-03-05T02:09:53.899000+08:00">2026-03-05 02:09</span></div><div class="search-block"><div class="search-label">Web Search</div><div class="search-result"><a href="https://www.wionews.com/photos/epstein-files-new-release-full-list-305-names-politicians-celebrities-businessmen-royals-1771220907285" target="_blank">Epstein Files new release has 305 names, including politicians, celebrities and businessmen - Full List</a><div class="snippet">The list of American politicians in the new release includes the names of US President Donald Trump and First Lady Melania Trump, Ivanka Trump, JD Vance, Bill C</div></div><div class="search-result"><a href="https://www.gazetaexpress.com/en/nuk-ka-me-dosje-epstein-departamenti-i-drejtesise-i-publikuam-te-gjitha/" target="_blank">No more "Epstein" files - Justice Department: We released them all</a><div class="snippet">The three million documents related to Jeffrey Epstein, which caused a political earthquake in many countries, with high-ranking figures involved, were the last</div></div><div class="search-result"><a href="https://www.themirror.com/news/politics/doj-releases-300-high-profile-1683828" target="_blank">DOJ releases 300 high-profile names in the Jeffrey Epstein files - see full list</a><div class="snippet">Some of the names include President Donald Trump, Barack and Michelle Obama, Bill Gates, and Bill and Hillary Clinton. Also included are Prince Harry, Woody All</div></div><div class="search-result"><a href="https://www.mediaite.com/politics/breaking-pam-bondi-says-doj-released-all-epstein-files-names-trump-biden-zuckerberg-tucker-carlson-among-politically-exposed-persons/" target="_blank">Pam Bondi Says DOJ Released ‘All’ Epstein Files — Names Trump, Biden, Zuckerberg, Tucker Carlson Among ‘Politically Exposed Persons’</a><div class="snippet">The Justice Department said it has released “all” files tied to dead sex criminal Jeffrey Epstein, according to a letter sent by Attorney General Pam Bondi and </div></div><div class="search-result"><a href="https://news.tvbs.com.tw/world/3118582" target="_blank">艾普斯坦名單懶人包》大咖政商名單文件解密！淫魔艾普斯坦案全揭露│TVBS新聞網</a><div class="snippet">艾普斯坦名單再度引發熱議！最新解密文件引爆全球政商大地震，名單包含川普、比爾蓋茲、安德魯王子等多位大咖。《TVBS新聞網》整理最新進度，解析艾普斯坦島內幕、死亡謎團與Netflix紀錄片沒說的檔案真相。</div></div></div><div class="thinking"><div class="thinking-label">Thinking</div>Okay, the user is asking about names on the "Epstein list" or in recently released "Epstein files." This is a high-interest topic that has generated significant media coverage and public speculation. The user likely wants to understand who has been named and what these revelations actually mean.<br><br>I need to provide the list of names from the February 2026 DOJ release while clearly explaining the crucial context about what this list represents versus the mythical "client list" many people expect.<br><br>Looking at the search results, several high-authority news outlets have covered this extensively. Newsweek provides the most comprehensive list with 305 names formatted alphabetically [citation:7], which would be useful for reference. WION similarly lists 305 names with category breakdowns [citation:1]. Daily Mail also covers the full list [citation:6].<br><br>The Financial Express article is particularly valuable because it explicitly debunks the viral misinterpretation about this being a "client list" [citation:8]. It explains these are simply people mentioned anywhere in the files, from emails to news articles to contact books. This directly addresses what the user is likely wondering about.<br><br>Mediaite provides official DOJ context about the "politically exposed persons" designation [citation:4]. The Mirror US covers similar ground with the 300-name list [citation:3]. The National Desk articles [citation:9][citation:10] report on the bipartisan backlash, including Rep. Khanna's criticism about Janis Joplin appearing despite dying when Epstein was a teenager.<br><br>Gazeta Express [citation:2] and TVBS [citation:5] provide additional international context but are less detailed on the full name list.<br><br>All sources are from mid-February 2026, making them timely for this release. Authority varies: Newsweek and Mediaite are established outlets, Daily Mail and Mirror US are tabloids but reporting factual DOJ information, Financial Express provides helpful clarification context.<br><br>For presenting this information, I should:<br>1. Start with the crucial caveat that this is not a "client list" but rather mentions in files<br>2. Organize the major names by category (politicians, celebrities, business, royals) to make it digestible<br>3. Include the full comprehensive list for reference [citation:7]<br>4. Explain the context of how names appear and the backlash [citation:8][citation:9]<br><br>The response should be informative while managing expectations about what this release actually reveals.</div><div class="content"><p>In February 2026, the U.S. Department of Justice released a tranche of files related to Jeffrey Epstein and provided a list of 305 individuals identified as "government officials" or "politically exposed persons" whose names appear in the materials [citation:1][citation:7]. It is very important to understand that <strong>being named in these files does not imply any wrongdoing or connection to illegal activities</strong>. The names appear in a wide variety of contexts, including email contact, being mentioned in a shared news article, or simply being listed in Epstein's contact book [citation:1][citation:4][citation:8].</p>
+<p>For clarity, here are some of the notable figures across different sectors whose names appear in the files, as reported by multiple news outlets [citation:1][citation:3][citation:7]:</p>
+<table><thead><tr><th>Category</th><th>Names Mentioned in the Released Files</th></tr></thead><tbody>
+<tr><td><strong>U.S. Politicians & Officials</strong></td><td>Donald Trump, Joe Biden, Barack Obama, Hillary Clinton, Bill Clinton, Kamala Harris, Marco Rubio, JD Vance, Nancy Pelosi, Hakeem Jeffries, Alexandria Ocasio-Cortez, Ron DeSantis, Mike Pence, Bernie Sanders, Mitch McConnell [citation:1][citation:3][citation:4]</td></tr>
+<tr><td><strong>International Leaders & Royals</strong></td><td>Prince Andrew, Sir Keir Starmer, Tony Blair, Benjamin Netanyahu, Prince Harry, Queen Elizabeth II, Princess Diana, Ehud Barak [citation:1][citation:3][citation:5]</td></tr>
+<tr><td><strong>Business & Tech Leaders</strong></td><td>Bill Gates, Elon Musk, Jeff Bezos, Mark Zuckerberg, Peter Thiel, Richard Branson, Leon Black, Les Wexner [citation:1][citation:3][citation:5]</td></tr>
+<tr><td><strong>Entertainment & Celebrities</strong></td><td>Beyoncé, Jay-Z, Bruce Springsteen, Michael Jackson, Cher, George Clooney, Alec Baldwin, Robert De Niro, Mick Jagger, Kevin Spacey, Woody Allen [citation:1][citation:3][citation:6]</td></tr>
+<tr><td><strong>Other Prominent Names</strong></td><td>The list also includes historical figures like <strong>Elvis Presley, Marilyn Monroe, and Kurt Cobain</strong>, as well as controversial individuals like <strong>Prince Andrew, Ghislaine Maxwell, and Bill Cosby</strong> [citation:1][citation:3][citation:7].</td></tr>
+</tbody></table>
+<h3>📄 Understanding the List and Its Context</h3>
+<p>The release of the names has been accompanied by significant clarification and some controversy:</p>
+<ul>
+<li><strong>What the List Is</strong>: This is an index of names that appear somewhere within the millions of pages of documents, flight logs, photos, and emails. The Department of Justice stated that individuals are included if their name appears at least once in connection with being a government official or politically exposed person [citation:1][citation:8].</li>
+<li><strong>What the List Is Not</strong>: Officials and news reports have stressed that this is <strong>not a "client list"</strong> of people who participated in or were aware of Epstein's crimes [citation:2][citation:8]. Ghislaine Maxwell herself has stated she is not aware of any such master list [citation:8]. The contexts for a name appearing can be as benign as being mentioned in a newspaper article that was included in the files [citation:4][citation:8].</li>
+<li><strong>The Backlash</strong>: The inclusion of figures who died long before Epstein's crimes (like Janis Joplin, who died when Epstein was 17) or were children at the time (like a 12-year-old Willie Nelson) has led to criticism. Lawmakers like Rep. Ro Khanna accused the DOJ of "purposefully muddying the waters" by releasing a list with no clarification on how each person was mentioned, which could unfairly conflate innocent associations with criminal activity [citation:8][citation:9][citation:10].</li>
+</ul>
+<p>I hope this provides a clear and accurate picture of the recently released information. If you would like to know more about the context surrounding a specific individual named in the files, feel free to ask.</p></div></div>
+<div class="message user" data-ts="1772647968925" data-ts-iso="2026-03-05T02:12:48.925000+08:00"><div class="role-label">You <span class="msg-time ts-display" data-ts="1772647968925" data-ts-iso="2026-03-05T02:12:48.925000+08:00">2026-03-05 02:12</span></div><div class="content"><p>what about the non public figures that were involved with epstein?   Tell me about the transfers of the house next door to where epstein lived in new york - was it really sold for 10$ over and over?  what is the list of people / organizations that the property was transferred to</p></div></div>
+<div class="message assistant" data-ts="1772647968926" data-ts-iso="2026-03-05T02:12:48.926000+08:00"><div class="role-label">DeepSeek <span class="msg-time ts-display" data-ts="1772647968926" data-ts-iso="2026-03-05T02:12:48.926000+08:00">2026-03-05 02:12</span></div><div class="search-block"><div class="search-label">Web Search</div><div class="search-result"><a href="https://growricherny.beehiiv.com/p/grow-richer-new-york-eb52" target="_blank">Greetings Grow Richer New York 🧠,</a><div class="snippet">This week, we shed light on the dark history of the Herbert N. Straus House on 71st Street, which once served as the residence of the late "financier" turned co</div></div><div class="search-result"><a href="https://therealdeal.com/new-york/2026/03/04/how-jeffrey-epstein-secretly-backed-manhattan-condo-project/" target="_blank">How Jeffrey Epstein secretly backed NoMad’s condo project to the stars</a><div class="snippet">At 21 East 26th Street, a little-known developer named David Mitchell cut Epstein in on a sweetheart deal that gave him access to the kind of returns reserved f</div></div><div class="search-result"><a href="https://www.newsweek.com/map-shows-jeffrey-epsteins-properties-and-who-owns-them-now-11537717" target="_blank">Map shows Jeffrey Epstein's properties and who owns them now</a><div class="snippet">The late disgraced financier and convicted sex offender Jeffrey Epstein socialized with some of the world’s wealthiest and most powerful people, hosting guests </div></div><div class="search-result"><a href="https://www.forbes.com/sites/lisettevoytko/2021/03/11/jeffrey-epstein-mansion-money-51-million-transferred-to-victims-fund/" target="_blank">Jeffrey Epstein Mansion Money—$51 Million—Transferred To Victim’s Fund And Estate</a><div class="snippet">A little under $51 million from the sale of Jeffrey Epstein’s Manhattan mansion was transferred Thursday to the estate and compensation fund for the alleged sex</div></div><div class="search-result"><a href="https://www.nbc4i.com/news/local-news/new-albany/what-les-wexner-said-about-the-manhattan-penthouse-he-sold-to-jeffrey-epstein/?ipid=promo-link-block1" target="_blank">What Les Wexner said about the Manhattan penthouse he sold to Jeffrey Epstein</a><div class="snippet">NEW ALBANY, Ohio (WCMH) — In his prepared statement to Congress, Ohio billionaire Les Wexner discussed his relationship with convicted sex offender Jeffrey Epst</div></div></div><div class="thinking"><div class="thinking-label">Thinking</div>Hmm, the user was previously asking about the public figure names on the Epstein list, and now they're digging deeper into two specific areas: non-public figures involved with Epstein, and the intriguing property transfers of the Manhattan townhouse with the $10 transaction rumor. This shows they're looking beyond just the celebrity names to understand the mechanics of Epstein's operation.<br><br>I'll need to address both parts of their query. For the property question, I'll trace the ownership chain of 9 East 71st Street. For the non-public figures, I'll need to identify individuals who weren't celebrities but played significant roles in Epstein's property and financial dealings.<br><br>Looking at the search results, several are highly valuable here. An NBC4 article contains Les Wexner's congressional testimony about selling the property to Epstein for its appraised value with a payment schedule [citation:5]. This directly contradicts the "$10 transfer" rumor. The Grow Richer NY blog mentions the $10 figure but notes it was "nominal" and associated with deed transfer from Wexner, not a sale price [citation:1].<br><br>The World Journal article reveals Howard Lutnick's connection - he purchased 11 East 71st Street from a trust where Epstein was a trustee [citation:8]. This is a legitimate news source documenting Epstein's role in neighboring properties. The NewsBreak article about Elizabeth "Libet" Johnson is particularly fascinating - it shows Epstein was named as a trustee for her $24M Colorado chalet with powers to "convey, encumber, lease" the property [citation:10]. While NewsBreak isn't the most authoritative source, the property deed details appear factual.<br><br>For the Whitman condo project, The Real Deal provides detailed information about David Mitchell and how Epstein invested in the development [citation:2]. This is a reputable real estate publication. The Forbes article confirms the 2021 sale and LLC purchase [citation:4], which is highly authoritative.<br><br>I'll organize the response with clear sections: first debunking the $10 myth with actual payment details, then listing the non-public figures with their specific connections. A table format will help users quickly see who these individuals were and their relationship to Epstein. The property transfer timeline can be woven into the narrative rather than a separate table, showing the progression from Straus to Wexner to Epstein to Daffey.</div><div class="content"><p>You've asked about a lesser-known aspect of this story, moving from the famous names to the intricate property dealings surrounding Jeffrey Epstein. While information on non-public figures is, by nature, harder to find, details about the New York townhouse and some key individuals involved in his real estate network have come to light.</p>
+<h3>🏘️ The Truth About the $10 Townhouse Transfers</h3>
+<p>The story of the Manhattan townhouse at <strong>9 East 71st Street</strong> being sold for $10 is a persistent rumor, but the reality of its transfer is more complex. The key transaction involved Les Wexner, the billionaire founder of L Brands, who was Epstein's primary client.</p>
+<p>Les Wexner purchased the seven-floor, 28,000-square-foot neo-classical mansion in 1989 for $13.2 million [citation:1]. In 1998, the property was transferred to Epstein. Contrary to the rumor of a nominal $10 payment, Wexner has stated that Epstein <strong>purchased it for its appraised value</strong> [citation:5]. Bank documents show Epstein paid a total of <strong>$20 million</strong> for the property through a corporation, with an initial payment of over $10 million in 1998 and the remaining balance paid in installments through March 2000 [citation:5].</p>
+<table><thead><tr><th>Year</th><th>Transaction Type</th><th>Entity/Individual Involved</th><th>Notes</th></tr></thead><tbody>
+<tr><td><strong>1932</strong></td><td>Construction</td><td>Herbert N. Straus (heir to Macy's fortune)</td><td>The home was built for Straus, who died before it was finished [citation:1].</td></tr>
+<tr><td><strong>1989</strong></td><td>Purchase</td><td>Les Wexner</td><td>Bought the property for <strong>$13.2 million</strong> [citation:1].</td></tr>
+<tr><td><strong>1998</strong></td><td>Sale</td><td>Les Wexner to Jeffrey Epstein</td><td>Sold for a total of <strong>$20 million</strong> [citation:5].</td></tr>
+<tr><td><strong>2021</strong></td><td>Sale</td><td>Epstein's Estate</td><td>Sold to Michael Daffey for <strong>$51 million</strong>; proceeds went to a victims' compensation fund [citation:3][citation:4].</td></tr>
+</tbody></table>
+<p>After Epstein's death in 2019, his estate sold the mansion in 2021. The buyer was <strong>Michael D. Daffey</strong>, a former Goldman Sachs executive, who purchased it for <strong>$51 million</strong> [citation:1][citation:3]. The proceeds from this sale were directed to the Epstein Victims' Compensation Program [citation:3][citation:4]. Daffey later sold the property in 2023 for over $65 million [citation:1].</p>
+<h3>👥 Non-Public Figures in Epstein's Orbit</h3>
+<p>While not household names, several individuals played significant roles in Epstein's financial and real estate dealings. These figures help illustrate the network that supported his wealth and operations.</p>
+<ul>
+<li><strong>David Mitchell</strong>: A little-known real estate developer who had a close, long-standing relationship with Epstein [citation:2]. Mitchell gave Epstein access to a lucrative investment in a Manhattan condo project at 21 East 26th Street, known as the Whitman. Epstein invested about $920,000 and saw returns of nearly 80% [citation:2]. Their dealings included other ventures, some of which were unsuccessful, highlighting how Epstein used personal connections to secure insider deals [citation:2].</li>
+</ul>
+<ul>
+<li><strong>Elizabeth "Libet" Johnson</strong>: An heiress to the Johnson & Johnson fortune [citation:10]. In 1998, Johnson transferred the deed for her <strong>$24 million ski chalet in Vail, Colorado</strong>, into a trust and named Epstein as one of its two trustees. This legal move gave Epstein broad authority to manage or even sell the property [citation:10]. It echoed the mechanism used with Les Wexner's property in New York, suggesting a pattern in how Epstein positioned himself to gain control over assets.</li>
+</ul>
+<ul>
+<li><strong>Howard Lutnick</strong>: The CEO of Cantor Fitzgerald and current U.S. Secretary of Commerce [citation:8]. Lutnick's connection to Epstein is geographical and transactional. Since 1998, Lutnick has owned the townhouse at <strong>11 East 71st Street</strong> [citation:8]. However, before Lutnick's ownership, the property had a history with Epstein. Records show that in 1996, a trust with ties to an individual on an FBI list, and for which Epstein was a trustee, sold the home [citation:8]. This makes Epstein a link in the chain of title for Lutnick's property, though Lutnick's office has stated he had no direct personal relationship with Epstein [citation:8].</li>
+</ul>
+<p>I hope this detailed look at the property transfers and the lesser-known individuals connected to them provides a clearer picture of this complex story. If you are interested in the fate of Epstein's other properties, such as his islands or ranch, feel free to ask.</p></div></div>
+<div class="message user" data-ts="1772648090023" data-ts-iso="2026-03-05T02:14:50.023000+08:00"><div class="role-label">You <span class="msg-time ts-display" data-ts="1772648090023" data-ts-iso="2026-03-05T02:14:50.023000+08:00">2026-03-05 02:14</span></div><div class="content"><p>I was asking about 11 East 71st Street, and howard lutnick - and the ownership and sales history</p></div></div>
+<div class="message assistant" data-ts="1772648090025" data-ts-iso="2026-03-05T02:14:50.025000+08:00"><div class="role-label">DeepSeek <span class="msg-time ts-display" data-ts="1772648090025" data-ts-iso="2026-03-05T02:14:50.025000+08:00">2026-03-05 02:14</span></div><div class="search-block"><div class="search-label">Web Search</div><div class="search-result"><a href="https://www.corcoran.com/nyc/press-mention/display/234" target="_blank">A Hell Of A Way To Wait Out A Town House</a><div class="snippet">Inc., which develops technology for trading online, bought a Beaux Arts house at 11 East 71st Street for $7.6 million in 1998. At the time, it was divided into </div></div><div class="search-result"><a href="https://vancouverisland.ctvnews.ca/world/article/lutnicks-epstein-ties-raise-concerns-on-wall-street-but-not-in-the-white-house/" target="_blank">Lutnick’s Epstein ties raise concerns on Wall Street — but not in the White House</a><div class="snippet">When Howard Lutnick had a problem in 2018, he turned to his next-door neighbour for help: Jeffrey Epstein. Lutnick emailed Epstein’s assistant in May 2018 about</div></div><div class="search-result"><a href="https://www.threads.com/@tissuepapermoon/post/DSp76VRCYEf/the-person-who-lived-in-the-house-next-door-to-jeffrey-epsteins-new-york" target="_blank">@tissuepapermoon on Threads</a><div class="snippet">Lutnick has owned the house at 11 East 71st Street since 1998, having purchased it from a trust that was previously associated with Epstein and Leslie Wexner. H</div></div><div class="search-result"><a href="https://www.ndtv.com/world-news/schoolgirl-uniforms-sexual-devices-epstein-s-amazon-shopping-history-released-10043853?pfrom=home-ndtv_topstories" target="_blank">Schoolgirl Uniforms, Sex Toys: What Jeffrey Epstein Bought Online</a><div class="snippet">convicted sex offender Jeffrey Epstein, spanning five years, has been made public by the US Department of Justice. ... The receipts show Epstein purchased four </div></div><div class="search-result"><a href="https://user.guancha.cn/main/content?id=1485637&comments-container" target="_blank">美国纷争与愤怒！权倾朝野为所欲为！ 川普内阁中的爱泼斯坦好友“隔壁老卢”</a><div class="snippet">爱泼斯坦豪宅位于纽约东71街9号，川普的商务部长“隔壁老卢”卢特尼克的房产挨着爱泼斯坦的房产，位于纽约东71街11号。“隔壁老卢”于1998年通过爱泼斯坦和莱斯·韦克斯纳 (Les Wexner) 的慧星信托公司（Comet Trust ）购买了该房产。</div></div></div><div class="thinking"><div class="thinking-label">Thinking</div>Hmm, the user is following up on my previous answer. They specifically want to focus on 11 East 71st Street and Howard Lutnick's connection to it, asking for the complete ownership history and sales record. This is a much more targeted question than my previous broader answer about non-public figures.<br><br>I need to provide a comprehensive timeline of ownership transfers for 11 East 71st Street, identify who was involved at each stage, and clarify the $10 transaction question from the user's original query.<br><br>Looking at the search results, one source from Crain's New York Business provides exceptionally detailed investigative reporting on these exact property transactions [citation:9]. It's a legitimate business publication with strong credibility on real estate matters. This source explains the $10 figure as a placeholder used in many NYC real estate transfers, not the actual sale price.<br><br>The CTV News article [citation:2] and World Journal piece [citation:6] corroborate the ownership chain and Lutnick's 1998 purchase. The Corcoran/NY Observer article [citation:1] confirms Lutnick bought it for $7.6 million in 1998. The Chinese commentary site [citation:5] and Threads post [citation:3] have lower authority but confirm basic facts.<br><br>The NDTV article [citation:4] and Times of Israel article [citation:10] aren't relevant to the property question. The Indonesian property article [citation:8] covers Epstein's properties but not the 11 East 71st transfer history.<br><br>For the timeline, I can create a chronological table showing each transfer from 1988 through Lutnick's 1998 purchase. This visual format will help the user track the complex ownership chain clearly. The Crain's article provides the 1992 transfer to the 11 East 71st Street Trust, the 1996 sale to Comet Trust with the $86,800 tax implying $6.2M price [citation:9], and the 1998 sale to Lutnick with $106,400 tax implying $7.6M [citation:1][citation:9].<br><br>The user's specific question about "$10 over and over" needs addressing - the Crain's article clearly explains this is a placeholder convention in NYC property records, not actual sale prices [citation:9]. The tax payments prove substantial sums changed hands.<br><br>I'll organize the response with the timeline table first, then address the $10 question, then highlight the key players at each stage. This gives the user exactly the ownership history they requested.</div><div class="content"><p>Of course, let's focus specifically on the history of <strong>11 East 71st Street</strong> and Howard Lutnick's connection to it. The ownership trail of this property is indeed complex and involves several transfers where Epstein acted as a trustee [citation:9].</p>
+<p>Here is a detailed timeline of the ownership for 11 East 71st Street based on the available records.</p>
+<table><thead><tr><th>Year</th><th>Transaction Type</th><th>Entity/Individual Involved</th><th>Key Details & Connections to Epstein</th></tr></thead><tbody>
+<tr><td><strong>1988</strong></td><td>Purchase</td><td><strong>SAM Conversion Corp.</strong> [citation:9]</td><td>An entity that used a Columbus, Ohio, address linked to Leslie Wexner (Epstein's billionaire client and mentor). <strong>Jeffrey Epstein was identified as the vice president of this corporation</strong> [citation:9].</td></tr>
+<tr><td><strong>1992</strong></td><td>Transfer</td><td><strong>SAM Conversion Corp. to the 11 East 71st Street Trust</strong> [citation:9]</td><td>The deed lists the sale price as "$10 and other valuable consideration," a standard placeholder in NYC records [citation:9]. Crucially, <strong>Epstein was a trustee of this new trust</strong> [citation:9].</td></tr>
+<tr><td><strong>1996</strong></td><td>Sale</td><td><strong>11 East 71st Street Trust to the Comet Trust</strong> [citation:6][citation:9]</td><td>Again listed as "$10 and other valuable consideration," but records of the <strong>$86,800</strong> real estate transfer tax paid allowed experts to estimate the actual sale price at <strong>$6.2 million</strong> [citation:9]. <strong>Epstein, as trustee, authorized his lawyer to handle this sale</strong> [citation:6][citation:9]. The Comet Trust was linked to an individual in Epstein's infamous "black book" [citation:9].</td></tr>
+<tr><td><strong>1998</strong></td><td>Sale</td><td><strong>Comet Trust to Howard Lutnick</strong> [citation:1][citation:6][citation:9]</td><td>For a final time, the deed cited "$10 and other valuable consideration." The <strong>$106,400</strong> transfer tax paid indicated an actual price of <strong>$7.6 million</strong> [citation:1][citation:9]. Lutnick took out a <strong>$4 million mortgage</strong> on the property the same day [citation:9].</td></tr>
+</tbody></table>
+<h3>🏘️ Clarifying the "$10" Question</h3>
+<p>To directly answer your question: <strong>No, the property was not actually sold for $10 each time.</strong> The "$10 and other valuable consideration" language is a standard convention used in many New York City real estate transactions [citation:9]. It's a legal placeholder, and the real estate transfer taxes paid on the deals prove that millions of dollars changed hands with each sale [citation:9].</p>
+<h3>👥 Who Was Involved in the Chain of Title?</h3>
+<p>The key figures and entities in this property's history, as confirmed by the search results, are:</p>
+<ul>
+<li><strong>Howard Lutnick</strong>: Purchased the property in 1998 and has owned it since [citation:1][citation:6]. He is the current U.S. Secretary of Commerce [citation:2].</li>
+<li><strong>Jeffrey Epstein</strong>: Never owned 11 East 71st Street, but he played a central role in its transfers. He was an officer of the company that bought it in 1988 and a trustee of the trusts that owned it in 1992 and 1996, giving him direct control over the sales during those years [citation:6][citation:9].</li>
+<li><strong>SAM Conversion Corp.</strong>: The initial corporate owner in 1988, linked to Leslie Wexner's address [citation:9].</li>
+<li><strong>The 11 East 71st Street Trust</strong>: A trust created in 1992 for which Epstein was a trustee [citation:9].</li>
+<li><strong>The Comet Trust</strong>: A trust that bought the property in 1996. It was connected to an individual listed in Epstein's contact book obtained by the FBI [citation:6][citation:9].</li>
+<li><strong>Leslie Wexner</strong>: Epstein's former mentor and client, whose business address was used by the initial purchasing entity in 1988 [citation:9].</li>
+</ul>
+<p>I hope this detailed history clarifies the ownership and sales record of 11 East 71st Street. Is there anything else about this property or the individuals involved that you would like to know?</p></div></div>
+<div class="message user" data-ts="1772648195822" data-ts-iso="2026-03-05T02:16:35.822000+08:00"><div class="role-label">You <span class="msg-time ts-display" data-ts="1772648195822" data-ts-iso="2026-03-05T02:16:35.822000+08:00">2026-03-05 02:16</span></div><div class="content"><p>who is the individual that represents the comet trust</p></div></div>
+<div class="message assistant" data-ts="1772648195824" data-ts-iso="2026-03-05T02:16:35.824000+08:00"><div class="role-label">DeepSeek <span class="msg-time ts-display" data-ts="1772648195824" data-ts-iso="2026-03-05T02:16:35.824000+08:00">2026-03-05 02:16</span></div><div class="search-block"><div class="search-label">Web Search</div></div><div class="thinking"><div class="thinking-label">Thinking</div>OK, the user is asking for the specific individual behind the "Comet Trust" that I mentioned in the last response about 11 East 71st Street. They're drilling down into the details of this non-public figure involved in Epstein's property network.<br><br>Looking at the history, the user has been very focused on the mechanics of these property transfers, especially the "$10" myth. They started with the big public names, then moved to the less-known figures and the specific house next door. Now they're zeroing in on one specific entity in the chain of title. This shows they're not just a casual reader; they're doing some serious research or have a deep personal interest in untangling this complex web.<br><br>Their genuine need is clear: they want a name. They want to know who this "Comet Trust" really was, the person who owned the property between Epstein's trust and Howard Lutnick. The deep-seated need is probably to understand the full network of people who facilitated or were involved in these opaque transactions around Epstein. They might be trying to piece together a more complete picture of his operations beyond the famous names.<br><br>My last response was very detailed but ended by saying the Comet Trust was "linked to an individual in Epstein's infamous 'black book'." So the user is following up on that exact point. I need to provide the name if it's available, but I also have to be very careful with the context. The search results I have specifically mention the "11 East 71st Street Trust" and the "Comet Trust" but don't name the individual behind the Comet Trust in the provided text snippets. I have to be honest about that limitation. I can give the name for the 1992 trust's beneficiary, as that's in the search results (Robin Ross), but for the Comet Trust, I only have the connection to the "black book," not the name.<br><br>So my response needs to: 1) Acknowledge the follow-up question. 2) Provide the known information about the 1992 trust's beneficiary (Robin Ross) to show I'm not dodging, and explain who she is. 3) Clearly state that the specific individual for the Comet Trust isn't named in the provided material, but reiterate its documented link to Epstein's black book. 4) Offer a way forward by asking if they want the known details about the Comet Trust's successor or the black book itself. This keeps the conversation helpful and transparent about the information boundaries.</div><div class="content"><p>You're asking about a specific detail that gets to the heart of the opaque financial dealings surrounding Epstein. Based on the search results provided, the individual behind the <strong>Comet Trust</strong> is not explicitly named. However, the documents confirm that the <strong>Comet Trust was linked to an individual listed in Jeffrey Epstein's infamous "black book"</strong> —the contact book obtained by the FBI during the 2019 raid on his townhouse .</p>
+<p>The only named individual in the chain of title for 11 East 71st Street, besides Howard Lutnick, is associated with the <strong>11 East 71st Street Trust</strong> (the entity that sold to the Comet Trust). Here is the specific breakdown:</p>
+<ul>
+<li><strong>Robin Ross</strong> was the <strong>beneficiary</strong> of the 11 East 71st Street Trust when it sold the property to the Comet Trust in 1996 . She was romantically involved with Epstein in the 1980s and remained a close associate .</li>
+</ul>
+<ul>
+<li><strong>The Comet Trust</strong> was a purchasing entity, but the search results do not disclose the name of its beneficiary or principal. They only state that this anonymous individual was significant enough to be in Epstein's personal contact book .</li>
+</ul>
+<p>If you are interested, I can provide more details on the contents of the "black book" or the known associates of Epstein like Robin Ross.</p></div></div>
+<div class="message user" data-ts="1772648258960" data-ts-iso="2026-03-05T02:17:38.960000+08:00"><div class="role-label">You <span class="msg-time ts-display" data-ts="1772648258960" data-ts-iso="2026-03-05T02:17:38.960000+08:00">2026-03-05 02:17</span></div><div class="content"><p>please provide complete details of the contents of epsteins black book</p></div></div>
+<div class="message assistant" data-ts="1772648258961" data-ts-iso="2026-03-05T02:17:38.961000+08:00"><div class="role-label">DeepSeek <span class="msg-time ts-display" data-ts="1772648258961" data-ts-iso="2026-03-05T02:17:38.961000+08:00">2026-03-05 02:17</span></div><div class="search-block"><div class="search-label">Web Search</div><div class="search-result"><a href="https://www.washingtontimes.com/news/2025/sep/9/epsteins-newly-revealed-black-book-whos-wealthy-power-players/" target="_blank">Epstein’s newly revealed ‘black book’ is a who’s who of wealthy power players</a><div class="snippet">Jeffrey Epstein had the private phone numbers and addresses of the very rich and very famous in an address book seized by the FBI during its investigation of a </div></div><div class="search-result"><a href="https://www.newsweek.com/jeffrey-epstein-files-donald-trump-bill-clinton-flight-logs-emails-11076136?ref=biztoc.com" target="_blank">Which Epstein Files Have Already Been Released?</a><div class="snippet">Attorney General Pam Bondi confirmed Wednesday that the Justice Department will release its files from the federal investigation into Jeffrey Epstein within 30 </div></div><div class="search-result"><a href="https://uz.kursiv.media/en/2026-02-14/unredacted-1997-epstein-address-book-leak-sparks-global-backlash/" target="_blank">1997 Epstein Little Black Book Leak Fuels Fresh Scrutiny of Elite Ties</a><div class="snippet">A newly leaked 1997 edition of Jeffrey Epstein’s so-called «Little Black Book» has triggered a social media firestorm after unredacted names, addresses and phon</div></div><div class="search-result"><a href="https://www.wptv.com/us-news/jeffrey-epsteins-little-black-book-just-went-up-for-auction-heres-whose-names-are-listed-in-it" target="_blank">Jeffrey Epstein's 'little black book' just went up for auction. Here's whose names are listed in it</a><div class="snippet">There are reportedly 221 names listed that haven't been publicly linked to the convicted sex offender, who died in 2019. Posted Convicted pedophile Jeffrey Epst</div></div><div class="search-result"><a href="https://www.hindustantimes.com/world-news/us-news/alfredo-rodriguez-jeffrey-epsteins-butler-and-black-book-in-focus-after-new-files-released-lot-of-truth-died-101771027601437.html" target="_blank">Alfredo Rodriguez: Epstein's butler and ‘black book’ in focus after new files released; ‘lot of truth died’</a><div class="snippet">‘lot of truth died’ | Alfredo Rodriguez, Jeffrey Epstein's butler or Palm Beach house manager, was seen in a video after the Justice Department released the fil</div></div></div><div class="thinking"><div class="thinking-label">Thinking</div>Hmm, the user has been digging into Epstein's real estate network and now wants the complete contents of his "black book." They're clearly doing deep research on this topic, having already explored the Comet Trust and property transfers. This is a request for comprehensive documentary evidence rather than just highlights.<br><br>I'll need to explain that there are actually multiple black books, each with different origins and contents. I should provide a structured overview of what each contains, the key names documented, and importantly contextualize that inclusion doesn't imply wrongdoing.<br><br>Looking at the search results, I have excellent coverage. The Washington Times piece [citation:1] is particularly authoritative, providing detailed coverage of the 2025 release with specific names like Prince Andrew, Michael Bloomberg, Conrad Black, and Jimmy Buffett. It also covers the Birthday Book with its controversial Trump note and Clinton message.<br><br>Newsweek [citation:2] gives good timeline context about the February 2025 DOJ release and importantly notes the FBI's conclusion that no "client list" exists. This is crucial for framing.<br><br>The Kursiv Media piece [citation:3] covers the 1997 edition leak with 349 entries. Though it's a Uzbek outlet with medium authority, it provides unique information about this earlier version.<br><br>The WPTV/10News/NYPost coverage [citation:4][citation:6][citation:7] all detail the auction book's 389 entries with the intriguing checkmarks and yellow highlights. NYPost [citation:7] adds the fascinating origin story of Denise Ondayko finding it on Fifth Avenue.<br><br>The World of Books listing [citation:8] is actually quite valuable as a commercial source that summarizes the published compilation book, describing both black books and the Palm Beach house manual. This gives me structured details about the 1,500+ names in Black Book #1.<br><br>The Telegraph [citation:10] and Hindustan Times [citation:5] provide the Alfredo Rodriguez backstory - his attempt to sell the book, the undercover FBI sting, and his claim about Maxwell's database of underage girls with braces.<br><br>For presentation, I'll organize this by the different books rather than a simple list, since the user asked for "complete details" which requires explaining the multiple sources. The information naturally divides into sections: the main seized books, the 1997 edition, the auction book with its annotations, the Birthday Book, and the butler's account. I'll include a summary table for quick reference and end with context about what the books actually represent.<br><br>I'll make sure to consistently note that inclusion doesn't imply criminal activity, as multiple sources emphasize this important distinction [citation:1][citation:2][citation:4].</div><div class="content"><p>The term "Epstein's black book" actually refers to several different address books and contact lists from different time periods, each with its own origin story and contents. I'll provide you with the complete details of each known version.</p>
+<h2>📚 Overview of the Multiple Black Books</h2>
+<p>There are three primary versions of Epstein's address books that have become public:</p>
+<table><thead><tr><th>Version</th><th>Time Period</th><th>Number of Entries</th><th>Origin/Source</th><th>Key Features</th></tr></thead><tbody>
+<tr><td><strong>Black Book #1</strong></td><td>Circa 2004</td><td>~1,500 names</td><td>Seized by FBI from Epstein's home; first leaked by Gawker in 2015 [citation:8]</td><td>Contains extensive network of politicians, royals, celebrities, academics [citation:1][citation:8]</td></tr>
+<tr><td><strong>Black Book #2 (1997 Edition)</strong></td><td>Circa 1997</td><td>349 names (221 not in later book)</td><td>Found on NYC sidewalk in 1990s; auctioned in 2024 [citation:3][citation:7]</td><td>Earlier snapshot of Epstein's circle; includes checkmarks and yellow highlights [citation:4][citation:6]</td></tr>
+<tr><td><strong>Rodriguez Book</strong></td><td>2004-2005</td><td>Unknown (stolen by butler)</td><td>Stolen by Alfredo Rodriguez; attempted to sell to undercover FBI [citation:5][citation:10]</td><td>Contained names of victims and "underage girls" according to Rodriguez [citation:10]</td></tr>
+</tbody></table>
+<h2>📖 Detailed Contents of Each Black Book</h2>
+<h3><strong>Black Book #1 (2004 Edition - Seized by FBI)</strong></h3>
+<p>This is the most comprehensive version, containing approximately <strong>1,500 names</strong> of Epstein's associates [citation:8]. It was first revealed in court after Epstein's Palm Beach house manager Alfredo Rodriguez attempted to sell it in 2009, then made public through Gawker in 2015 [citation:8].</p>
+<p><strong>Notable individuals listed include</strong> [citation:1][citation:8]:</p>
+<ul>
+<li><strong>Royalty</strong>: Prince Andrew (with 18 contact numbers including Buckingham Palace and Balmoral Castle)</li>
+<li><strong>Politicians</strong>: Bill Clinton, Donald Trump, Ted Kennedy, Bill Richardson, Ehud Barak</li>
+<li><strong>Legal figures</strong>: Alan Dershowitz</li>
+<li><strong>Entertainment</strong>: Alec Baldwin, Ralph Fiennes, Griffin Dunne, Courtney Love, Kevin Spacey</li>
+<li><strong>Business</strong>: Les Wexner, David Koch, Peter Soros, Eva Andersson-Dubin</li>
+<li><strong>Media</strong>: New York Post gossip Richard Johnson</li>
+<li><strong>Academics</strong>: Lawrence Summers, Martin Peretz</li>
+<li><strong>Filmmakers</strong>: Andrew Jarecki</li>
+</ul>
+<p><strong>Also included in the files</strong> [citation:1]:</p>
+<ul>
+<li><strong>Massage contacts</strong>: Pages of women listed under "massage" in Paris, New Mexico, Britain, Virgin Islands, and Florida (taking 1.5 pages)</li>
+<li><strong>Specific categories</strong>: Some women listed for "foot" massages; 24 names under "masseuse/masseur"; 8 under "exercise people" [citation:4]</li>
+<li><strong>Flagged entries</strong>: FBI investigators flagged potential witnesses including Epstein's driver, Secret Service personnel who escorted Ehud Barak, David Cook (who "interacted and chatted daily with underage girls"), and Jean-Luc Brunel (modeling scout flagged as "scout for young females") [citation:1]</li>
+</ul>
+<h3><strong>Black Book #2 (1997 Edition - The "Sidewalk" Book)</strong></h3>
+<p>This 64-page address book was found on a Manhattan sidewalk in the mid-1990s by musician Denise Ondayko, who kept it in storage until 2020 [citation:7][citation:9]. It contains <strong>389 printed entries</strong> with <strong>221 names not seen in the later edition</strong> [citation:4][citation:7].</p>
+<p><strong>Unique features</strong> [citation:4][citation:6]:</p>
+<ul>
+<li><strong>94 names have checkmarks</strong> next to them (significance unknown)</li>
+<li><strong>5 names highlighted in yellow</strong> - all described as "well-recognized financial and industrial figures"</li>
+<li>Donald Trump is one of the five highlighted in yellow [citation:4]</li>
+<li>Two entries in "childlike" handwriting on the last page (similar to but not confirmed as Epstein's)</li>
+</ul>
+<p><strong>Names in this edition include</strong> [citation:4][citation:6][citation:7]:</p>
+<ul>
+<li>Donald Trump (highlighted)</li>
+<li>Alan Dershowitz</li>
+<li>Edward Kennedy</li>
+<li>Robert F. Kennedy Jr.</li>
+<li>Carl Icahn (special adviser to Trump during his presidency)</li>
+<li>Suzanne Ircha / Suzanna Johnson (Melania Trump's best friend, New York Jets co-owner)</li>
+<li>Cristina Greeven (Chris Cuomo's wife)</li>
+<li>Morgan Fairchild</li>
+<li>Jill Harth (who accused Donald Trump of sexual assault)</li>
+<li>Christie Hefner (former Playboy CEO)</li>
+<li>John Catsimatidis</li>
+<li>Sandy Warner</li>
+</ul>
+<h3><strong>The Rodriguez Black Book (Stolen from Epstein's Home)</strong></h3>
+<p>Alfredo Rodriguez, Epstein's Palm Beach house manager, stole an address book while working for Epstein between 2004-2005 [citation:10]. In <strong>November 2009</strong>, Rodriguez attempted to sell it to an undercover FBI agent for $50,000, believing he was dealing with a lawyer representing Epstein's victims [citation:5][citation:10].</p>
+<p><strong>Key revelations from the FBI sting video</strong> [citation:10]:</p>
+<ul>
+<li>Rodriguez described the book as the <strong>"Holy Grail"</strong> containing names of high-profile public figures, witnesses, and <strong>hundreds of alleged victims</strong></li>
+<li>He claimed Ghislaine Maxwell operated a <strong>computer database</strong> with details and <strong>naked images of young girls</strong> from Sweden, Romania, Czechoslovakia, and Brazil</li>
+<li>Rodriguez stated the girls in the images <strong>"were teenagers... they had braces"</strong></li>
+<li>When asked who created the book, Rodriguez replied: <strong>"Epstein himself"</strong></li>
+<li>He admitted lying to the FBI earlier about having documents because he feared Epstein would make him <strong>"disappear"</strong> and was keeping it as <strong>"insurance policy"</strong></li>
+</ul>
+<p>Rodriguez was arrested for obstruction of official proceedings, pleaded guilty, and served <strong>18 months in prison</strong> [citation:5][citation:10]. He died of mesothelioma in 2014 [citation:5]. The current location of his black book is unknown, though copies are believed to be in circulation [citation:10].</p>
+<h2>📕 The Birthday Book (2003)</h2>
+<p>Separate from the address books, Ghislaine Maxwell compiled a <strong>"Birthday Book"</strong> for Epstein's 50th birthday in 2003, which was released by the House Oversight Committee in September 2025 [citation:1][citation:2].</p>
+<p><strong>Contents include</strong> [citation:1][citation:2]:</p>
+<ul>
+<li>A message from <strong>Bill Clinton</strong> praising Epstein's "childlike curiosity" and "drive to make a difference"</li>
+<li>An alleged note from <strong>Donald Trump</strong> with a sexually suggestive drawing (Trump denies writing or signing it)</li>
+<li>A message from <strong>Bill Elkus</strong> stating it was "no secret" Epstein "appreciates beautiful women," recounting Epstein persuading a woman from Iowa to return to New York on his private jet</li>
+<li>A crude cartoon drawing labeled "1983" showing Epstein offering balloons and lollipops to girls, next to a "2003" image of women massaging Epstein and providing oral sex, captioned "What a great country!"</li>
+</ul>
+<h2>⚠️ Important Context</h2>
+<p>It is crucial to understand that <strong>being listed in any of these books does not imply wrongdoing or connection to illegal activities</strong> [citation:1][citation:2][citation:4]. The names appear in various contexts including:</p>
+<ul>
+<li>Social acquaintances</li>
+<li>Business contacts</li>
+<li>People mentioned in news articles</li>
+<li>Individuals whose contact information Epstein obtained for legitimate reasons</li>
+</ul>
+<p>The FBI conducted a systematic review of over 300 gigabytes of data and concluded there was <strong>no evidence of an incriminating "client list"</strong> or proof that Epstein blackmailed prominent individuals [citation:2]. The review confirmed Epstein harmed more than 1,000 victims but found no basis to investigate uncharged third parties [citation:2].</p>
+<p>Additionally, estate attorneys for Epstein have stated they are <strong>"not aware of the existence of a 'list of clients involved in sex, sex acts, or sex trafficking facilitated by Mr. Jeffrey Epstein'"</strong> [citation:1].</p>
+<p>I hope this comprehensive overview provides the complete details you were seeking about the contents of Epstein's various black books.</p></div></div>
+<div class="message user" data-ts="1772648415911" data-ts-iso="2026-03-05T02:20:15.911000+08:00"><div class="role-label">You <span class="msg-time ts-display" data-ts="1772648415911" data-ts-iso="2026-03-05T02:20:15.911000+08:00">2026-03-05 02:20</span></div><div class="content"><p>what is the israel connection to epstein?</p></div></div>
+<div class="message assistant" data-ts="1772648415913" data-ts-iso="2026-03-05T02:20:15.913000+08:00"><div class="role-label">DeepSeek <span class="msg-time ts-display" data-ts="1772648415913" data-ts-iso="2026-03-05T02:20:15.913000+08:00">2026-03-05 02:20</span></div><div class="search-block"><div class="search-label">Web Search</div><div class="search-result"><a href="https://www.wionews.com/world/epstein-was-not-israeli-agent-ties-with-barack-prove-it-netanyahu-1770397848800" target="_blank">Epstein was not Israeli agent, ties with Barack prove it: Netanyahu</a><div class="snippet">Israeli PM Benjamin Netanyahu rejected claims that Jeffrey Epstein was an Israeli spy, arguing Epstein’s close ties with former PM Ehud Barak prove the opposite</div></div><div class="search-result"><a href="https://www.aljazeera.com/news/2026/2/9/what-were-jeffrey-epsteins-links-to-israel" target="_blank">What were Jeffrey Epstein’s links to Israel?</a><div class="snippet">New documents show some believed the disgraced American financier had links to Israeli intelligence services and settler groups. ... documents related to the co</div></div><div class="search-result"><a href="https://en.didpress.com/25098/" target="_blank">Documents Allege Epstein Funded Israeli Military, Settlement Projects - DID PRESS AGENCY</a><div class="snippet">Newly released documents cited by the U.S. Department of Justice allege that disgraced American financier Jeffrey Epstein allocated significant funds to support</div></div><div class="search-result"><a href="https://www.aa.com.tr/en/americas/epstein-funded-pro-israel-groups-including-1-settlement-building-fbi-documents-show/3824046?amp=1" target="_blank">Epstein funded pro-Israel groups, including 1 'settlement-building,' FBI documents show</a><div class="snippet">Convicted sex offender Jeffrey Epstein funded Friends of Israel Defense Forces and settlement-building organization Jewish National Fund, according to FBI docum</div></div><div class="search-result"><a href="https://www.yerepouni-news.com/was-epstein-a-mossad-spy-or-did-he-just-look-like-one/" target="_blank">Was Epstein a Mossad spy, or did he just look like one?</a><div class="snippet">The US Justice Department’s January release of over 3 million documents continues to stoke theories that convicted sex offender Jeffrey Epstein operated as an a</div></div></div><div class="thinking"><div class="thinking-label">Thinking</div>Hmm, the user has been digging deep into the Epstein files after seeing the public figure list earlier. They're now asking about Israel connections - an area with allegations and counter-allegations that require careful handling.<br><br>I'll need to address several aspects: the Ehud Barak relationship, intelligence allegations, organizational funding, the Robert Maxwell connection, and the business/cyber angle. This is politically sensitive territory, so I should present facts neutrally and note official denials.<br><br>Looking at the search results, I have strong material. Al Jazeera provides comprehensive coverage of the intelligence allegations and financial ties [citation:2]. The Anadolu Agency piece has the FBI informant details and Netanyahu's denial [citation:4][citation:10]. JNS offers detailed analysis of Barak's business dealings [citation:9].<br><br>Some results are lower quality - the Iranian and Yemeni state media [citation:6][citation:7] have clear political agendas, though their factual claims about financial donations are corroborated elsewhere. The RT-affiliated piece [citation:5] includes speculative elements but does contain verifiable information about Rothschild connections.<br><br>For the intelligence allegations, multiple sources confirm the FBI informant believed Epstein was a "co-opted Mossad agent" [citation:2][citation:4]. The same sources report Netanyahu's strong denial [citation:1][citation:10]. This is important - I need to present both sides.<br><br>The financial donations to FIDF ($25,000) and JNF ($15,000) are consistently reported across sources [citation:2][citation:3][citation:4]. These are concrete, documented figures.<br><br>Robert Maxwell's role as alleged Mossad asset appears in multiple sources [citation:2][citation:5][citation:7]. His suspicious death and state funeral in Israel add weight to these claims.<br><br>The cyber/technology angle from JNS about Carbyne/Reporty [citation:9] and backchannel exports [citation:7] provides interesting context about practical business collaboration beyond just personal friendship.<br><br>I'll organize this as a multi-faceted connection with clear headings, showing both allegations and official responses. This gives the user a comprehensive understanding without overstating unproven claims.</div><div class="content"><p>The recently released files reveal a multi-faceted connection between Jeffrey Epstein and Israel, encompassing close personal relationships with key political figures, financial support for Israeli organizations, and unverified but persistent allegations of intelligence ties.</p>
+<ul>
+<li><strong>🤝 Ehud Barak</strong>: Epstein's most significant Israeli link was his decades-long relationship with former Prime Minister <strong>Ehud Barak</strong> [citation:2][citation:5][citation:9]. Barak visited Epstein's New York residence over 30 times [citation:5] and co-founded the emergency communications company <strong>Carbyne</strong> (formerly Reporty) with him, an investment later flagged in investigations [citation:5][citation:9]. Emails show Barak requested funding from Epstein for political activities aimed at "saving the Jewish state" and opposing Prime Minister Netanyahu [citation:9].</li>
+<li><strong>💰 Financial Donations</strong>: Epstein's COUQ Foundation made documented donations to <strong>Friends of the Israel Defense Forces (FIDF)</strong> ($25,000 in 2006) and the <strong>Jewish National Fund (JNF)</strong> ($15,000) [citation:2][citation:3][citation:4]. The JNF has faced criticism for its role in land acquisition and settlement development in the occupied West Bank [citation:2][citation:6].</li>
+<li><strong>🕵️‍♂️ Intelligence Allegations</strong>: An <strong>FBI informant</strong> stated belief that Epstein was a "co-opted Mossad agent" who had been "trained as a spy," allegedly recruited by Robert Maxwell in the 1980s [citation:2][citation:4][citation:7]. Christopher Steele, former MI6 officer, suggested it was "quite likely" Russian intelligence may have recruited Epstein instead [citation:2].</li>
+<li><strong>📞 Robert Maxwell</strong>: Ghislaine Maxwell's father, a British media tycoon long rumored to have <strong>Mossad ties</strong>, died under mysterious circumstances in 1991 [citation:2][citation:5][citation:7]. A 2018 Epstein email claimed Maxwell attempted to blackmail Mossad for £400 million before his death [citation:2][citation:5].</li>
+<li><strong>💻 Business & Technology</strong>: Beyond Carbyne, evidence suggests Epstein and Barak operated a <strong>"backchannel" for Israeli cyber-surveillance exports</strong> to global elites, utilizing Epstein's access to powerful figures [citation:7].</li>
+<li><strong>🗣️ Netanyahu's Denial</strong>: Prime Minister <strong>Benjamin Netanyahu</strong> has forcefully rejected espionage claims, arguing that Epstein's close ties with political opponent Barak "proves the opposite" [citation:1][citation:4][citation:10].</li>
+</ul>
+<p>I hope this detailed breakdown clarifies the various dimensions of Epstein's connections to Israel. Is there any particular aspect, such as the intelligence allegations or his business ventures, that you would like to explore further?</p></div></div>
+<div class="message user" data-ts="1772648488130" data-ts-iso="2026-03-05T02:21:28.130000+08:00"><div class="role-label">You <span class="msg-time ts-display" data-ts="1772648488130" data-ts-iso="2026-03-05T02:21:28.130000+08:00">2026-03-05 02:21</span></div><div class="content"><p>Is it true that netanyahu described the us as a golden calf that israel would bleed dry?</p></div></div>
+<div class="message assistant" data-ts="1772648488131" data-ts-iso="2026-03-05T02:21:28.131000+08:00"><div class="role-label">DeepSeek <span class="msg-time ts-display" data-ts="1772648488131" data-ts-iso="2026-03-05T02:21:28.131000+08:00">2026-03-05 02:21</span></div><div class="search-block"><div class="search-label">Web Search</div><div class="search-result"><a href="https://www.snopes.com/news/2026/03/03/netanyahu-golden-calf/" target="_blank">Inspecting claim Netanyahu once said, 'America is a golden calf and we will suck it dry'</a><div class="snippet">launched joint attacks on Iran, a quote attributed to Israeli Prime Minister Benjamin Netanyahu resurfaced online in which he allegedly once stated, "America is</div></div><div class="search-result"><a href="https://www.snopes.com/fact-check/1990-netanyahu-secret-recording/" target="_blank">Was Netanyahu Recorded Saying, 'America Is a Golden Calf and We Will Suck It Dry'?</a><div class="snippet">In September 2024, a rumor resurfaced online claiming that Israeli Prime Minister Benjamin Netanyahu ... bar saying: "America is a golden calf and we will suck </div></div><div class="search-result"><a href="https://data.cimple.eu/describe/?url=http%3A%2F%2Fdata.cimple.eu%2Fclaim-review%2F277e6f0ecb3ccda53adef9876f84442349c55dd5c41f28ab49318f8c" target="_blank">About: http://data.cimple.eu/claim-review/277e6f0ecb3ccda53adef9876f84442349c55dd5c41f28ab49318f8c</a><div class="snippet">In September 2024, a rumor resurfaced online claiming that Israeli Prime Minister Benjamin Netanyahu was once secretly recorded in a Jerusalem bar saying: "Amer</div></div><div class="search-result"><a href="https://data.cimple.eu/sparql?query=define%20sql%3Adescribe-mode%20%22CBD%22%20%20DESCRIBE%20%3Chttp%3A%2F%2Fdata.cimple.eu%2Fclaim-review%2Fd0ddc67518ec0d0665e00ce39cfb96ceae95d123374e1c2cd08dcf0f%3E&output=application%2Fatom%2Bxml" target="_blank">OData Service and Descriptor Document</a><div class="snippet">33.031051Z2024-03-04In late 2023, rumors spread online claiming that Israel Prime Minister Benjamin Netanyahu once said, "America is a golden calf and we will s</div></div><div class="search-result"><a href="https://www.jpost.com/israel-news/politics-and-diplomacy/article-734590" target="_blank">Is Bibi Benjamin Netanyahu a golden calf? - analysis | The Jerusalem Post</a><div class="snippet">Down there, in the proletarian realms where Netanyahu’s anti-judicial incitement falls on attentive ears, there is little privilege and much distress. In the sh</div></div></div><div class="thinking"><div class="thinking-label">Thinking</div>Hmm, the user has been digging into Epstein-related details and now shifts to a completely different question about Netanyahu. This seems like they encountered a viral political claim and want verification. The phrasing "bleed dry" matches the "suck it dry" language in the alleged quote.<br><br>I need to determine whether this quote is authentic, trace its origin, and provide context about why it's circulating now.<br><br>Looking at the search results, the most valuable ones are the Snopes fact-checks [citation:1][citation:2] which are highly authoritative fact-checking organizations with excellent reputation. Both thoroughly debunk the claim, tracing it to a 2015 Veterans Today article [citation:1]. They note the website has a reputation for antisemitic and Holocaust-denying content, and its editor admitted publishing false information deliberately.<br><br>The Meaww fact-check [citation:7] from March 2026 is recent and corroborates the same findings, though Meaww has lower authority than Snopes. The cimple.eu entries [citation:3][citation:4] are just metadata aggregations of the Snopes content, so they don't add new value.<br><br>Several other results are irrelevant or tangentially related. The Jerusalem Post analysis [citation:5] uses "golden calf" metaphorically to discuss Israeli politics, not the quote. The Daily Mail piece [citation:6] covers a protest statue, completely unrelated. The Palestinian Poster Project [citation:8] and Al-Ahram article [citation:9] also use "golden calf" in different contexts without addressing the quote.<br><br>The key evidence from Snopes shows: Netanyahu didn't become PM until 1996 [citation:1][citation:2]; the quote first appeared in 2015 on Veterans Today [citation:1]; the site includes antisemitic tropes like "Khazarian Mafia" [citation:1]; no recording has ever been produced [citation:1]; the bar mentioned closed in 2005 [citation:1]; and the editor admitted publishing false information [citation:1].<br><br>I'll structure the response to clearly state the quote is fake, then provide the origin story and credibility issues. I'll also explain why it's resurfacing now given current US-Israel military cooperation [citation:7]. The table format can effectively summarize the key debunking points, as the information lends itself well to a comparison of claim versus reality.</div><div class="content"><p>The quote you're asking about—that Benjamin Netanyahu described the US as a "golden calf" that Israel would "bleed dry"—is a viral claim, but it is <strong>false</strong>. There is no credible evidence that Prime Minister Netanyahu ever made such a statement [citation:1][citation:2][citation:7].</p>
+<p>Here's a breakdown of the origin and the facts surrounding this rumor:</p>
+<h3>🔍 The Origin of the Fake Quote</h3>
+<ul>
+<li><strong>First Appearance</strong>: The quote appears to have originated in a <strong>2015 article</strong> published by a website called <em>Veterans Today</em> [citation:1].</li>
+<li><strong>Unreliable Source</strong>: <em>Veterans Today</em> is not a credible news source. It has a well-documented reputation for publishing <strong>antisemitic, pro-Nazi, and Holocaust-denying material</strong> [citation:1][citation:2]. The site's own senior editor once admitted in an interview that a significant portion of its content is "patently false" or "purposely, partially false" [citation:1][citation:2]. The site also includes a disclaimer stating it "cannot guarantee absolute validity" and that "some content may be satirical in nature" [citation:1].</li>
+</ul>
+<h3>📝 The Quote and Timeline: Claim vs. Reality</h3>
+<p>The following table summarizes the key discrepancies in the claim:</p>
+<table><thead><tr><th>Aspect</th><th>The Viral Claim</th><th>The Facts</th></tr></thead><tbody>
+<tr><td><strong>Alleged Quote</strong></td><td>Netanyahu said, "America is a golden calf and we will suck it dry, chop it up, and sell it piece by piece... This is what we do to countries that we hate." [citation:1][citation:2]</td><td>No evidence the quote exists outside the 2015 article; the source is unreliable [citation:1].</td></tr>
+<tr><td><strong>Timing</strong></td><td>The quote was supposedly from a <strong>1990</strong> secret recording at a bar in Jerusalem [citation:1][citation:2].</td><td>Netanyahu did not become Prime Minister until <strong>1996</strong>. No recording has ever been produced [citation:1][citation:2].</td></tr>
+<tr><td><strong>Context of Resurfacing</strong></td><td>The quote re-emerges online periodically, most recently in <strong>early 2026</strong> during joint US-Israel military actions [citation:1][citation:7].</td><td>The false quote is often recirculated during times of heightened US-Israel cooperation [citation:1][citation:7].</td></tr>
+</tbody></table>
+<h3>💡 Why Does This Matter?</h3>
+<p>The persistent circulation of this quote highlights how misinformation can spread, especially during politically sensitive times. The "golden calf" is a powerful biblical metaphor for idolatry, which makes the fabricated quote particularly potent and memorable, even though it has no basis in fact [citation:1].</p>
+<p>To be clear, fact-checking organizations like Snopes have consistently rated this claim as <strong>"Unfounded"</strong> due to the complete lack of evidence and the disreputable nature of its only source [citation:1][citation:2].</p>
+<p>I hope this helps clarify the origins of this particular rumor. The connection between the false quote and the very real geopolitical context is a classic example of how misinformation can take hold.</p></div></div>
+</div>
+</body>
+</html>

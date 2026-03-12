@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Prompt for LLM to generate test suite</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: #0f1117;
+    color: #e0e0e0;
+    line-height: 1.7;
+    padding: 2rem 1rem;
+  }
+  .container { max-width: 860px; margin: 0 auto; }
+  h1 {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 0.3rem;
+  }
+  .meta {
+    font-size: 0.8rem;
+    color: #666;
+    margin-bottom: 2.5rem;
+  }
+  .message {
+    margin-bottom: 1.8rem;
+    border-radius: 10px;
+    padding: 1.2rem 1.5rem;
+    position: relative;
+  }
+  .message.user {
+    background: #1a1f2e;
+    border-left: 3px solid #4a90e2;
+  }
+  .message.assistant {
+    background: #141a14;
+    border-left: 3px solid #5cb85c;
+  }
+  .role-label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 0.6rem;
+    opacity: 0.6;
+  }
+  .message.user .role-label { color: #4a90e2; }
+  .message.assistant .role-label { color: #5cb85c; }
+  .msg-time {
+    font-size: 0.72rem;
+    color: #555;
+    float: right;
+    margin-top: 0.1rem;
+  }
+  .thinking {
+    background: #1a1a10;
+    border: 1px solid #3a3a20;
+    border-radius: 6px;
+    padding: 0.8rem 1.1rem;
+    margin-bottom: 1rem;
+    font-style: italic;
+    color: #999;
+    font-size: 0.88rem;
+  }
+  .thinking-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #6a6a40;
+    margin-bottom: 0.4rem;
+  }
+  .search-block {
+    background: #111820;
+    border: 1px dashed #2a3a50;
+    border-radius: 6px;
+    padding: 0.7rem 1rem;
+    margin-bottom: 0.8rem;
+    font-size: 0.82rem;
+    color: #7a9fc0;
+  }
+  .search-block .search-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #3a6a90;
+    margin-bottom: 0.4rem;
+  }
+  .search-result {
+    margin-top: 0.4rem;
+    padding-left: 0.8rem;
+    border-left: 2px solid #2a4a60;
+  }
+  .search-result a { color: #5a9fc0; text-decoration: none; }
+  .search-result a:hover { text-decoration: underline; }
+  .search-result .snippet { color: #668; font-size: 0.8rem; }
+  .read-link-block {
+    background: #11181a;
+    border: 1px dashed #2a4040;
+    border-radius: 6px;
+    padding: 0.5rem 0.9rem;
+    margin-bottom: 0.8rem;
+    font-size: 0.8rem;
+    color: #6ab;
+  }
+  .content p { margin-bottom: 0.8rem; }
+  .content pre {
+    background: #0a0a0a;
+    border: 1px solid #2a2a2a;
+    border-radius: 6px;
+    padding: 1rem;
+    overflow-x: auto;
+    font-size: 0.85rem;
+    margin-bottom: 0.8rem;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .content code {
+    background: #1a1a1a;
+    border-radius: 3px;
+    padding: 0.1em 0.35em;
+    font-size: 0.87em;
+    font-family: "JetBrains Mono", "Fira Code", monospace;
+  }
+  .content pre code { background: none; padding: 0; }
+  .content h1, .content h2, .content h3, .content h4 {
+    color: #d0d0d0;
+    margin: 1rem 0 0.5rem;
+  }
+  .content ul, .content ol {
+    padding-left: 1.5rem;
+    margin-bottom: 0.8rem;
+  }
+  .content li { margin-bottom: 0.3rem; }
+  .content blockquote {
+    border-left: 3px solid #444;
+    padding-left: 1rem;
+    color: #999;
+    margin-bottom: 0.8rem;
+  }
+  .content table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 0.8rem;
+    font-size: 0.88rem;
+  }
+  .content th, .content td {
+    border: 1px solid #2a2a2a;
+    padding: 0.4rem 0.7rem;
+  }
+  .content th { background: #1a1a1a; }
+  .content hr { border: none; border-top: 1px solid #2a2a2a; margin: 1rem 0; }
+  .content a { color: #4a90e2; }
+  .divider {
+    border: none;
+    border-top: 1px solid #1e1e1e;
+    margin: 2rem 0;
+  }
+  #index { margin-bottom: 2.5rem; }
+  #index h2 { font-size: 1rem; color: #888; margin-bottom: 0.8rem; }
+  #index ul { list-style: none; padding: 0; }
+  #index li { margin-bottom: 0.4rem; }
+  #index a { color: #4a90e2; text-decoration: none; font-size: 0.9rem; }
+  #index a:hover { text-decoration: underline; }
+  .conv-header { margin: 3rem 0 1rem; }
+  .conv-header h2 { font-size: 1.25rem; color: #ccc; }
+</style>
+</head>
+<body>
+<div class="container">
+<h1>Prompt for LLM to generate test suite</h1>
+<div class="meta" data-started-ts="1771339386805" data-updated-ts="1771339467716" data-started-iso="2026-02-17T22:43:06.805000+08:00" data-updated-iso="2026-02-17T22:44:27.716000+08:00">Started <span class="ts-display">2026-02-17 22:43</span> &nbsp;·&nbsp; Last updated <span class="ts-display">2026-02-17 22:44</span></div>
+<div class="message user" data-ts="1771339388129" data-ts-iso="2026-02-17T22:43:08.129000+08:00"><div class="role-label">You <span class="msg-time ts-display" data-ts="1771339388129" data-ts-iso="2026-02-17T22:43:08.129000+08:00">2026-02-17 22:43</span></div><div class="content"><p>give me a prompt to feed to an llm to have them generate a meaningful, compact, elegant test suite, to cover the boundary areas and most fragile areas of the application.  think out of the box about it, this should not be a test suite of pointless unit tests, it should be token cost efficient, use python or shell scripts wherever possible.  the suite should be thourugh while being fast and cheap.</p></div></div>
+<div class="message assistant" data-ts="1771339388130" data-ts-iso="2026-02-17T22:43:08.130000+08:00"><div class="role-label">DeepSeek <span class="msg-time ts-display" data-ts="1771339388130" data-ts-iso="2026-02-17T22:43:08.130000+08:00">2026-02-17 22:43</span></div><div class="thinking"><div class="thinking-label">Thinking</div>We need to generate a prompt for an LLM to create a test suite. The prompt should guide the LLM to produce a meaningful, compact, elegant test suite that covers boundary areas and fragile areas. It should be token-cost efficient, use Python or shell scripts, be thorough but fast and cheap. The user wants us to "think out of the box" about it. So the prompt should be well-crafted to elicit high-quality test suite design.<br><br>Key elements:<br>- The LLM will be asked to generate tests for an application (maybe unspecified? The user will provide the application context?). The prompt should be general enough to be adapted, but specific instructions on what to generate.<br>- The test suite should focus on boundary areas and most fragile areas.<br>- Should avoid pointless unit tests (i.e., trivial tests). So the tests should be meaningful, targeting complex logic, edge cases, integrations, etc.<br>- Token-cost efficient: meaning the generated test code should be concise, not verbose, using appropriate abstractions.<br>- Use Python or shell scripts. Possibly both.<br>- Thorough while fast: likely means the tests should be designed to run quickly, maybe using mocks, not heavy external dependencies.<br>- Elegant: well-structured, readable, maintainable.<br><br>We need to craft a prompt that an LLM can understand and follow. The prompt should include:<br>- A request to generate a test suite.<br>- Specify that the tests should be in Python or shell scripts.<br>- Emphasize boundary and fragile areas.<br>- Encourage thinking beyond trivial tests, focusing on edge cases, error handling, concurrency, performance, etc.<br>- Provide guidance on structuring tests: use of pytest (if Python), maybe shell scripting with bats or similar.<br>- Suggest using mocks to avoid slow dependencies.<br>- Ask for documentation and comments.<br>- Mention token efficiency: avoid redundant code, use fixtures, parameterization, etc.<br>- Include a note about being fast: tests should run quickly, maybe parallelizable.<br><br>Also, we need to make the prompt adaptable: the user will fill in details about their application (e.g., description, functions, modules). So we should include placeholders like [DESCRIBE YOUR APPLICATION HERE] or [INSERT CODE/FUNCTIONS]. The prompt should instruct the user to provide the necessary context.<br><br>Thus, the final output should be a prompt that the user can copy-paste and fill in with their application details. The LLM will then generate the test suite.<br><br>Let's craft it.</div><div class="content"><p>Below is a prompt designed to be fed to an LLM (like me) to generate a meaningful, compact, and elegant test suite. It emphasizes boundary conditions, fragile areas, token efficiency, and speed, using Python or shell scripts. You can copy and paste this prompt, then fill in the bracketed sections with details about your application.</p>
+<hr>
+<p><strong>Prompt:</strong></p>
+<p>You are an expert software engineer tasked with designing a test suite for the application described below. The goal is to produce a <strong>meaningful, compact, elegant test suite</strong> that covers the <strong>boundary areas and most fragile parts</strong> of the code. Avoid trivial unit tests; focus on edge cases, error handling, integration points, concurrency, performance bottlenecks, and any other high-risk logic. The suite must be <strong>token‑cost efficient</strong> (concise, well‑structured, and free of redundant boilerplate) and <strong>fast to execute</strong> (use mocks/stubs to avoid slow external dependencies). Prefer <strong>Python</strong> (with pytest) or <strong>shell scripts</strong> (with tools like <code>bats</code> or simple bash). The tests should be thorough yet lightweight, capable of running in CI environments without excessive resource usage.</p>
+<h3>Application Context</h3>
+<p>[Provide a concise description of your application, its main components, and any known fragile areas. Include code snippets or function signatures if helpful. For example: "I have a Python module that processes JSON data, validates user input, and calls an external payment API. The most fragile parts are the JSON schema validation and the retry logic for the API call."]</p>
+<h3>Specific Requirements</h3>
+<ol>
+<li><strong>Target Areas</strong>  </li>
+</ol>
+<p>- Identify and test the <strong>boundary conditions</strong> (e.g., empty inputs, maximum values, malformed data, near‑limit scenarios).      - Cover <strong>fragile logic</strong> (e.g., complex algorithms, state machines, error recovery, race conditions).      - Include <strong>integration points</strong> with external systems (mock these where needed).</p>
+<ol>
+<li><strong>Test Style & Tools</strong>  </li>
+</ol>
+<p>- <strong>Python</strong>: Use <code>pytest</code> with fixtures, parameterization, and mocks (<code>unittest.mock</code> or <code>pytest-mock</code>). Keep tests small and focused.      - <strong>Shell</strong>: If applicable, use <code>bats</code> (Bash Automated Testing System) or plain bash with <code>set -e</code> and <code>trap</code>. Shell tests should be idempotent and clean up after themselves.      - Prefer <strong>one clear assertion per test</strong> where possible, but combine related checks with parameterization to avoid duplication.</p>
+<ol>
+<li><strong>Efficiency & Speed</strong>  </li>
+</ol>
+<p>- Mock all network, filesystem, and database calls unless testing those layers directly.      - Use <strong>lazy fixtures</strong> (e.g., <code>@pytest.fixture(scope="function")</code>) to minimise setup.      - Avoid sleeps and polling; use deterministic timeouts or async mocks.      - Write tests that can run <strong>in parallel</strong> (e.g., avoid shared state).</p>
+<ol>
+<li><strong>Output Format</strong>  </li>
+</ol>
+<p>- Provide the test code in a single block (or multiple blocks if necessary) with clear comments.      - Include a brief explanation of <strong>why</strong> each test was chosen (what risk it mitigates) and how it fits into the overall strategy.      - If shell scripts are used, explain how to run them (e.g., <code>./run_tests.sh</code>).</p>
+<ol>
+<li><strong>Token Economy</strong>  </li>
+</ol>
+<p>- Be concise: avoid repeating setup code (use fixtures), leverage pytest’s built‑in features (<code>tmp_path</code>, <code>capsys</code>, etc.).      - For shell scripts, reuse helper functions to avoid duplication.      - Omit trivial tests (e.g., “test function exists”) unless they protect a genuinely fragile contract.</p>
+<h3>Example (if helpful)</h3>
+<p>Here’s a miniature example of the kind of compact, boundary‑focused test you might produce (Python): <pre><code class="language-python">import pytest from myapp import process_data</p>
+<p>def test<em>process</em>data<em>empty</em>input():     with pytest.raises(ValueError, match="Input cannot be empty"):         process_data("")</p>
+<p>@pytest.mark.parametrize("value,expected", [     (0, 0),     (1, 1),     (100, 100),     (101, None),  # out of range ]) def test<em>process</em>data_boundaries(value, expected):     assert process_data(value) == expected </code></pre></p>
+<h3>Now, generate the test suite for the application described above.</h3>
+<ul>
+<li>If you need to make assumptions about missing details, state them clearly.</li>
+<li>The final answer should be ready to copy‑paste into a test file or script.</li>
+</ul>
+<hr>
+<p><strong>Instructions for you (the user):</strong>   Replace the bracketed <code>[Application Context]</code> with a clear description of your code, its main functions/classes, and any known risk areas. The more specific you are, the better the LLM can tailor the tests. If you have existing code snippets, include them. Then paste the entire prompt into an LLM of your choice.</p></div></div>
+<div class="message user" data-ts="1771339431400" data-ts-iso="2026-02-17T22:43:51.400000+08:00"><div class="role-label">You <span class="msg-time ts-display" data-ts="1771339431400" data-ts-iso="2026-02-17T22:43:51.400000+08:00">2026-02-17 22:43</span></div><div class="content"><p>the application is https://github.com/ngallodev/dev-activity-report-skill if that changes your answer at all</p></div></div>
+<div class="message assistant" data-ts="1771339431401" data-ts-iso="2026-02-17T22:43:51.401000+08:00"><div class="role-label">DeepSeek <span class="msg-time ts-display" data-ts="1771339431401" data-ts-iso="2026-02-17T22:43:51.401000+08:00">2026-02-17 22:43</span></div><div class="read-link-block">Read page: <a href="" target="_blank"></a></div><div class="thinking"><div class="thinking-label">Thinking</div>Hmm, the user previously asked for a prompt to generate a compact, meaningful test suite, and I provided a detailed template. Now they're asking if that answer changes based on the specific application they've linked—a GitHub repo for a dev activity reporting skill.<br><br>Okay, I need to look at this repository carefully. It's a Claude Code skill that scans local development environments to generate professional activity summaries. The architecture is quite sophisticated with multiple phases using different models, caching mechanisms, and fingerprinting.<br><br>Looking at the README, I can see several critical areas that would need testing. The caching system is particularly important—it uses content hashes of git-tracked files and stores fingerprints to avoid re-scanning. That's definitely a fragile area that needs thorough testing. The ownership classification with marker files like `.not-my-work` and `.skip-for-now` is another key feature that could easily break. The multi-phase pipeline with model delegation between Haiku and Sonnet has complex integration points. The fingerprint ignore list for excluding volatile files from content hashing is subtle but critical for cache correctness.<br><br>The user wants a token-efficient test suite, so I should focus on boundary testing around these core features rather than testing trivial things. For example, testing what happens when marker files appear/disappear, when git repos have no commits, when content changes slightly but enough to invalidate cache, or when the Phase 2 model returns malformed JSON.<br><br>I should provide an updated prompt that incorporates these specifics from the repository. The prompt should guide the LLM to focus on the fragile areas I've identified—caching integrity, ownership detection, pipeline phase integration, fingerprint collisions, and error recovery. It should also emphasize using mocks for the expensive model calls since we don't want to actually call Claude APIs during testing.<br><br>The answer should acknowledge that yes, the specific application changes the approach, then provide the tailored prompt with repository-specific details and testing priorities. I'll keep it concise but comprehensive, explaining why each testing area matters for this particular codebase.</div><div class="content"><p>Yes, the specific application does change the approach significantly. The <code>dev-activity-report-skill</code> has a sophisticated architecture with clear boundaries, caching mechanisms, and external integrations. A compact, meaningful test suite should focus on its most fragile and critical parts, not trivial unit tests.</p>
+<p>Based on the repository details, I would refine the test suite prompt to target these specific areas. Here is an updated, highly specific prompt you can use:</p>
+<p><strong>Updated Prompt (Tailored for <code>dev-activity-report-skill</code>):</strong></p>
+<p>You are an expert software engineer. Your task is to design a <strong>compact, elegant, and token-efficient test suite</strong> for the <code>dev-activity-report-skill</code> (GitHub repo provided). The goal is to cover the <strong>most fragile and critical parts</strong> of the application, not to achieve blanket coverage with pointless unit tests. Focus on integration points, caching logic, error handling, and configuration edge cases. Use Python (with <code>pytest</code>) and shell scripts (with <code>bats</code>) where appropriate. The suite must be fast, cheap to run (mock all LLM API calls), and easy to understand.</p>
+<h3>Application Core Concepts (from the repo)</h3>
+<p>The skill runs a multi-phase pipeline:</p>
+<ol>
+<li><strong>Phase 1 (Data Gathering):</strong> Scans local paths (git repos, Codex sessions). Uses <strong>content-based fingerprints</strong> to cache the scan result in <code>.phase1-cache.json</code>. Respects ownership markers (<code>.not-my-work</code>, <code>.skip-for-now</code>, <code>.forked-work</code>).</li>
+<li><strong>Phase 1.5 (Draft):</strong> A cheap model creates a rough draft from the Phase 1 JSON.</li>
+<li><strong>Phase 2 (Structured Analysis):</strong> A more powerful model consumes the JSON + draft and outputs <strong>strict JSON only</strong>.</li>
+<li><strong>Phase 2.5 (Render):</strong> A script renders the JSON to Markdown/HTML.</li>
+<li><strong>Phase 3 (Cache Write):</strong> Writes per-project <code>.dev-report-cache.md</code> files using fingerprints.</li>
+<li><strong>Configuration:</strong> All user settings are in a <code>.env</code> file.</li>
+</ol>
+<h3>Target Fragile Areas & Boundaries (Test These!)</h3>
+<ol>
+<li><strong>Caching Integrity (Highest Risk):</strong></li>
+</ol>
+<p>*   <strong>Fingerprint Stability:</strong> Does the content hash change when it shouldn't (e.g., only cache file timestamps change)? Does it correctly ignore files listed in <code>.dev-report-fingerprint-ignore</code>?     *   <strong>Cache Invalidation:</strong> Does a change in a project's git-tracked files correctly trigger a re-scan (Phase 1) and re-analysis (Phase 3)? Does a change in <code>.env</code> (e.g., <code>APPS_DIR</code>) invalidate the global Phase 1 cache?     *   <strong>Cache Short-Circuit:</strong> If the Phase 1 fingerprint matches, does the pipeline correctly skip the Haiku scan and reuse the old JSON payload? Verify with a mock.</p>
+<ol>
+<li><strong>Ownership & Marker File Logic:</strong></li>
+</ol>
+<p>*   Test the behavior for each marker file (<code>.not-my-work</code>, <code>.skip-for-now</code>, <code>.forked-work</code>, <code>.forked-work-modified</code>) in a project directory. Does a project with <code>.skip-for-now</code> get completely omitted from the Phase 1 output?     *   Test the auto-generation logic for <code>.forked-work-modified</code>: Does it correctly parse <code>git log</code> and file mtimes to generate a summary? (Mock git commands for this).</p>
+<ol>
+<li><strong>Pipeline Phase Contracts & Error Handling:</strong></li>
+</ol>
+<p>*   <strong>Phase 2 JSON Contract:</strong> If Phase 2 returns invalid JSON, or JSON with a missing required key, does the pipeline fail gracefully? Does the <code>render_report.py</code> script handle malformed input?     *   <strong>Subprocess Failures:</strong> What happens if <code>phase1_runner.py</code> crashes? If the <code>claude</code> CLI command for Phase 2 times out or returns an error? The test should verify the main script handles these and exits with a non-zero code.     *   <strong>Model Fallback:</strong> If the API key for Phase 1.5 is missing, does it correctly fall back to the deterministic heuristic?</p>
+<ol>
+<li><strong>Configuration & Environment:</strong></li>
+</ol>
+<p>*   <strong><code>.env</code> Parsing:</strong> Test with missing <code>.env</code> file, empty variables, and malformed values. Does it use safe defaults?     *   <strong>Path Handling:</strong> Test <code>APPS&lt;em&gt;DIR</code> and <code>EXTRA&lt;/em&gt;SCAN_DIRS</code> with relative paths, paths with spaces, and non-existent paths.     *   <strong>Output Formats:</strong> Test <code>REPORT&lt;em&gt;OUTPUT&lt;/em&gt;FORMATS=md</code>, <code>html</code>, and <code>md,html</code>. Verify the correct files are generated in <code>REPORT&lt;em&gt;OUTPUT&lt;/em&gt;DIR</code>.</p>
+<ol>
+<li><strong>Non-Git Directory Handling (as noted in roadmap):</strong></li>
+</ol>
+<p>*   Currently uses mtime. Create a test that shows this fragility: a temp file change triggers a re-scan even though code content hasn't changed. (This is a great example of a meaningful, non-trivial test).</p>
+<h3>Test Implementation Guidelines</h3>
+<ul>
+<li><strong>Python (<code>pytest</code>):</strong> Use <code>monkeypatch</code> and <code>tmp&lt;em&gt;path</code> fixtures extensively. Mock all <code>subprocess.run</code> calls that invoke <code>claude</code> or <code>codex</code>. Create dummy project structures (git repos, marker files) in <code>tmp&lt;/em&gt;path</code> to simulate the filesystem.</li>
+<li><strong>Shell (<code>bats</code>):</strong> Use for testing the main entry point script (e.g., <code>run_pipeline.py --foreground</code>) and its interaction with the environment. Keep these minimal.</li>
+<li><strong>Avoid:</strong> Do not write tests that call actual LLM APIs. Mock the responses. Do not test trivial getters/setters.</li>
+</ul>
+<h3>Output Format</h3>
+<p>Provide the test code in clear, commented blocks. Include a brief <code>README</code> section explaining how to run the suite (e.g., <code>pytest tests/ -v</code>) and a short justification for each test group, explaining which fragility it protects.</p>
+<p>This prompt now directly targets the application's unique architecture, guiding the LLM to create a high-value, low-cost test suite that protects its most critical and delicate logic.</p></div></div>
+</div>
+</body>
+</html>

@@ -90,8 +90,8 @@ def _render_fragment_html(frag: dict) -> str:
 
     if ftype == "RESPONSE":
         content = frag.get("content", "")
-        html = markdown_to_html(content)
-        return f'<div class="content">{html}</div>'
+        rendered_html = markdown_to_html(content)
+        return f'<div class="content">{rendered_html}</div>'
 
     return ""
 

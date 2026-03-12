@@ -1,0 +1,1574 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chat Export Viewer</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            surface: { 900: '#0c0e14', 800: '#111318', 700: '#16181f', 600: '#1c1f28', 500: '#232733' },
+            accent: { blue: '#4a90e2', green: '#4ade80', amber: '#f59e0b', muted: '#6b7280' }
+          },
+          fontFamily: {
+            sans: ['-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'Roboto', 'sans-serif'],
+            mono: ['"JetBrains Mono"', '"Fira Code"', 'monospace'],
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* SPA chrome — header, sidebar, menus, search, jump nav */
+
+    ::-webkit-scrollbar {
+      width: 5px;
+      height: 5px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: #2a2d3a;
+      border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: #3a3d4a;
+    }
+
+    .conv-item {
+      border-left: 2px solid transparent;
+      transition: all .15s;
+    }
+
+    .conv-item.active {
+      background: #1c2035;
+      border-left-color: #4a90e2;
+    }
+
+    .conv-item:hover {
+      background: #161922;
+      border-left-color: #2a3a5a;
+    }
+
+    .conv-item .remove-btn {
+      opacity: 0;
+      transition: opacity .15s;
+    }
+
+    .conv-item:hover .remove-btn {
+      opacity: 1;
+    }
+
+    .jump-link {
+      color: #4a5568;
+      font-size: .72rem;
+      transition: color .15s;
+    }
+
+    .jump-link:hover {
+      color: #a0aec0;
+    }
+
+    .jump-link.active-heading {
+      color: #4a90e2;
+    }
+
+    .jump-link.search-hit {
+      color: #f59e0b !important;
+    }
+
+    .jump-link.search-hit::before {
+      content: '◆ ';
+      font-size: .55rem;
+      vertical-align: middle;
+    }
+
+    /* User menu */
+    #user-menu {
+      position: absolute;
+      top: calc(100% + 6px);
+      left: 0;
+      width: 340px;
+      background: #111318;
+      border: 1px solid #1f2937;
+      border-radius: .6rem;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, .65);
+      z-index: 100;
+      overflow: hidden;
+    }
+
+    #user-menu.hidden {
+      display: none;
+    }
+
+    .menu-section {
+      padding: .75rem 1rem;
+      border-bottom: 1px solid #1a1f2e;
+    }
+
+    .menu-section:last-child {
+      border-bottom: none;
+    }
+
+    .menu-section-title {
+      font-size: .6rem;
+      font-weight: 700;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: #4b5563;
+      margin-bottom: .55rem;
+    }
+
+    .file-row {
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+      padding: .28rem .4rem;
+      border-radius: .3rem;
+      transition: background .12s;
+    }
+
+    .file-row:hover {
+      background: #161922;
+    }
+
+    .file-row .file-name {
+      flex: 1;
+      font-size: .72rem;
+      color: #9ca3af;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .file-row .file-status {
+      font-size: .62rem;
+      color: #4ade80;
+      flex-none;
+    }
+
+    .file-action {
+      font-size: .62rem;
+      cursor: pointer;
+      flex-none;
+      padding: .15rem .4rem;
+      border-radius: .25rem;
+      border: 1px solid transparent;
+      transition: all .12s;
+    }
+
+    .file-action.add {
+      color: #4a90e2;
+      border-color: #1a3a5a;
+    }
+
+    .file-action.add:hover {
+      background: #1a2a40;
+      color: #6aace2;
+    }
+
+    .file-action.remove {
+      color: #ef4444;
+      border-color: #3a1a1a;
+    }
+
+    .file-action.remove:hover {
+      background: #2a1010;
+      color: #f87171;
+    }
+
+    /* Toggle row */
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: .3rem 0;
+    }
+
+    .toggle-row label {
+      font-size: .72rem;
+      color: #9ca3af;
+      cursor: pointer;
+    }
+
+    .toggle-switch {
+      position: relative;
+      width: 28px;
+      height: 15px;
+      flex-none;
+    }
+
+    .toggle-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .toggle-track {
+      position: absolute;
+      inset: 0;
+      background: #1f2937;
+      border-radius: 99px;
+      cursor: pointer;
+      transition: background .2s;
+    }
+
+    .toggle-switch input:checked+.toggle-track {
+      background: #4a90e2;
+    }
+
+    .toggle-track::after {
+      content: '';
+      position: absolute;
+      left: 2px;
+      top: 2px;
+      width: 11px;
+      height: 11px;
+      background: #fff;
+      border-radius: 50%;
+      transition: transform .2s;
+    }
+
+    .toggle-switch input:checked+.toggle-track::after {
+      transform: translateX(13px);
+    }
+
+    /* Sort controls */
+    .sort-btn {
+      font-size: .65rem;
+      color: #4b5563;
+      cursor: pointer;
+      padding: .2rem .45rem;
+      border-radius: .3rem;
+      border: 1px solid transparent;
+      transition: all .12s;
+      white-space: nowrap;
+    }
+
+    .sort-btn:hover {
+      color: #9ca3af;
+      border-color: #2a2d3a;
+    }
+
+    .sort-btn.active {
+      color: #4a90e2;
+      border-color: #1a3a5a;
+      background: #0d1a2a;
+    }
+
+    /* Sidebar date label */
+    .conv-date {
+      font-size: .58rem;
+      color: #374151;
+      margin-top: .15rem;
+      display: none;
+    }
+
+    body.show-ts .conv-date {
+      display: block;
+    }
+
+    /* Provider filter buttons in settings menu */
+    .provider-filter-btn {
+      font-size: .65rem;
+      cursor: pointer;
+      padding: .2rem .5rem;
+      border-radius: .3rem;
+      border: 1px solid transparent;
+      transition: all .12s;
+      white-space: nowrap;
+    }
+
+    .provider-filter-btn:hover {
+      color: #9ca3af;
+      border-color: #2a2d3a;
+    }
+
+    .provider-filter-btn.active {
+      border-color: #1a3a5a;
+      background: #0d1a2a;
+    }
+
+    .provider-filter-btn.active[data-p="deepseek"] {
+      color: #4a90e2;
+      border-color: #1a3a5a;
+    }
+
+    .provider-filter-btn.active[data-p="claude"] {
+      color: #a78bfa;
+      border-color: #2a1a4a;
+      background: #0e0a1a;
+    }
+
+    .provider-filter-btn.active[data-p="all"] {
+      color: #7c5cbf;
+      border-color: #2a1a4a;
+      background: #0d0a1a;
+    }
+
+    /* Provider dot in sidebar list */
+    .provider-dot {
+      display: inline-block;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      vertical-align: middle;
+      margin-right: .3rem;
+    }
+
+    .provider-dot[data-p="deepseek"] {
+      background: #4a90e2;
+    }
+
+    .provider-dot[data-p="claude"] {
+      background: #a78bfa;
+    }
+
+    /* Search mode badge */
+    #search-mode-badge {
+      display: none;
+      font-size: .6rem;
+      background: #2a1800;
+      color: #f59e0b;
+      border: 1px solid #4a3000;
+      border-radius: 3px;
+      padding: .1rem .4rem;
+      white-space: nowrap;
+    }
+
+    #search-mode-badge.active {
+      display: inline-block;
+    }
+
+    /* Fade transition */
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(6px);
+      }
+
+      to {
+        opacity: 1;
+        transform: none;
+      }
+    }
+
+    .fade-in {
+      animation: fadeIn .22s ease;
+    }
+
+    /* Mobile sidebar */
+    #sidebar-overlay {
+      display: none;
+    }
+
+    @media (max-width: 768px) {
+      #sidebar {
+        transform: translateX(-100%);
+        transition: transform .2s;
+        position: fixed;
+        z-index: 40;
+        height: 100vh;
+      }
+
+      #sidebar.open {
+        transform: translateX(0);
+      }
+
+      #sidebar-overlay.active {
+        display: block;
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, .6);
+        z-index: 30;
+      }
+    }
+
+
+    /* Thread content area — base styles for #conv-content */
+
+    #conv-content h1 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: .25rem;
+    }
+
+    #conv-content h2 {
+      font-size: 1.15rem;
+      font-weight: 600;
+      color: #d1d5db;
+      margin: 1.2rem 0 .5rem;
+    }
+
+    #conv-content h3 {
+      font-size: 1rem;
+      font-weight: 600;
+      color: #c4cad3;
+      margin: 1rem 0 .4rem;
+    }
+
+    #conv-content h4 {
+      font-size: .9rem;
+      font-weight: 600;
+      color: #9ca3af;
+      margin: .8rem 0 .3rem;
+    }
+
+    #conv-content p {
+      margin-bottom: .75rem;
+      line-height: 1.75;
+      color: #d1d5db;
+    }
+
+    #conv-content ul,
+    #conv-content ol {
+      padding-left: 1.4rem;
+      margin-bottom: .75rem;
+      color: #d1d5db;
+    }
+
+    #conv-content li {
+      margin-bottom: .25rem;
+      line-height: 1.7;
+    }
+
+    #conv-content a {
+      color: #4a90e2;
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+
+    #conv-content blockquote {
+      border-left: 3px solid #374151;
+      padding-left: 1rem;
+      color: #9ca3af;
+      margin-bottom: .75rem;
+    }
+
+    #conv-content hr {
+      border: none;
+      border-top: 1px solid #1f2937;
+      margin: 1.5rem 0;
+    }
+
+    #conv-content table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: .75rem;
+      font-size: .85rem;
+    }
+
+    #conv-content th,
+    #conv-content td {
+      border: 1px solid #1f2937;
+      padding: .35rem .65rem;
+      color: #d1d5db;
+    }
+
+    #conv-content th {
+      background: #161922;
+      color: #9ca3af;
+    }
+
+    #conv-content pre {
+      background: #0a0c10;
+      border: 1px solid #1f2937;
+      border-radius: .5rem;
+      padding: 1rem 1.2rem;
+      overflow-x: auto;
+      font-size: .82rem;
+      margin-bottom: .75rem;
+      font-family: "JetBrains Mono", "Fira Code", monospace;
+      white-space: pre-wrap;
+      word-break: break-word;
+      line-height: 1.6;
+      color: #e2e8f0;
+    }
+
+    #conv-content code {
+      background: #161922;
+      border-radius: 3px;
+      padding: .1em .35em;
+      font-size: .85em;
+      font-family: "JetBrains Mono", "Fira Code", monospace;
+      color: #93c5fd;
+    }
+
+    #conv-content pre code {
+      background: none;
+      padding: 0;
+      color: inherit;
+    }
+
+    #conv-content .message {
+      margin-bottom: 1.5rem;
+      border-radius: .625rem;
+      padding: 1.1rem 1.4rem;
+    }
+
+    #conv-content .role-label {
+      font-size: .68rem;
+      font-weight: 700;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      opacity: .6;
+      margin-bottom: .5rem;
+    }
+
+    #conv-content .msg-time {
+      font-size: .68rem;
+      color: #4b5563;
+      float: right;
+      margin-top: .1rem;
+    }
+
+    /* Timestamp visibility — controlled by body class */
+    #conv-content .msg-time {
+      display: none;
+    }
+
+    body.show-ts #conv-content .msg-time {
+      display: inline;
+    }
+
+    #conv-content .meta .ts-display {
+      opacity: 0.5;
+    }
+
+    body.show-ts #conv-content .meta .ts-display {
+      opacity: 1;
+    }
+
+    #conv-content .thinking {
+      background: #111108;
+      border: 1px solid #2a2a18;
+      border-radius: .45rem;
+      padding: .75rem 1rem;
+      margin-bottom: .85rem;
+      font-style: italic;
+      color: #6b7040;
+      font-size: .84rem;
+      line-height: 1.7;
+    }
+
+    #conv-content .thinking-label {
+      font-size: .65rem;
+      font-weight: 700;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: #4a4a28;
+      margin-bottom: .35rem;
+    }
+
+    #conv-content .search-block {
+      background: #0a1018;
+      border: 1px dashed #1e3048;
+      border-radius: .45rem;
+      padding: .65rem .9rem;
+      margin-bottom: .75rem;
+      font-size: .8rem;
+      color: #5a8aaa;
+    }
+
+    #conv-content .search-block .search-label {
+      font-size: .65rem;
+      font-weight: 700;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: #2a5a7a;
+      margin-bottom: .35rem;
+    }
+
+    #conv-content .search-result {
+      margin-top: .35rem;
+      padding-left: .7rem;
+      border-left: 2px solid #1a3a52;
+    }
+
+    #conv-content .search-result a {
+      color: #4a80aa;
+      text-decoration: none;
+    }
+
+    #conv-content .search-result a:hover {
+      text-decoration: underline;
+    }
+
+    #conv-content .search-result .snippet {
+      color: #445566;
+      font-size: .77rem;
+    }
+
+    #conv-content .read-link-block {
+      background: #0a1214;
+      border: 1px dashed #1a3030;
+      border-radius: .45rem;
+      padding: .45rem .8rem;
+      margin-bottom: .75rem;
+      font-size: .78rem;
+      color: #4a8888;
+    }
+
+    #conv-content .meta {
+      font-size: .75rem;
+      color: #4b5563;
+      margin-bottom: 2rem;
+    }
+
+    .thinking-toggle {
+      cursor: pointer;
+    }
+
+    .thinking-toggle summary {
+      list-style: none;
+    }
+
+    .thinking-toggle summary::-webkit-details-marker {
+      display: none;
+    }
+
+    mark {
+      background: #3b2a00;
+      color: #fbbf24;
+      border-radius: 2px;
+      padding: 0 2px;
+    }
+
+    mark.search-active {
+      background: #7a4a00;
+      outline: 1px solid #f59e0b;
+    }
+
+
+    /* DeepSeek provider — thread accent colour overrides */
+
+    #conv-content.provider-deepseek .message.user {
+      background: #111827;
+      border-left: 3px solid #4a90e2;
+    }
+
+    #conv-content.provider-deepseek .message.assistant {
+      background: #0f1a0f;
+      border-left: 3px solid #4ade80;
+    }
+
+    #conv-content.provider-deepseek .message.user .role-label {
+      color: #4a90e2;
+    }
+
+    #conv-content.provider-deepseek .message.assistant .role-label {
+      color: #4ade80;
+    }
+
+
+    /* Claude provider — thread accent colour overrides */
+    /* User: violet (#a78bfa) / Assistant: teal (#2dd4bf) — distinct hues, colourblind-safe */
+
+    #conv-content.provider-claude .message.user {
+      background: #110f1a;
+      border-left: 3px solid #a78bfa;
+    }
+
+    #conv-content.provider-claude .message.assistant {
+      background: #0a1614;
+      border-left: 3px solid #2dd4bf;
+    }
+
+    #conv-content.provider-claude .message.user .role-label {
+      color: #a78bfa;
+    }
+
+    #conv-content.provider-claude .message.assistant .role-label {
+      color: #2dd4bf;
+    }
+
+
+    /* ChatGPT provider — thread accent colour overrides */
+    /* User: warm sand (#e8c97e) / Assistant: OpenAI green (#10a37f) */
+
+    #conv-content.provider-chatgpt .message.user {
+      background: #1a1708;
+      border-left: 3px solid #e8c97e;
+    }
+
+    #conv-content.provider-chatgpt .message.assistant {
+      background: #08140f;
+      border-left: 3px solid #10a37f;
+    }
+
+    #conv-content.provider-chatgpt .message.user .role-label {
+      color: #e8c97e;
+    }
+
+    #conv-content.provider-chatgpt .message.assistant .role-label {
+      color: #10a37f;
+    }
+  </style>
+</head>
+
+<body class="bg-[#0c0e14] text-gray-300 font-sans h-screen flex flex-col overflow-hidden">
+
+  <!-- Top bar -->
+  <header class="flex-none flex items-center gap-3 px-4 py-2.5 bg-[#111318] border-b border-gray-800/60 z-20">
+    <button id="sidebar-toggle" class="md:hidden text-gray-500 hover:text-gray-300 p-1 rounded">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+      </svg>
+    </button>
+
+    <!-- Logo + menu trigger -->
+    <div class="relative flex items-center gap-2">
+      <button id="menu-trigger"
+        class="flex items-center gap-2 rounded-md px-1 py-0.5 hover:bg-[#1c1f28] transition-colors">
+        <div
+          class="w-6 h-6 rounded-full bg-gradient-to-br from-violet-500 to-blue-400 flex items-center justify-center flex-none">
+          <svg class="w-3.5 h-3.5 text-white" fill="currentColor" viewBox="0 0 20 20">
+            <path d="M2 5a2 2 0 012-2h12a2 2 0 012 2v10a2 2 0 01-2 2H4a2 2 0 01-2-2V5z" />
+          </svg>
+        </div>
+        <span id="header-title" class="text-sm font-semibold text-gray-200 tracking-tight">Chat Export Viewer</span>
+        <svg class="w-3 h-3 text-gray-600 ml-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+
+      <!-- User menu -->
+      <div id="user-menu" class="hidden">
+        <!-- Provider filter -->
+        <div class="menu-section">
+          <div class="menu-section-title">Provider</div>
+          <div class="flex flex-wrap gap-1.5">
+            <button class="provider-filter-btn" data-p="deepseek">DeepSeek</button>
+            <button class="provider-filter-btn" data-p="claude">Claude</button>
+            <button class="provider-filter-btn" data-p="chatgpt">ChatGPT</button>
+            <button class="provider-filter-btn" data-p="all">All</button>
+          </div>
+        </div>
+
+
+        <!-- Sort controls -->
+        <div class="menu-section">
+          <div class="menu-section-title">Sort conversations</div>
+          <div class="flex flex-wrap gap-1.5">
+            <button class="sort-btn" data-sort="date-desc">Newest first</button>
+            <button class="sort-btn" data-sort="date-asc">Oldest first</button>
+            <button class="sort-btn" data-sort="alpha-asc">A → Z</button>
+            <button class="sort-btn" data-sort="alpha-desc">Z → A</button>
+          </div>
+        </div>
+
+        <!-- Display options -->
+        <div class="menu-section">
+          <div class="menu-section-title">Display</div>
+          <div class="toggle-row">
+            <label for="toggle-ts">Show timestamps</label>
+            <label class="toggle-switch">
+              <input type="checkbox" id="toggle-ts">
+              <span class="toggle-track"></span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Manage conversations -->
+        <div class="menu-section">
+          <div class="menu-section-title">Manage conversations</div>
+          <div id="menu-file-list" class="space-y-px max-h-56 overflow-y-auto"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="flex-1 max-w-xs ml-auto">
+      <div class="relative">
+        <svg class="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-600" fill="none"
+          stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M21 21l-4.35-4.35M17 11A6 6 0 105 11a6 6 0 0012 0z" />
+        </svg>
+        <input id="search-input" type="text" placeholder="Search chats…"
+          class="w-full bg-[#1c1f28] border border-gray-800 rounded-md py-1.5 pl-8 pr-3 text-xs text-gray-300 placeholder-gray-600 focus:outline-none focus:border-blue-700 focus:ring-1 focus:ring-blue-800">
+      </div>
+    </div>
+
+    <span id="search-mode-badge">full-text</span>
+    <div id="conv-count" class="text-xs text-gray-600 flex-none hidden md:block"></div>
+  </header>
+
+  <!-- Main layout -->
+  <div class="flex flex-1 overflow-hidden">
+    <div id="sidebar-overlay"></div>
+
+    <!-- Left sidebar -->
+    <aside id="sidebar" class="w-64 bg-[#111318] border-r border-gray-800/60 flex flex-col overflow-hidden">
+      <div class="flex-1 overflow-y-auto py-2" id="conv-list-container">
+        <div class="px-3 py-1.5 mb-1">
+          <span class="text-[.6rem] font-bold tracking-widest uppercase text-gray-600">Chats</span>
+        </div>
+        <ul id="conv-list" class="space-y-px px-1.5"></ul>
+      </div>
+
+      <div class="border-t border-gray-800/60 flex-none"></div>
+
+      <div class="flex-none overflow-y-auto max-h-60 py-2" id="jump-nav-container" style="display:none">
+        <div class="px-3 py-1.5 mb-1 flex items-center gap-1.5">
+          <svg class="w-3 h-3 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h8M4 18h4" />
+          </svg>
+          <span id="jump-nav-label" class="text-[.6rem] font-bold tracking-widest uppercase text-gray-600">Jump
+            to</span>
+        </div>
+        <ul id="jump-nav" class="space-y-px px-1.5"></ul>
+      </div>
+    </aside>
+
+    <!-- Content area -->
+    <main class="flex-1 overflow-y-auto" id="main-content">
+      <div id="empty-state" class="flex flex-col items-center justify-center h-full gap-3 opacity-30">
+        <svg class="w-12 h-12 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1"
+            d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+        </svg>
+        <p class="text-sm">Select a chat</p>
+      </div>
+      <div id="loading-state" class="flex items-center justify-center h-full gap-2 opacity-40"
+        style="display:none!important">
+        <div class="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+        <span class="text-sm">Loading…</span>
+      </div>
+      <div id="conv-content" class="max-w-3xl mx-auto px-6 py-8 fade-in" style="display:none"></div>
+    </main>
+  </div>
+
+  <script>
+    // ─── Data ───────────────────────────────────────────────────────────────────
+    const ALL_CONVERSATIONS = [
+      { file: "ai-assistant-introduction.html", title: "AI Assistant Introduction", ts: 1772782798836, provider: "deepseek" },
+      { file: "911-israeli-connection-novel-development.html", title: "9/11 Israeli Connection Novel Development", ts: 1772660927829, provider: "deepseek" },
+      { file: "world-trade-center-fireproofing-companies-timeline.html", title: "World Trade Center Fireproofing Companies Timeline", ts: 1772648602770, provider: "deepseek" },
+      { file: "epstein-files-released-names-list.html", title: "Epstein Files Released Names List", ts: 1772647791857, provider: "deepseek" },
+      { file: "security-and-code-review-for-repo.html", title: "Security and Code Review for Repo", ts: 1771395766194, provider: "deepseek" },
+      { file: "dev-activity-report-app-review-and-readiness-assessment.html", title: "Dev Activity Report App Review and Readiness Assessment", ts: 1771384097745, provider: "deepseek" },
+      { file: "repo-go-live-analysis-and-ai-cost-optimization.html", title: "Repo Go Live Analysis and AI Cost Optimization", ts: 1771346863688, provider: "deepseek" },
+      { file: "critical-pr-review-test-suite.html", title: "Critical PR Review Test Suite", ts: 1771341059537, provider: "deepseek" },
+      { file: "prompt-for-llm-to-generate-test-suite.html", title: "Prompt for LLM to generate test suite", ts: 1771339386805, provider: "deepseek" },
+      { file: "ai-app-review-prompt-and-advice.html", title: "AI App Review Prompt and Advice", ts: 1771336728978, provider: "deepseek" },
+      { file: "help-me-format-this-prompt-for-c.html", title: "help me format this prompt for c", ts: 1771116758173, provider: "deepseek" },
+      { file: "token-efficiency-analysis-for-report-writing-skill.html", title: "Token Efficiency Analysis for Report Writing Skill", ts: 1771113279659, provider: "deepseek" },
+      { file: "minimize-ai-token-usage-in-cli.html", title: "Minimize AI Token Usage in CLI", ts: 1771071898224, provider: "deepseek" },
+      { file: "brainstorming-ai-powered-portfolio-app-ideas.html", title: "Brainstorming AI-Powered Portfolio App Ideas", ts: 1770798382507, provider: "deepseek" },
+      { file: "online-research.html", title: "online research", ts: 1769770992250, provider: "deepseek" },
+      { file: "how-to-oonline.html", title: "how to oonline", ts: 1767263398734, provider: "deepseek" },
+      { file: "designing-osint-application-with-net-core-and-react.html", title: "Designing OSINT Application with .NET Core and React", ts: 1761947534776, provider: "deepseek" },
+      { file: "seeking-legal-alternatives-for-aff-2016-data.html", title: "Seeking Legal Alternatives for AFF 2016 Data", ts: 1761909104118, provider: "deepseek" },
+      { file: "download-triumph-sprint-st-manual-pdf.html", title: "Download Triumph Sprint ST Manual PDF", ts: 1756868182572, provider: "deepseek" },
+      { file: "integrating-claude-into-software-engineer-workflow.html", title: "Integrating Claude into Software Engineer Workflow", ts: 1756232032038, provider: "deepseek" },
+      { file: "converting-content-to-markdown-format.html", title: "Converting content to markdown format", ts: 1772830545249, provider: "claude" },
+      { file: "analyze-this-next-phase-artifa.html", title: "Analyze this next phase artifa...", ts: 1772475217651, provider: "claude" },
+      { file: "portfolio-project-plan-and-mvp-evaluation.html", title: "Portfolio project plan and MVP evaluation", ts: 1772444248459, provider: "claude" },
+      { file: "golf-ball-cannon-muzzle-velocity-analysis.html", title: "Golf ball cannon muzzle velocity analysis", ts: 1772140318238, provider: "claude" },
+      { file: "resume-analysis-and-feedback.html", title: "Resume analysis and feedback", ts: 1771673311548, provider: "claude" },
+      { file: "resume-rewrite-for-ai-software-engineering-pivot.html", title: "Resume rewrite for AI software engineering pivot", ts: 1771474476357, provider: "claude" },
+      { file: "filling-job-gap-with-portfolio-projects.html", title: "Filling job gap with portfolio projects", ts: 1770975210395, provider: "claude" },
+      { file: "evaluating-a-spec-against-claudes-multi-agent-planning.html", title: "Evaluating a spec against Claude's multi-agent planning", ts: 1770866018191, provider: "claude" },
+      { file: "navigating-career-direction-and-job-search-confidence.html", title: "Navigating career direction and job search confidence", ts: 1770424494952, provider: "claude" },
+      { file: "writing-a-cover-letter.html", title: "Writing a cover letter", ts: 1770412285880, provider: "claude" },
+      { file: "getting-an-engineering-job-before-its-too-late.html", title: "Getting an engineering job before it's too late", ts: 1770194633695, provider: "claude" },
+      { file: "getting-back-to-mid-senior-net-development.html", title: "Getting back to mid-senior .NET development", ts: 1769844340718, provider: "claude" },
+      { file: "fourth-grade-spelling-test-words.html", title: "Fourth grade spelling test words", ts: 1769833884944, provider: "claude" },
+      { file: "practice-net-development-kata-ideas.html", title: "Practice .NET development kata ideas", ts: 1769670293755, provider: "claude" },
+      { file: "resume-professional-summary-refinement.html", title: "Resume professional summary refinement", ts: 1769459023623, provider: "claude" },
+      { file: "resume-optimization-for-net-contract-work.html", title: "Resume optimization for .NET contract work", ts: 1768958133836, provider: "claude" },
+      { file: "remote-senior-net-backend-role-with-ai-focus.html", title: "Remote senior .NET backend role with AI focus", ts: 1768598516817, provider: "claude" },
+      { file: "crafting-a-motivation-statement-for-pomelo-care.html", title: "Crafting a motivation statement for Pomelo Care", ts: 1768457732981, provider: "claude" },
+      { file: "flattening-git-history-and-cleaning-branches.html", title: "Flattening git history and cleaning branches", ts: 1768342068300, provider: "claude" },
+      { file: "docker-compose-setup-for-jenkins-on-debian-12.html", title: "Docker compose setup for Jenkins on Debian 12", ts: 1768339861675, provider: "claude" },
+      { file: "unanet-hr-interview-preparation.html", title: "Unanet HR interview preparation", ts: 1768301635528, provider: "claude" },
+      { file: "strategic-github-projects-for-job-search.html", title: "Strategic GitHub projects for job search", ts: 1768258779816, provider: "claude" },
+      { file: "finding-short-term-remote-software-engineering-contracts.html", title: "Finding short-term remote software engineering contracts", ts: 1768186636673, provider: "claude" },
+      { file: "56be38ad-82b7-409d-a445-e38991a149c0.html", title: "", ts: 1768186492903, provider: "claude" },
+      { file: "finding-remote-software-engineering-contract-work-7eaf2e22-07e.html", title: "Finding remote software engineering contract work", ts: 1768156775521, provider: "claude" },
+      { file: "finding-remote-software-engineering-contract-work.html", title: "Finding remote software engineering contract work", ts: 1768156697631, provider: "claude" },
+      { file: "850b5def-28a2-4699-88a3-9637ed70eb58.html", title: "", ts: 1768156667681, provider: "claude" },
+      { file: "thank-you-email-to-recruiter-sanity-check.html", title: "Thank you email to recruiter sanity check", ts: 1767815993543, provider: "claude" },
+      { file: "resume-review-for-tech-job-application.html", title: "Resume review for tech job application", ts: 1767670949884, provider: "claude" },
+      { file: "interpreting-an-unusual-username.html", title: "Interpreting an unusual username", ts: 1767451732582, provider: "claude" },
+      { file: "simple-fps-game-development.html", title: "Simple FPS game development", ts: 1766595108310, provider: "claude" },
+      { file: "simple-horror-game-development.html", title: "Simple horror game development", ts: 1766592929125, provider: "claude" },
+      { file: "analyzing-email-for-personality-disorder-traits.html", title: "Analyzing email for personality disorder traits", ts: 1766119479052, provider: "claude" },
+      { file: "senior-net-engineer-cover-letter.html", title: "Senior .NET engineer cover letter", ts: 1765242861440, provider: "claude" },
+      { file: "principal-software-engineer-cover-letter.html", title: "Principal software engineer cover letter", ts: 1764956518128, provider: "claude" },
+      { file: "remote-network-engineer-job-search.html", title: "Remote network engineer job search", ts: 1764903363136, provider: "claude" },
+      { file: "sagas-in-domain-driven-design.html", title: "Sagas in domain-driven design", ts: 1764697415878, provider: "claude" },
+      { file: "senior-net-architecture-interview-prep.html", title: "Senior .NET architecture interview prep", ts: 1764376952556, provider: "claude" },
+      { file: "settle-software-engineer-application.html", title: "Settle software engineer application", ts: 1760673413582, provider: "claude" },
+      { file: "analyzing-user-post-content.html", title: "Analyzing user post content", ts: 1760569180184, provider: "claude" },
+      { file: "optimizing-mariadb-data-load-performance.html", title: "Optimizing mariadb data load performance", ts: 1760467031894, provider: "claude" },
+      { file: "linux-database-compatibility.html", title: "Linux database compatibility", ts: 1760382189291, provider: "claude" },
+      { file: "ai-tools-resume-enhancement.html", title: "AI tools resume enhancement", ts: 1760378802368, provider: "claude" },
+      { file: "west-coast-business-travel-routes.html", title: "West Coast business travel routes", ts: 1760325137122, provider: "claude" },
+      { file: "user-privacy-on-review-forum.html", title: "User privacy on review forum", ts: 1760311584743, provider: "claude" },
+      { file: "starting-over.html", title: "Starting over", ts: 1760135302801, provider: "claude" },
+      { file: "splitting-large-csv-file-in-debian.html", title: "Splitting large CSV file in Debian", ts: 1760135136971, provider: "claude" },
+      { file: "large-text-file-handling-in-vscode.html", title: "Large text file handling in VSCode", ts: 1759972345826, provider: "claude" },
+      { file: "splitting-text-file-by-delimiter.html", title: "Splitting text file by delimiter", ts: 1759971004579, provider: "claude" },
+      { file: "cloud-native-full-stack-resume-optimization.html", title: "Cloud-native full-stack resume optimization", ts: 1759962982334, provider: "claude" },
+      { file: "job-salary-zones-explained.html", title: "Job salary zones explained", ts: 1759875216679, provider: "claude" },
+      { file: "python-file-saving-function.html", title: "Python file saving function", ts: 1759241736005, provider: "claude" },
+      { file: "physics-problem-billiard-ball-collision.html", title: "Physics problem: billiard ball collision", ts: 1759197692329, provider: "claude" },
+      { file: "docker-container-logs-on-debian.html", title: "Docker container logs on Debian", ts: 1759195773092, provider: "claude" },
+      { file: "attorney-liability-for-employee-theft.html", title: "Attorney liability for employee theft", ts: 1758478896453, provider: "claude" },
+      { file: "advanced-forum-search-techniques.html", title: "Advanced forum search techniques", ts: 1758453137772, provider: "claude" },
+      { file: "custom-yt-dlp-in-metube.html", title: "Custom yt-dlp in MeTube", ts: 1757508014923, provider: "claude" },
+      { file: "claude-code-mastery-learning-path.html", title: "Claude Code Mastery Learning Path", ts: 1757033387317, provider: "claude" },
+      { file: "metube-github-feature-development.html", title: "Metube GitHub Feature Development", ts: 1756182791672, provider: "claude" },
+      { file: "parcelshield-data-science-interview.html", title: "ParcelShield Data Science Interview", ts: 1756146338128, provider: "claude" },
+      { file: "resume-ats-optimization-strategy.html", title: "Resume ATS Optimization Strategy", ts: 1755149211003, provider: "claude" },
+      { file: "resume-review-and-ats-optimization.html", title: "Resume Review and ATS Optimization", ts: 1754350039363, provider: "claude" },
+      { file: "system-design-interview-answer.html", title: "System Design Interview Answer", ts: 1772833292906, provider: "chatgpt" },
+      { file: "interview-prep-strategy.html", title: "Interview Prep Strategy", ts: 1772757358777, provider: "chatgpt" },
+      { file: "resume-error-correction.html", title: "Resume Error Correction", ts: 1772644606260, provider: "chatgpt" },
+      { file: "robokiller-lookup-results.html", title: "RoboKiller Lookup Results", ts: 1772479463639, provider: "chatgpt" },
+      { file: "phase-1-execution-plan.html", title: "Phase 1 Execution Plan", ts: 1772478061538, provider: "chatgpt" },
+      { file: "ai-workflow-edge.html", title: "AI Workflow Edge", ts: 1772442536744, provider: "chatgpt" },
+      { file: "ai-adjacent-roles-for-you.html", title: "AI-Adjacent Roles for You", ts: 1772441790196, provider: "chatgpt" },
+      { file: "git-hook-naming-validity.html", title: "Git Hook Naming Validity", ts: 1772319195321, provider: "chatgpt" },
+      { file: "resume-critical-analysis.html", title: "Resume Critical Analysis", ts: 1771672633708, provider: "chatgpt" },
+      { file: "dev-activity-report-ready.html", title: "Dev activity report ready", ts: 1771425645762, provider: "chatgpt" },
+      { file: "check-usage-limits.html", title: "Check Usage Limits", ts: 1771117646188, provider: "chatgpt" },
+      { file: "ai-platform-engineering-review.html", title: "AI Platform Engineering Review", ts: 1771058898421, provider: "chatgpt" },
+      { file: "ai-job-tracker-review.html", title: "AI Job Tracker Review", ts: 1770977517262, provider: "chatgpt" },
+      { file: "hire-optimized-startup-idea.html", title: "Hire-Optimized Startup Idea", ts: 1770848484219, provider: "chatgpt" },
+      { file: "ai-workforce-management.html", title: "AI Workforce Management", ts: 1768438186257, provider: "chatgpt" },
+      { file: "ai-cost-optimization-research.html", title: "AI Cost Optimization Research", ts: 1768431785942, provider: "chatgpt" },
+      { file: "startup-acquisition-brainstorm.html", title: "Startup Acquisition Brainstorm", ts: 1768429883915, provider: "chatgpt" },
+      { file: "platform-engineer-role.html", title: "Platform engineer role", ts: 1766424692513, provider: "chatgpt" },
+      { file: "job-search-assistance-693f4055-63e.html", title: "Job search assistance", ts: 1765752918255, provider: "chatgpt" },
+      { file: "job-search-assistance.html", title: "Job search assistance", ts: 1764903255938, provider: "chatgpt" },
+      { file: "example-net-api-problem.html", title: "Example .NET API Problem", ts: 1764816214216, provider: "chatgpt" },
+      { file: "hackerrank-test-prep.html", title: "HackerRank test prep", ts: 1764786597699, provider: "chatgpt" },
+      { file: "test-preparation-guide.html", title: "Test preparation guide", ts: 1764786388850, provider: "chatgpt" },
+      { file: "chemgpt-with-ollama.html", title: "ChemGPT with Ollama", ts: 1764747284108, provider: "chatgpt" },
+      { file: "implementing-delete-method.html", title: "Implementing delete method", ts: 1764745980724, provider: "chatgpt" },
+      { file: "senior-net-prep-plan.html", title: "Senior .NET prep plan", ts: 1764377136764, provider: "chatgpt" },
+      { file: "resume-draft-creation.html", title: "Resume draft creation", ts: 1761541858935, provider: "chatgpt" },
+      { file: "job-search-recommendations.html", title: "Job search recommendations", ts: 1760468531171, provider: "chatgpt" },
+      { file: "phenyl-2-propanol-with-hcl.html", title: "Phenyl-2-propanol with HCl", ts: 1752729101189, provider: "chatgpt" },
+      { file: "uaf-wtc7-collapse-study.html", title: "UAF WTC7 Collapse Study", ts: 1737834259828, provider: "chatgpt" },
+      { file: "steel-melting-point.html", title: "Steel Melting Point", ts: 1737743654061, provider: "chatgpt" },
+      { file: "chrome-bookmarklet-for-url.html", title: "Chrome Bookmarklet for URL", ts: 1731949820005, provider: "chatgpt" },
+      { file: "stash-win-send-urls-for-youtube-dl.html", title: "Stash-Win: Send URLs for youtube-dl", ts: 1707911089734, provider: "chatgpt" }
+    ];
+
+    // ─── Persistence ────────────────────────────────────────────────────────────
+    const LS = {
+      KEY_SCROLL: 'spa_scroll_positions',
+      KEY_ACTIVE: 'spa_active_file',
+      KEY_HIDDEN: 'spa_hidden_files',
+      KEY_PREFS: 'spa_prefs',
+      KEY_PROVIDER: 'spa_active_provider',
+
+      getScrolls() { try { return JSON.parse(localStorage.getItem(this.KEY_SCROLL) || '{}'); } catch { return {}; } },
+      saveScroll(file, pos) { try { const m = this.getScrolls(); m[file] = pos; localStorage.setItem(this.KEY_SCROLL, JSON.stringify(m)); } catch { } },
+      getActiveFile() { try { return localStorage.getItem(this.KEY_ACTIVE) || null; } catch { return null; } },
+      saveActiveFile(f) { try { if (f) localStorage.setItem(this.KEY_ACTIVE, f); else localStorage.removeItem(this.KEY_ACTIVE); } catch { } },
+      getHidden() { try { return new Set(JSON.parse(localStorage.getItem(this.KEY_HIDDEN) || '[]')); } catch { return new Set(); } },
+      saveHidden(s) { try { localStorage.setItem(this.KEY_HIDDEN, JSON.stringify([...s])); } catch { } },
+      getPrefs() { try { return Object.assign({ sort: 'date-desc', showTs: false }, JSON.parse(localStorage.getItem(this.KEY_PREFS) || '{}')); } catch { return { sort: 'date-desc', showTs: false }; } },
+      savePrefs(p) { try { localStorage.setItem(this.KEY_PREFS, JSON.stringify(p)); } catch { } },
+      getProvider() { return localStorage.getItem(this.KEY_PROVIDER) || 'all'; },
+      saveProvider(p) { try { localStorage.setItem(this.KEY_PROVIDER, p); } catch { } },
+    };
+
+    // ─── State ──────────────────────────────────────────────────────────────────
+    let hiddenFiles = LS.getHidden();
+    let prefs = LS.getPrefs();
+    let activeProvider = LS.getProvider();
+    let CONVERSATIONS = ALL_CONVERSATIONS.filter(c => !hiddenFiles.has(c.provider + ':' + c.file));
+    let activeIndex = -1;
+    let filteredConvs = [];
+    let currentSearchQuery = '';
+    let currentSearchHits = null;
+    let isFullTextSearch = false;
+
+    const loadedContent = new Map();  // "provider:file" → { bodyHtml }
+    const contentTextCache = new Map();  // "provider:file" → plaintext
+    const persistedScrolls = LS.getScrolls();
+
+    // ─── DOM refs ───────────────────────────────────────────────────────────────
+    const convList = document.getElementById('conv-list');
+    const jumpNav = document.getElementById('jump-nav');
+    const jumpNavContainer = document.getElementById('jump-nav-container');
+    const jumpNavLabel = document.getElementById('jump-nav-label');
+    const convContent = document.getElementById('conv-content');
+    const emptyState = document.getElementById('empty-state');
+    const loadingState = document.getElementById('loading-state');
+    const searchInput = document.getElementById('search-input');
+    const convCount = document.getElementById('conv-count');
+    const sidebar = document.getElementById('sidebar');
+    const sidebarOverlay = document.getElementById('sidebar-overlay');
+    const sidebarToggle = document.getElementById('sidebar-toggle');
+    const menuTrigger = document.getElementById('menu-trigger');
+    const userMenu = document.getElementById('user-menu');
+    const menuFileList = document.getElementById('menu-file-list');
+    const searchModeBadge = document.getElementById('search-mode-badge');
+    const mainContentEl = document.getElementById('main-content');
+    const toggleTs = document.getElementById('toggle-ts');
+
+    function fileKey(conv) { return conv.provider + ':' + conv.file; }
+    function pathFor(conv) { return conv.provider + '/' + conv.file; }
+
+    const PROVIDER_LABELS = { "deepseek": "DeepSeek", "claude": "Claude", "chatgpt": "ChatGPT" };
+    const headerTitle = document.getElementById('header-title');
+
+    function updateHeaderTitle(p) {
+      headerTitle.textContent = p === 'all' ? 'Chat Export Viewer' : (PROVIDER_LABELS[p] || p) + ' Chats';
+    }
+
+    function escHtml(s) {
+      return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    function escapeRegex(s) { return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+
+    function fmtTs(ts) {
+      if (!ts) return '';
+      return new Date(ts).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+    }
+
+    // ─── Provider filter ────────────────────────────────────────────────────────
+    function setProvider(p) {
+      activeProvider = p;
+      LS.saveProvider(p);
+      updateHeaderTitle(p);
+      document.querySelectorAll('.provider-filter-btn').forEach(b =>
+        b.classList.toggle('active', b.dataset.p === p));
+      activeIndex = -1;
+      filteredConvs = applyFilter(currentSearchQuery);
+      renderList(currentSearchHits);
+      const lastFile = LS.getActiveFile();
+      if (lastFile) {
+        const idx = filteredConvs.findIndex(c => fileKey(c) === lastFile);
+        if (idx >= 0) { loadConversation(idx); return; }
+      }
+      convContent.style.display = 'none';
+      emptyState.style.display = '';
+      jumpNavContainer.style.display = 'none';
+    }
+
+    // ─── Sorting / filtering ────────────────────────────────────────────────────
+    function sortConversations(list) {
+      const s = prefs.sort;
+      return [...list].sort((a, b) => {
+        if (s === 'date-desc') return (b.ts || 0) - (a.ts || 0);
+        if (s === 'date-asc') return (a.ts || 0) - (b.ts || 0);
+        if (s === 'alpha-asc') return a.title.localeCompare(b.title);
+        if (s === 'alpha-desc') return b.title.localeCompare(a.title);
+        return 0;
+      });
+    }
+
+    function getVisibleConvs() {
+      const all = ALL_CONVERSATIONS.filter(c => !hiddenFiles.has(fileKey(c)));
+      if (activeProvider === 'all') return all;
+      return all.filter(c => c.provider === activeProvider);
+    }
+
+    function applyFilter(q) {
+      const base = getVisibleConvs();
+      if (!q) return sortConversations(base);
+      const lq = q.toLowerCase();
+      return sortConversations(base.filter(c => c.title.toLowerCase().includes(lq)));
+    }
+
+    // ─── Prefs ──────────────────────────────────────────────────────────────────
+    function applyPrefs() {
+      toggleTs.checked = prefs.showTs;
+      document.body.classList.toggle('show-ts', prefs.showTs);
+      document.querySelectorAll('.sort-btn').forEach(b =>
+        b.classList.toggle('active', b.dataset.sort === prefs.sort));
+    }
+
+    toggleTs.addEventListener('change', () => {
+      prefs.showTs = toggleTs.checked;
+      document.body.classList.toggle('show-ts', prefs.showTs);
+      LS.savePrefs(prefs);
+      renderList(currentSearchHits);
+    });
+
+    document.querySelectorAll('.sort-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        prefs.sort = btn.dataset.sort;
+        LS.savePrefs(prefs);
+        document.querySelectorAll('.sort-btn').forEach(b => b.classList.toggle('active', b.dataset.sort === prefs.sort));
+        filteredConvs = applyFilter(currentSearchQuery);
+        renderList(currentSearchHits);
+      });
+    });
+
+    // ─── Sidebar list ───────────────────────────────────────────────────────────
+    function renderList(searchHits) {
+      currentSearchHits = searchHits || null;
+      convList.innerHTML = '';
+      convCount.textContent = filteredConvs.length + ' of ' + getVisibleConvs().length;
+      convCount.classList.remove('hidden');
+
+      if (filteredConvs.length === 0) {
+        convList.innerHTML = '<li class="px-3 py-2 text-xs text-gray-600">No matches</li>';
+        return;
+      }
+
+      filteredConvs.forEach((conv, i) => {
+        const isActive = i === activeIndex;
+        const li = document.createElement('li');
+        li.className = 'conv-item rounded-md px-2.5 py-2 cursor-pointer' + (isActive ? ' active' : '');
+        li.dataset.idx = i;
+
+        const short = conv.title.length > 36 ? conv.title.slice(0, 34) + '…' : conv.title;
+        const hits = searchHits && searchHits.has(i);
+        const dateStr = fmtTs(conv.ts);
+        const dot = activeProvider === 'all'
+          ? '<span class="provider-dot" data-p="' + conv.provider + '"></span>' : '';
+
+        li.innerHTML =
+          '<div class="flex items-center gap-1">' +
+          dot +
+          '<span class="block text-xs leading-snug text-gray-300 flex-1">' + escHtml(short) + '</span>' +
+          (hits ? '<span class="text-[.58rem] text-amber-500 flex-none">' + searchHits.get(i).length + '×</span>' : '') +
+          '<button class="remove-btn text-gray-700 hover:text-red-500 p-0.5 rounded" title="Remove" data-idx="' + i + '">' +
+          '<svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">' +
+          '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>' +
+          '</svg>' +
+          '</button>' +
+          '</div>' +
+          '<div class="conv-date">' + dateStr + '</div>' +
+          (hits ? '<div class="mt-0.5 space-y-0.5">' + searchHits.get(i).slice(0, 2).map(s =>
+            '<div class="text-[.6rem] text-amber-700/80 leading-snug line-clamp-1 pl-1 border-l border-amber-900">…' + escHtml(s) + '…</div>'
+          ).join('') + '</div>' : '');
+
+        li.setAttribute('title', conv.title);
+        li.addEventListener('click', e => { if (e.target.closest('.remove-btn')) return; loadConversation(i); });
+        li.querySelector('.remove-btn').addEventListener('click', e => { e.stopPropagation(); quickRemove(i); });
+        convList.appendChild(li);
+      });
+    }
+
+    // ─── Shared remove helper ────────────────────────────────────────────────────
+    function removeConversation(key, { rerenderMenu = false } = {}) {
+      const idx = filteredConvs.findIndex(c => fileKey(c) === key);
+      if (idx === activeIndex) {
+        activeIndex = -1;
+        convContent.style.display = 'none';
+        emptyState.style.display = '';
+        jumpNavContainer.style.display = 'none';
+        LS.saveActiveFile(null);
+      }
+      hiddenFiles.add(key);
+      LS.saveHidden(hiddenFiles);
+      filteredConvs = applyFilter(currentSearchQuery);
+      if (activeIndex > idx) activeIndex--;
+      renderList(currentSearchHits);
+      if (rerenderMenu) renderMenuFileList();
+    }
+
+    function quickRemove(idx) {
+      const conv = filteredConvs[idx];
+      if (!conv) return;
+      removeConversation(fileKey(conv));
+    }
+
+    // ─── Menu file list ─────────────────────────────────────────────────────────
+    function renderMenuFileList() {
+      menuFileList.innerHTML = '';
+      const allConvs = activeProvider === 'all'
+        ? ALL_CONVERSATIONS
+        : ALL_CONVERSATIONS.filter(c => c.provider === activeProvider);
+
+      allConvs.forEach(conv => {
+        const key = fileKey(conv);
+        const visible = !hiddenFiles.has(key);
+        const short = conv.title.length > 36 ? conv.title.slice(0, 34) + '…' : conv.title;
+        const dot = '<span class="provider-dot" data-p="' + conv.provider + '" style="display:inline-block;margin-right:.25rem"></span>';
+        const row = document.createElement('div');
+        row.className = 'file-row';
+        row.innerHTML =
+          '<span class="file-name" title="' + escHtml(conv.title) + '">' + dot + escHtml(short) + '</span>' +
+          (visible
+            ? '<span class="file-status">✓</span><button class="file-action remove" data-key="' + key + '">Remove</button>'
+            : '<button class="file-action add" data-key="' + key + '">Add</button>');
+        menuFileList.appendChild(row);
+      });
+
+      menuFileList.querySelectorAll('.file-action.add').forEach(btn => {
+        btn.addEventListener('click', () => {
+          hiddenFiles.delete(btn.dataset.key);
+          LS.saveHidden(hiddenFiles);
+          filteredConvs = applyFilter(currentSearchQuery);
+          renderList(currentSearchHits);
+          renderMenuFileList();
+        });
+      });
+
+      menuFileList.querySelectorAll('.file-action.remove').forEach(btn => {
+        btn.addEventListener('click', () => {
+          removeConversation(btn.dataset.key, { rerenderMenu: true });
+        });
+      });
+    }
+
+    // ─── Search ─────────────────────────────────────────────────────────────────
+    let searchDebounce = null;
+    searchInput.addEventListener('input', () => { clearTimeout(searchDebounce); searchDebounce = setTimeout(handleSearch, 180); });
+
+    async function handleSearch() {
+      const q = searchInput.value.trim();
+      currentSearchQuery = q;
+
+      if (!q) {
+        isFullTextSearch = false;
+        searchModeBadge.classList.remove('active');
+        filteredConvs = sortConversations(getVisibleConvs());
+        renderList(null);
+        clearContentHighlights();
+        jumpNavLabel.textContent = 'Jump to';
+        if (activeIndex >= 0) buildJumpNav();
+        return;
+      }
+
+      const lq = q.toLowerCase();
+      const titleMatchKeys = new Set(
+        getVisibleConvs().filter(c => c.title.toLowerCase().includes(lq)).map(fileKey)
+      );
+
+      const searchHits = new Map();
+      getVisibleConvs().forEach((conv, i) => {
+        const key = fileKey(conv);
+        let text = contentTextCache.get(key);
+        if (text === undefined) {
+          if (loadedContent.has(key)) {
+            const tmp = document.createElement('div');
+            tmp.innerHTML = loadedContent.get(key).bodyHtml;
+            text = tmp.textContent || '';
+            contentTextCache.set(key, text);
+          } else { text = null; }
+        }
+        if (text && text.toLowerCase().includes(lq)) {
+          const snippets = []; let idx2 = 0; const tl = text.toLowerCase();
+          while (snippets.length < 3) {
+            const pos = tl.indexOf(lq, idx2);
+            if (pos === -1) break;
+            snippets.push(text.slice(Math.max(0, pos - 28), Math.min(text.length, pos + lq.length + 28)).replace(/\n+/g, ' ').trim());
+            idx2 = pos + lq.length;
+          }
+          searchHits.set(i, snippets);
+        }
+      });
+
+      const allVisible = getVisibleConvs();
+      const matchIdxs = new Set();
+      allVisible.forEach((c, i) => {
+        if (titleMatchKeys.has(fileKey(c)) || searchHits.has(i)) matchIdxs.add(i);
+      });
+
+      isFullTextSearch = [...matchIdxs].some(i => !titleMatchKeys.has(fileKey(allVisible[i])));
+      filteredConvs = sortConversations(allVisible.filter((_, i) => matchIdxs.has(i)));
+      searchModeBadge.classList.toggle('active', isFullTextSearch);
+
+      // Remap searchHits keys to filteredConvs indices
+      const remapped = new Map();
+      filteredConvs.forEach((conv, fi) => {
+        const oi = allVisible.indexOf(conv);
+        if (searchHits.has(oi)) remapped.set(fi, searchHits.get(oi));
+      });
+
+      renderList(remapped.size > 0 ? remapped : null);
+      if (activeIndex >= 0 && q) highlightContentMatches(q);
+    }
+
+    // ─── Highlight ───────────────────────────────────────────────────────────────
+    function highlightContentMatches(q) {
+      if (!q || activeIndex < 0) return;
+      clearContentHighlights();
+      if (!q.trim()) return;
+      const lq = q.toLowerCase();
+      jumpNavLabel.textContent = 'Search hits';
+      let matchCount = 0;
+      walkTextNodes(convContent, node => {
+        const text = node.textContent;
+        if (!text.toLowerCase().includes(lq)) return;
+        const parts = text.split(new RegExp('(' + escapeRegex(q) + ')', 'gi'));
+        if (parts.length <= 1) return;
+        const frag = document.createDocumentFragment();
+        parts.forEach(part => {
+          if (part.toLowerCase() === lq) {
+            const mark = document.createElement('mark');
+            mark.textContent = part; mark.dataset.matchIdx = matchCount++;
+            frag.appendChild(mark);
+          } else { frag.appendChild(document.createTextNode(part)); }
+        });
+        node.parentNode.replaceChild(frag, node);
+      });
+      buildJumpNavWithSearchHits(q);
+    }
+
+    function clearContentHighlights() {
+      convContent.querySelectorAll('mark').forEach(m => {
+        const p = m.parentNode;
+        p.replaceChild(document.createTextNode(m.textContent), m);
+        p.normalize();
+      });
+    }
+
+    function walkTextNodes(el, fn) {
+      if (['SCRIPT', 'STYLE', 'PRE', 'CODE'].includes(el.tagName)) return;
+      const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT, {
+        acceptNode(node) {
+          const p = node.parentElement;
+          if (!p) return NodeFilter.FILTER_REJECT;
+          if (['SCRIPT', 'STYLE', 'PRE', 'CODE'].includes(p.tagName)) return NodeFilter.FILTER_REJECT;
+          return node.textContent.trim() ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
+        }
+      });
+      const nodes = []; let n;
+      while ((n = walker.nextNode())) nodes.push(n);
+      nodes.forEach(fn);
+    }
+
+    // ─── Jump nav ────────────────────────────────────────────────────────────────
+    function buildJumpNav() {
+      jumpNav.innerHTML = '';
+      jumpNavLabel.textContent = 'Jump to';
+      const userMsgs = convContent.querySelectorAll('.message.user');
+      const items = [];
+
+      userMsgs.forEach((msg, i) => {
+        const text = msg.textContent.trim().replace(/^YOU\s*/i, '').slice(0, 52);
+        const label = text || ('Turn ' + (i + 1));
+        const id = 'jump-msg-' + i;
+        msg.id = id;
+        items.push({ id, label: label.length > 50 ? label.slice(0, 48) + '…' : label });
+      });
+
+      convContent.querySelectorAll('.message.assistant h2, .message.assistant h3').forEach((h, i) => {
+        const text = h.textContent.trim().slice(0, 52);
+        const id = 'jump-h-' + i; h.id = id;
+        if (text.length > 3) items.push({ id, label: text.length > 50 ? text.slice(0, 48) + '…' : text, isHeading: true });
+      });
+
+      if (items.length === 0) return;
+      items.forEach(item => {
+        const li = document.createElement('li');
+        li.innerHTML = '<a href="#' + item.id + '" class="jump-link block px-2.5 py-1 rounded truncate' + (item.isHeading ? ' pl-5 italic' : '') + '" data-target="' + item.id + '" title="' + escHtml(item.label) + '">' + (item.isHeading ? '↳ ' : '') + escHtml(item.label) + '</a>';
+        li.querySelector('a').addEventListener('click', e => { e.preventDefault(); scrollToTarget(item.id, li.querySelector('a')); });
+        jumpNav.appendChild(li);
+      });
+      jumpNavContainer.style.display = 'block';
+      attachScrollObserver();
+    }
+
+    function buildJumpNavWithSearchHits(q) {
+      jumpNav.innerHTML = '';
+      jumpNavLabel.textContent = 'Search hits';
+      const userMsgs = convContent.querySelectorAll('.message.user');
+      userMsgs.forEach((msg, i) => { msg.id = 'jump-msg-' + i; });
+      const assistantMsgs = convContent.querySelectorAll('.message.assistant');
+      assistantMsgs.forEach((msg, i) => { if (!msg.id) msg.id = 'jump-asst-' + i; });
+
+      convContent.querySelectorAll('.message').forEach((msg, i) => {
+        const marks = msg.querySelectorAll('mark');
+        if (marks.length === 0) return;
+        const msgId = msg.id || ('jump-m-' + i); msg.id = msgId;
+        const labelEl = msg.querySelector('.role-label');
+        const rawText = (labelEl ? msg.textContent.replace(labelEl.textContent, '') : msg.textContent).trim().replace(/\n+/g, ' ');
+        const label = rawText.slice(0, 46) + (rawText.length > 46 ? '…' : '');
+        const li = document.createElement('li');
+        li.innerHTML = '<a href="#' + msgId + '" class="jump-link search-hit block px-2.5 py-1 rounded truncate" data-target="' + msgId + '" title="' + escHtml(label) + '"><span class="text-[.58rem] text-amber-600 mr-0.5">' + marks.length + '×</span>' + escHtml(label) + '</a>';
+        li.querySelector('a').addEventListener('click', e => {
+          e.preventDefault(); scrollToTarget(msgId, li.querySelector('a'));
+          const fm = msg.querySelector('mark');
+          if (fm) { fm.classList.add('search-active'); setTimeout(() => fm.classList.remove('search-active'), 1400); }
+        });
+        jumpNav.appendChild(li);
+      });
+      if (jumpNav.children.length > 0) jumpNavContainer.style.display = 'block';
+    }
+
+    function scrollToTarget(id, linkEl) {
+      const target = document.getElementById(id);
+      if (target) {
+        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        target.style.outline = '1px solid #4a90e240';
+        setTimeout(() => target.style.outline = '', 1200);
+        jumpNav.querySelectorAll('.jump-link').forEach(a => a.classList.remove('active-heading'));
+        if (linkEl) linkEl.classList.add('active-heading');
+      }
+    }
+
+    function attachScrollObserver() {
+      const allTargets = [...convContent.querySelectorAll('[id^="jump-"]')];
+      const observer = new IntersectionObserver(entries => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            const id = entry.target.id;
+            jumpNav.querySelectorAll('.jump-link').forEach(a => a.classList.toggle('active-heading', a.dataset.target === id));
+          }
+        });
+      }, { root: mainContentEl, threshold: 0.1, rootMargin: '-10% 0px -80% 0px' });
+      allTargets.forEach(el => observer.observe(el));
+    }
+
+    // ─── Load conversation ───────────────────────────────────────────────────────
+    async function loadConversation(idx) {
+      if (idx === activeIndex) return;
+
+      if (activeIndex !== -1 && filteredConvs[activeIndex]) {
+        LS.saveScroll(fileKey(filteredConvs[activeIndex]), mainContentEl.scrollTop);
+        persistedScrolls[fileKey(filteredConvs[activeIndex])] = mainContentEl.scrollTop;
+      }
+
+      const prevIndex = activeIndex;
+      activeIndex = idx;
+      const conv = filteredConvs[idx];
+      if (!conv) return;
+      const key = fileKey(conv);
+      LS.saveActiveFile(key);
+
+      sidebar.classList.remove('open'); sidebarOverlay.classList.remove('active');
+      renderList(currentSearchHits);
+
+      // Set provider class on content area for CSS accent colours
+      convContent.className = 'provider-' + conv.provider + ' max-w-3xl mx-auto px-6 py-8 fade-in';
+
+      // Fast path
+      if (loadedContent.has(key)) {
+        const cached = loadedContent.get(key);
+        emptyState.style.display = 'none'; loadingState.style.display = 'none';
+        convContent.innerHTML = cached.bodyHtml; convContent.style.display = 'block';
+        convContent.classList.remove('fade-in'); void convContent.offsetWidth; convContent.classList.add('fade-in');
+        buildJumpNav();
+        const saved = persistedScrolls[key];
+        mainContentEl.scrollTop = saved !== undefined ? saved : 0;
+        if (currentSearchQuery) highlightContentMatches(currentSearchQuery);
+        return;
+      }
+
+      // Slow path
+      if (prevIndex === -1) {
+        emptyState.style.display = 'none';
+        loadingState.style.removeProperty('display');
+        convContent.style.display = 'none';
+      }
+      jumpNavContainer.style.display = 'none'; jumpNav.innerHTML = '';
+
+      try {
+        const res = await fetch(pathFor(conv));
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const html = await res.text();
+
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const container = doc.querySelector('.container');
+        const bodyHtml = container ? container.innerHTML : doc.body.innerHTML;
+
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = bodyHtml;
+
+        // Convert .thinking blocks to collapsible <details>
+        tempDiv.querySelectorAll('.thinking').forEach(el => {
+          const label = el.querySelector('.thinking-label');
+          const labelText = label ? label.textContent : 'Thinking';
+          const contentHtml = label ? el.innerHTML.replace(label.outerHTML, '') : el.innerHTML;
+          const details = document.createElement('details');
+          details.className = 'thinking-toggle';
+          details.innerHTML =
+            '<summary class="flex items-center gap-1.5 cursor-pointer select-none mb-1">' +
+            '<span class="thinking-label">' + labelText + '</span>' +
+            '<svg class="w-3 h-3" style="color:#4a4a28" fill="none" stroke="currentColor" viewBox="0 0 24 24">' +
+            '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>' +
+            '</svg>' +
+            '</summary>' +
+            '<div class="thinking-body" style="font-style:italic;color:#6b7040;font-size:.84rem;line-height:1.7">' + contentHtml + '</div>';
+          el.replaceWith(details);
+        });
+
+        loadedContent.set(key, { bodyHtml: tempDiv.innerHTML });
+        contentTextCache.set(key, tempDiv.textContent || '');
+
+        if (activeIndex !== idx) return;
+
+        loadingState.style.display = 'none';
+        convContent.innerHTML = tempDiv.innerHTML; convContent.style.display = 'block';
+        emptyState.style.display = 'none';
+        convContent.classList.remove('fade-in'); void convContent.offsetWidth; convContent.classList.add('fade-in');
+        buildJumpNav();
+        mainContentEl.scrollTop = 0;
+        if (currentSearchQuery) { highlightContentMatches(currentSearchQuery); handleSearch(); }
+
+      } catch (err) {
+        if (activeIndex !== idx) return;
+        loadingState.style.display = 'none';
+        convContent.innerHTML = '<div class="text-red-400 text-sm p-4 bg-red-950/30 rounded-lg border border-red-900/40">Failed to load: ' + escHtml(err.message) + '<br><span class="text-gray-500 text-xs">Serve via <code>python3 -m http.server</code></span></div>';
+        convContent.style.display = 'block'; emptyState.style.display = 'none';
+      }
+    }
+
+    // ─── Mobile sidebar ─────────────────────────────────────────────────────────
+    sidebarToggle.addEventListener('click', () => { sidebar.classList.toggle('open'); sidebarOverlay.classList.toggle('active'); });
+    sidebarOverlay.addEventListener('click', () => { sidebar.classList.remove('open'); sidebarOverlay.classList.remove('active'); });
+
+    // ─── User menu ───────────────────────────────────────────────────────────────
+    menuTrigger.addEventListener('click', e => {
+      e.stopPropagation();
+      userMenu.classList.toggle('hidden');
+      if (!userMenu.classList.contains('hidden')) renderMenuFileList();
+    });
+    document.addEventListener('click', e => {
+      if (!userMenu.contains(e.target) && e.target !== menuTrigger) userMenu.classList.add('hidden');
+    });
+
+    // Provider filter buttons
+    document.querySelectorAll('.provider-filter-btn').forEach(btn => {
+      btn.addEventListener('click', () => setProvider(btn.dataset.p));
+    });
+
+    // ─── Scroll persistence ──────────────────────────────────────────────────────
+    window.addEventListener('beforeunload', () => {
+      if (activeIndex >= 0 && filteredConvs[activeIndex])
+        LS.saveScroll(fileKey(filteredConvs[activeIndex]), mainContentEl.scrollTop);
+    });
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'hidden' && activeIndex >= 0 && filteredConvs[activeIndex])
+        LS.saveScroll(fileKey(filteredConvs[activeIndex]), mainContentEl.scrollTop);
+    });
+
+    // ─── Init ────────────────────────────────────────────────────────────────────
+    applyPrefs();
+    updateHeaderTitle(activeProvider);
+    document.querySelectorAll('.provider-filter-btn').forEach(b =>
+      b.classList.toggle('active', b.dataset.p === activeProvider));
+    filteredConvs = sortConversations(getVisibleConvs());
+    renderList(null);
+
+    const lastFile = LS.getActiveFile();
+    if (lastFile) {
+      const lastIdx = filteredConvs.findIndex(c => fileKey(c) === lastFile);
+      if (lastIdx >= 0) {
+        loadConversation(lastIdx).then(() => {
+          const saved = persistedScrolls[lastFile];
+          if (saved) setTimeout(() => { mainContentEl.scrollTop = saved; }, 80);
+        });
+      }
+    }
+  </script>
+</body>
+
+</html>

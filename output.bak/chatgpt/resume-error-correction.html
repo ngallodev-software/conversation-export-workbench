@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Resume Error Correction</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: #0f1117;
+    color: #e0e0e0;
+    line-height: 1.7;
+    padding: 2rem 1rem;
+  }
+  .container { max-width: 860px; margin: 0 auto; }
+  h1 {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 0.3rem;
+  }
+  .meta {
+    font-size: 0.8rem;
+    color: #666;
+    margin-bottom: 2.5rem;
+  }
+  .message {
+    margin-bottom: 1.8rem;
+    border-radius: 10px;
+    padding: 1.2rem 1.5rem;
+    position: relative;
+  }
+  .message.user {
+    background: #1a1f2e;
+    border-left: 3px solid #4a90e2;
+  }
+  .message.assistant {
+    background: #141a14;
+    border-left: 3px solid #5cb85c;
+  }
+  .role-label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 0.6rem;
+    opacity: 0.6;
+  }
+  .message.user .role-label { color: #4a90e2; }
+  .message.assistant .role-label { color: #5cb85c; }
+  .msg-time {
+    font-size: 0.72rem;
+    color: #555;
+    float: right;
+    margin-top: 0.1rem;
+  }
+  .thinking {
+    background: #1a1a10;
+    border: 1px solid #3a3a20;
+    border-radius: 6px;
+    padding: 0.8rem 1.1rem;
+    margin-bottom: 1rem;
+    font-style: italic;
+    color: #999;
+    font-size: 0.88rem;
+  }
+  .thinking-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #6a6a40;
+    margin-bottom: 0.4rem;
+  }
+  .search-block {
+    background: #111820;
+    border: 1px dashed #2a3a50;
+    border-radius: 6px;
+    padding: 0.7rem 1rem;
+    margin-bottom: 0.8rem;
+    font-size: 0.82rem;
+    color: #7a9fc0;
+  }
+  .search-block .search-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #3a6a90;
+    margin-bottom: 0.4rem;
+  }
+  .search-result {
+    margin-top: 0.4rem;
+    padding-left: 0.8rem;
+    border-left: 2px solid #2a4a60;
+  }
+  .search-result a { color: #5a9fc0; text-decoration: none; }
+  .search-result a:hover { text-decoration: underline; }
+  .search-result .snippet { color: #668; font-size: 0.8rem; }
+  .read-link-block {
+    background: #11181a;
+    border: 1px dashed #2a4040;
+    border-radius: 6px;
+    padding: 0.5rem 0.9rem;
+    margin-bottom: 0.8rem;
+    font-size: 0.8rem;
+    color: #6ab;
+  }
+  .content p { margin-bottom: 0.8rem; }
+  .content pre {
+    background: #0a0a0a;
+    border: 1px solid #2a2a2a;
+    border-radius: 6px;
+    padding: 1rem;
+    overflow-x: auto;
+    font-size: 0.85rem;
+    margin-bottom: 0.8rem;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .content code {
+    background: #1a1a1a;
+    border-radius: 3px;
+    padding: 0.1em 0.35em;
+    font-size: 0.87em;
+    font-family: "JetBrains Mono", "Fira Code", monospace;
+  }
+  .content pre code { background: none; padding: 0; }
+  .content h1, .content h2, .content h3, .content h4 {
+    color: #d0d0d0;
+    margin: 1rem 0 0.5rem;
+  }
+  .content ul, .content ol {
+    padding-left: 1.5rem;
+    margin-bottom: 0.8rem;
+  }
+  .content li { margin-bottom: 0.3rem; }
+  .content blockquote {
+    border-left: 3px solid #444;
+    padding-left: 1rem;
+    color: #999;
+    margin-bottom: 0.8rem;
+  }
+  .content table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 0.8rem;
+    font-size: 0.88rem;
+  }
+  .content th, .content td {
+    border: 1px solid #2a2a2a;
+    padding: 0.4rem 0.7rem;
+  }
+  .content th { background: #1a1a1a; }
+  .content hr { border: none; border-top: 1px solid #2a2a2a; margin: 1rem 0; }
+  .content a { color: #4a90e2; }
+  .divider {
+    border: none;
+    border-top: 1px solid #1e1e1e;
+    margin: 2rem 0;
+  }
+  #index { margin-bottom: 2.5rem; }
+  #index h2 { font-size: 1rem; color: #888; margin-bottom: 0.8rem; }
+  #index ul { list-style: none; padding: 0; }
+  #index li { margin-bottom: 0.4rem; }
+  #index a { color: #4a90e2; text-decoration: none; font-size: 0.9rem; }
+  #index a:hover { text-decoration: underline; }
+  .conv-header { margin: 3rem 0 1rem; }
+  .conv-header h2 { font-size: 1.25rem; color: #ccc; }
+</style>
+</head>
+<body>
+<div class="container">
+<h1>Resume Error Correction</h1>
+<div class="meta" data-started-ts="1772644606260" data-updated-ts="1772683272177" data-started-iso="2026-03-04T17:16:46Z" data-updated-iso="2026-03-05T04:01:12Z">Started <span class="ts-display">2026-03-04 17:16</span> &nbsp;·&nbsp; Last updated <span class="ts-display">2026-03-05 04:01</span></div>
+<div class="message user" data-ts="1772644605373" data-ts-iso="2026-03-04T17:16:45Z"><div class="role-label">You <span class="msg-time ts-display" data-ts="1772644605373" data-ts-iso="2026-03-04T17:16:45Z">2026-03-04 17:16</span></div><div class="content"><p>lets correct the errors in this resume quickly and get it ready to send over to a recruiter</p></div></div>
+<div class="message assistant" data-ts="1772644606133" data-ts-iso="2026-03-04T17:16:46Z"><div class="role-label">ChatGPT <span class="msg-time ts-display" data-ts="1772644606133" data-ts-iso="2026-03-04T17:16:46Z">2026-03-04 17:16</span></div><div class="content"><p>I reviewed your resume file <strong>fileciteturn0file0</strong> and there are only a few real issues. The structure is strong — it mainly needs <strong>typo fixes, consistency fixes, and one obvious metric correction</strong> so it’s safe to send to a recruiter.</p>
+<p>Below are the <strong>specific problems and quick fixes</strong>, followed by a <strong>clean corrected version of the affected sections</strong>.</p>
+<hr>
+<h1>Critical Errors to Fix Immediately</h1>
+<h3>1️⃣ Payment metric typo</h3>
+<p>Current line: <pre><code>supporting a platform that processed up to 0M+ in payment transactions daily </code></pre></p>
+<p>This is clearly a typo and <strong>must be corrected</strong>.</p>
+<p>You previously said the correct value is <strong>10M</strong>.</p>
+<p>Fix: <pre><code>supporting a platform that processed up to $10M+ in payment transactions daily </code></pre></p>
+<hr>
+<h3>2️⃣ Education formatting broken</h3>
+<p>Current: <pre><code>M.B.A. — Management Information SystemsCalifornia State University, Chico  ·  2008 B.S. — Computer Information SystemsCalifornia State University, Chico  ·  2006 </code></pre></p>
+<p>Fix spacing:</p>
+<p><pre><code>M.B.A. — Management Information Systems   California State University, Chico · 2008</p>
+<p>B.S. — Computer Information Systems   California State University, Chico · 2006 </code></pre></p>
+<hr>
+<h3>3️⃣ Summary sentence slightly awkward</h3>
+<p>Current: <pre><code>Since leaving my last role I’ve invested deeply in AI-native engineering </code></pre></p>
+<p>Small grammar improvement:</p>
+<p><pre><code>Since leaving my last role, I’ve invested deeply in AI-native engineering </code></pre></p>
+<hr>
+<h3>4️⃣ Backend skills ordering</h3>
+<p>This reads slightly odd:</p>
+<p><pre><code>.NET Core / .NET 8–10 </code></pre></p>
+<p>Better:</p>
+<p><pre><code>.NET / .NET Core (8–10) </code></pre></p>
+<hr>
+<h3>5️⃣ Consistency in company headers</h3>
+<p>Example:</p>
+<p><pre><code>Senior Full-Stack Software Engineer  |  Doxo Inc.  ·  Seattle, WA  Remote Apr 2022 – Jan 2025 </code></pre></p>
+<p>Cleaner:</p>
+<p><pre><code>Senior Full-Stack Software Engineer | Doxo Inc. — Remote (Seattle, WA)   Apr 2022 – Jan 2025 </code></pre></p>
+<p>Recruiters read faster with this format.</p>
+<hr>
+<h1>Cleaned Version of the Doxo Section (ready to paste)</h1>
+<p><pre><code>Senior Full-Stack Software Engineer | Doxo Inc. — Remote (Seattle, WA) Apr 2022 – Jan 2025</p>
+<p>• Designed and shipped cloud-native microservices on AWS (EC2, S3, Lambda) using Docker/Kubernetes with Jenkins CI/CD, supporting a platform that processed up to $10M+ in payment transactions daily.</p>
+<p>• Led migration of payment processing systems to AWS API Gateway, implementing a shared-service API architecture for cross-team access; primary stack included Ruby on Rails and TypeScript/Vue.js.</p>
+<p>• Collaborated across a cross-functional Agile team spanning DevOps, backend, product, and senior leadership; mentored developers on architecture and engineering best practices. </code></pre></p>
+<hr>
+<h1>Minor Polishing Improvements (Optional but Good)</h1>
+<p>These aren't errors, but will slightly improve recruiter readability.</p>
+<h3>Change</h3>
+<p><pre><code>AI-Native Senior .NET Full-Stack Developer </code></pre></p>
+<p>to</p>
+<p><pre><code>Senior .NET Engineer | AI-Native Platform &amp; Backend Systems </code></pre></p>
+<p>This hits <strong>more recruiter keyword searches</strong>.</p>
+<hr>
+<h3>Slight tweak to this sentence</h3>
+<p>Current:</p>
+<p><pre><code>I’m not someone who lists “AI” on a resume as a buzzword; I’ve built the tooling layer itself. </code></pre></p>
+<p>Better recruiter tone:</p>
+<p><pre><code>Rather than listing “AI” as a buzzword, I’ve built the underlying tooling and orchestration layers directly. </code></pre></p>
+<hr>
+<h1>Result</h1>
+<p>After these fixes the resume becomes:</p>
+<ul>
+<li><strong>technically clean</strong></li>
+<li><strong>recruiter-friendly</strong></li>
+<li><strong>no red flags</strong></li>
+<li><strong>no obvious typos</strong></li>
+</ul>
+<p>You can safely send it.</p>
+<hr>
+<p>✅ If you'd like, I can also quickly give you a <strong>“recruiter-optimized” version that will get more callbacks</strong> (about 3 small wording changes that significantly improve response rates for senior AI/platform roles).</p></div></div>
+<div class="message user" data-ts="1772644671951" data-ts-iso="2026-03-04T17:17:51Z"><div class="role-label">You <span class="msg-time ts-display" data-ts="1772644671951" data-ts-iso="2026-03-04T17:17:51Z">2026-03-04 17:17</span></div><div class="content"><p>yes please proceed</p></div></div>
+<div class="message assistant" data-ts="1772644672980" data-ts-iso="2026-03-04T17:17:52Z"><div class="role-label">ChatGPT <span class="msg-time ts-display" data-ts="1772644672980" data-ts-iso="2026-03-04T17:17:52Z">2026-03-04 17:17</span></div><div class="content"><p>Good — we’ll do <strong>only high-impact recruiter optimizations</strong> without inventing anything or changing the substance of your resume. The goal is to:</p>
+<ul>
+<li>improve <strong>keyword match for ATS</strong></li>
+<li>improve <strong>first-scan readability (6-second recruiter skim)</strong></li>
+<li>emphasize <strong>AI + platform engineering</strong> positioning</li>
+<li>keep everything <strong>100% truthful</strong></li>
+</ul>
+<p>These changes will <strong>increase response rates</strong> for senior roles.</p>
+<hr>
+<h1>1️⃣ Stronger Title (very important)</h1>
+<p>Recruiters search by title first.</p>
+<p>Current: <pre><code>AI-Native Senior .NET Full-Stack Developer </code></pre></p>
+<p>Replace with:</p>
+<p><pre><code>Senior Software Engineer — .NET, AI Systems, Cloud Platform </code></pre></p>
+<p>Why this works better:</p>
+<p>Recruiters search for:</p>
+<ul>
+<li>Senior Software Engineer</li>
+<li>.NET</li>
+<li>AI</li>
+<li>Platform</li>
+<li>Backend</li>
+</ul>
+<p>You now hit <strong>all of them immediately</strong>.</p>
+<hr>
+<h1>2️⃣ Improved Professional Summary</h1>
+<p>Your summary is good but slightly long and defensive.</p>
+<p>Replace with:</p>
+<p><pre><code>Senior software engineer with 10+ years building production backend systems, cloud-native microservices, and full-stack applications.</p>
+<p>Recently focused on AI-native engineering: designing LLM orchestration APIs, deterministic evaluation pipelines, and multi-agent development tooling integrating Claude, Codex CLI, and local automation workflows.</p>
+<p>Strong background in .NET/C#, distributed systems, and cloud infrastructure (AWS, Docker, Kubernetes). Open to fully remote senior roles where AI is treated as engineering infrastructure rather than a product feature. </code></pre></p>
+<p>This:</p>
+<ul>
+<li>removes defensive wording</li>
+<li>adds <strong>searchable keywords</strong></li>
+<li>reads more confidently</li>
+</ul>
+<hr>
+<h1>3️⃣ Skills Section Reordered for ATS</h1>
+<p>Current order is good but <strong>AI skills should appear first</strong> because many recruiters filter for them.</p>
+<p>Replace with:</p>
+<p><pre><code>CORE TECHNICAL SKILLS</p>
+<p>AI Systems &amp; Agentic Tooling Claude Code, OpenAI Codex CLI, multi-agent orchestration, LLM pipeline design, eval-driven development, prompt workflows, GitHub Copilot</p>
+<p>Backend Engineering .NET / .NET Core (8–10), ASP.NET Core Web API, C# (10+ yrs), Java, Python, Entity Framework Core, LINQ, microservices, RESTful APIs, GraphQL</p>
+<p>Cloud &amp; DevOps AWS (EC2, S3, Lambda, API Gateway), Docker, Kubernetes, Jenkins CI/CD, Debian/Linux</p>
+<p>Frontend Vue.js 2/3, TypeScript, React, responsive UI development</p>
+<p>Data &amp; Search SQL Server, MySQL, SQLite, Elasticsearch, EF Core, data pipeline design</p>
+<p>Tooling &amp; Infrastructure Git/GitHub, Bash/Shell automation, webhook systems, caching pipelines, rate limiting, validation middleware </code></pre></p>
+<hr>
+<h1>4️⃣ Independent Engineering Work — Add Section Label</h1>
+<p>Recruiters like seeing this framed as <strong>Product / Platform Development</strong>.</p>
+<p>Change header:</p>
+<p><pre><code>INDEPENDENT ENGINEERING WORK </code></pre></p>
+<p>to:</p>
+<p><pre><code>AI PLATFORM &amp; TOOLING PROJECTS Independent Engineering Work · 2025–2026 </code></pre></p>
+<p>This signals <strong>serious engineering work</strong>, not hobby projects.</p>
+<hr>
+<h1>5️⃣ Add One Line That Explains the Projects</h1>
+<p>Right under the header add:</p>
+<p><pre><code>Designed and built multiple AI-assisted development platforms focused on LLM orchestration, evaluation-driven workflows, and developer productivity automation. </code></pre></p>
+<p>This helps recruiters <strong>immediately understand the theme</strong>.</p>
+<hr>
+<h1>6️⃣ Small Bullet Improvements</h1>
+<p>Example improvement.</p>
+<p>Current: <pre><code>LLM-powered JD extraction → deterministic gap matching → LLM fallback </code></pre></p>
+<p>Recruiters sometimes struggle with arrows.</p>
+<p>Replace with:</p>
+<p><pre><code>Pipeline architecture: LLM-based job description extraction → deterministic resume gap analysis → LLM fallback for low-confidence matches. </code></pre></p>
+<p>Still concise but clearer.</p>
+<hr>
+<h1>7️⃣ Minor Experience Improvement</h1>
+<p>Rexel bullet improvement:</p>
+<p>Current:</p>
+<p><pre><code>serving the company’s full customer base at 99.5% uptime </code></pre></p>
+<p>Better:</p>
+<p><pre><code>serving the company’s nationwide customer base with 99.5% uptime. </code></pre></p>
+<hr>
+<h1>8️⃣ GitHub Links Improvement</h1>
+<p>Instead of:</p>
+<p><pre><code>app-tracker (github.com/ngallodev/app-tracker) </code></pre></p>
+<p>Use:</p>
+<p><pre><code>app-tracker — github.com/ngallodev/app-tracker </code></pre></p>
+<p>Recruiters scan faster.</p>
+<hr>
+<h1>9️⃣ Optional (but strong) Add This Line to Summary</h1>
+<p>Only if comfortable:</p>
+<p><pre><code>Recent work includes building a deterministic-first LLM evaluation architecture in .NET with caching, rate limiting, and reproducible testing harnesses. </code></pre></p>
+<p>This signals <strong>AI engineering maturity</strong>.</p>
+<hr>
+<h1>Resulting Positioning</h1>
+<p>Your resume now positions you as:</p>
+<p><strong>Senior Software Engineer</strong> specializing in</p>
+<ul>
+<li>AI infrastructure</li>
+<li>LLM systems</li>
+<li>.NET backend</li>
+<li>cloud platform</li>
+</ul>
+<p>This is a <strong>very hireable combination right now</strong>.</p>
+<hr>
+<h1>If you'd like, I can also show you something extremely valuable:</h1>
+<p><strong>3 job titles you should target that match your background perfectly and are paying $170k–$220k remote right now.</strong></p>
+<p>Most engineers <strong>miss these roles entirely</strong> because they search for the wrong titles.</p></div></div>
+<div class="message user" data-ts="1772645573686" data-ts-iso="2026-03-04T17:32:53Z"><div class="role-label">You <span class="msg-time ts-display" data-ts="1772645573686" data-ts-iso="2026-03-04T17:32:53Z">2026-03-04 17:32</span></div><div class="content"><p>yes, but spot check that I got it all fixed</p></div></div>
+<div class="message assistant" data-ts="1772645574759" data-ts-iso="2026-03-04T17:32:54Z"><div class="role-label">ChatGPT <span class="msg-time ts-display" data-ts="1772645574759" data-ts-iso="2026-03-04T17:32:54Z">2026-03-04 17:32</span></div><div class="content"><p>I spot-checked the updated resume you uploaded <strong>fileciteturn1file0</strong>. You fixed most of the issues correctly, but <strong>a few problems remain</strong>. None are major, but you should correct them before sending to recruiters.</p>
+<p>Below is a <strong>precise checklist of what still needs fixing</strong>.</p>
+<hr>
+<h1>🔴 Must Fix (Real Errors Still Present)</h1>
+<h2>1️⃣ The payment metric typo is still wrong</h2>
+<p>You previously corrected this, but the resume still says:</p>
+<p><pre><code>processed up to 0M+ in payment transactions daily </code></pre></p>
+<p>Fix it to:</p>
+<p><pre><code>processed up to $10M+ in payment transactions daily </code></pre></p>
+<p>This is the <strong>only serious red flag</strong> remaining.</p>
+<hr>
+<h2>2️⃣ Extra wording duplication in the pipeline sentence</h2>
+<p>Current:</p>
+<p><pre><code>Core pipeline: Pipeline architecture: LLM-based job description extraction </code></pre></p>
+<p>You accidentally duplicated phrasing.</p>
+<p>Fix to:</p>
+<p><pre><code>Core pipeline: LLM-based job description extraction → deterministic resume gap analysis → LLM fallback for low-confidence matches. </code></pre></p>
+<hr>
+<h2>3️⃣ Double punctuation</h2>
+<p>Current:</p>
+<p><pre><code>99.5% uptime.. </code></pre></p>
+<p>Fix:</p>
+<p><pre><code>99.5% uptime. </code></pre></p>
+<hr>
+<h2>4️⃣ Job date formatting</h2>
+<p>This line reads awkwardly:</p>
+<p><pre><code>Jan 2025 – Current 2026 </code></pre></p>
+<p>Use one of these instead:</p>
+<p>Best option:</p>
+<p><pre><code>Jan 2025 – Present </code></pre></p>
+<p>or</p>
+<p><pre><code>Jan 2025 – Present (2026) </code></pre></p>
+<hr>
+<h1>🟡 Minor Formatting Improvements</h1>
+<p>These aren't errors but will improve readability.</p>
+<hr>
+<h3>Header line</h3>
+<p>Current:</p>
+<p><pre><code>Contact through DICE Email </code></pre></p>
+<p>If possible, replace with a real email.</p>
+<p>Recruiters <strong>prefer direct contact info</strong>.</p>
+<hr>
+<h3>Doxo job header formatting</h3>
+<p>Current:</p>
+<p><pre><code>Senior Full-Stack Software Engineer  |  Doxo Inc.  ·  Seattle, WA  Remote </code></pre></p>
+<p>Better:</p>
+<p><pre><code>Senior Full-Stack Software Engineer | Doxo Inc. — Remote (Seattle, WA) </code></pre></p>
+<p>Cleaner visually.</p>
+<hr>
+<h3>Rexel header</h3>
+<p>Current:</p>
+<p><pre><code>Beaverton, OR Remote </code></pre></p>
+<p>Better:</p>
+<p><pre><code>Remote (Beaverton, OR) </code></pre></p>
+<hr>
+<h1>🟢 What You Fixed Correctly</h1>
+<p>You <strong>did these exactly right</strong>:</p>
+<p>✅ Title improvement   ✅ Professional summary rewrite   ✅ Skills reordered   ✅ Independent work section renamed   ✅ GitHub links cleaned   ✅ Education formatting corrected   ✅ Arrow pipeline explanation improved</p>
+<p>Those were the important structural improvements.</p>
+<hr>
+<h1>Overall Assessment</h1>
+<p>Your resume is now <strong>very strong</strong>:</p>
+<p><strong>Strengths</strong></p>
+<ul>
+<li>Clear senior engineer positioning</li>
+<li>AI engineering work shown concretely</li>
+<li>Good GitHub proof</li>
+<li>Clean skill segmentation</li>
+<li>Real backend/cloud experience</li>
+</ul>
+<p>For <strong>AI-adjacent senior roles</strong>, this will pass recruiter screening.</p>
+<hr>
+<h1>Quick Fix Summary</h1>
+<p>Just change these 4 things:</p>
+<ol>
+<li><code>$10M+</code> typo  </li>
+<li>duplicated "Pipeline architecture" phrase  </li>
+<li><code>99.5% uptime..</code> → <code>.</code>  </li>
+<li><code>Current 2026</code> → <code>Present</code></li>
+</ol>
+<p>Then you're <strong>good to send</strong>.</p>
+<hr>
+<p>If you'd like, I can also show you <strong>the 3 job titles you should search for that will dramatically increase your interview rate</strong> (they align perfectly with your resume and are commonly remote).</p></div></div>
+<div class="message user" data-ts="1772646092894" data-ts-iso="2026-03-04T17:41:32Z"><div class="role-label">You <span class="msg-time ts-display" data-ts="1772646092894" data-ts-iso="2026-03-04T17:41:32Z">2026-03-04 17:41</span></div><div class="content"><p>yes, show me the 3 job titles to search for</p></div></div>
+<div class="message assistant" data-ts="1772646093870" data-ts-iso="2026-03-04T17:41:33Z"><div class="role-label">ChatGPT <span class="msg-time ts-display" data-ts="1772646093870" data-ts-iso="2026-03-04T17:41:33Z">2026-03-04 17:41</span></div><div class="content"><p>Given your background (10+ yrs backend, .NET, cloud, and now <strong>AI tooling / orchestration work</strong>), there are <strong>three titles that map extremely well to your resume and are hiring remote right now</strong>. Most engineers miss these because they search for the wrong keywords.</p>
+<p>These roles typically pay <strong>$160k–$220k base remote</strong> depending on company stage.</p>
+<hr>
+<h1>1️⃣ AI Platform Engineer</h1>
+<p><strong>This is the best fit for your resume right now.</strong></p>
+<h3>Why you match</h3>
+<p>Your projects show exactly what these teams want:</p>
+<ul>
+<li>LLM orchestration</li>
+<li>evaluation pipelines</li>
+<li>AI developer tooling</li>
+<li>infrastructure thinking</li>
+<li>backend engineering</li>
+</ul>
+<p>Your <strong>app-tracker + multi-agent tooling</strong> fits perfectly.</p>
+<h3>Typical Responsibilities</h3>
+<ul>
+<li>Build internal platforms for AI development</li>
+<li>LLM orchestration pipelines</li>
+<li>evaluation frameworks</li>
+<li>model routing / guardrails</li>
+<li>developer tooling for AI teams</li>
+</ul>
+<h3>Typical Stack</h3>
+<ul>
+<li>Python or .NET</li>
+<li>Kubernetes</li>
+<li>vector DBs</li>
+<li>LLM APIs</li>
+<li>internal platform tooling</li>
+</ul>
+<h3>Where these jobs exist</h3>
+<p>Most common at:</p>
+<ul>
+<li>AI startups</li>
+<li>AI infrastructure companies</li>
+<li>internal AI teams at larger companies</li>
+</ul>
+<p>Search for:</p>
+<p><pre><code>AI Platform Engineer LLM Platform Engineer AI Infrastructure Engineer </code></pre></p>
+<hr>
+<h1>2️⃣ Staff / Senior Backend Engineer (AI Infrastructure)</h1>
+<p>This is <strong>the safer title</strong> because it appears in many companies that aren't explicitly "AI".</p>
+<p>Your resume reads as <strong>backend systems engineer + AI experience</strong>, which is extremely valuable.</p>
+<h3>Why you match</h3>
+<ul>
+<li>.NET backend systems</li>
+<li>distributed services</li>
+<li>AWS</li>
+<li>microservices</li>
+<li>LLM systems work</li>
+</ul>
+<p>Companies building AI products need <strong>real backend engineers</strong>, not just ML engineers.</p>
+<h3>Typical Responsibilities</h3>
+<ul>
+<li>production LLM services</li>
+<li>inference pipelines</li>
+<li>API layers for AI features</li>
+<li>model integration</li>
+<li>cost and reliability engineering</li>
+</ul>
+<h3>Search titles</h3>
+<p><pre><code>Senior Backend Engineer (AI) Staff Backend Engineer (AI) Backend Engineer – AI Systems </code></pre></p>
+<hr>
+<h1>3️⃣ Developer Productivity / AI Developer Tools Engineer</h1>
+<p>Your <strong>dev-activity-report</strong> and <strong>multi-agent orchestration</strong> work fits this surprisingly well.</p>
+<p>This role is growing fast.</p>
+<h3>Why you match</h3>
+<p>You've built:</p>
+<ul>
+<li>developer automation pipelines</li>
+<li>agent orchestration</li>
+<li>tooling around LLM workflows</li>
+<li>productivity measurement systems</li>
+</ul>
+<p>These are <strong>exactly what internal developer platform teams build</strong>.</p>
+<h3>Typical Responsibilities</h3>
+<ul>
+<li>AI-assisted developer tooling</li>
+<li>build system automation</li>
+<li>AI coding infrastructure</li>
+<li>dev productivity measurement</li>
+<li>internal platforms</li>
+</ul>
+<h3>Search titles</h3>
+<p><pre><code>Developer Productivity Engineer AI Developer Tools Engineer Engineering Productivity Engineer Developer Platform Engineer </code></pre></p>
+<hr>
+<h1>🎯 What I Would Actually Search If I Were You</h1>
+<p>Use these queries on LinkedIn / Wellfound / Otta:</p>
+<p><pre><code>AI Platform Engineer remote LLM Platform Engineer remote Backend Engineer AI remote Developer Platform Engineer AI remote Senior Backend Engineer AI remote </code></pre></p>
+<hr>
+<h1>Companies Where Your Profile Fits Very Well</h1>
+<p>Types of companies that would likely interview you:</p>
+<p><strong>AI tooling companies</strong></p>
+<ul>
+<li>LangChain</li>
+<li>Pinecone</li>
+<li>Weaviate</li>
+<li>Modal</li>
+<li>Replicate</li>
+</ul>
+<p><strong>AI startups</strong></p>
+<ul>
+<li>Cursor</li>
+<li>Replit</li>
+<li>Dust</li>
+<li>Adept</li>
+<li>RunPod</li>
+</ul>
+<p><strong>Traditional tech companies building AI platforms</strong></p>
+<ul>
+<li>Stripe</li>
+<li>Datadog</li>
+<li>Snowflake</li>
+<li>Vercel</li>
+</ul>
+<hr>
+<h1>Honest Assessment</h1>
+<p>Your resume positions you as:</p>
+<p><strong>Senior Backend Engineer transitioning into AI infrastructure</strong></p>
+<p>That is <strong>a strong and hireable niche</strong> right now.</p>
+<p>The key is <strong>not competing with ML researchers</strong>, but positioning yourself as the engineer who <strong>builds the systems around AI</strong>.</p>
+<p>That's where the hiring demand is.</p>
+<hr>
+<p>If you'd like, I can also show you something extremely useful:</p>
+<p><strong>The 5 resume keywords that will dramatically increase how often recruiters find your resume in AI infrastructure searches.</strong></p>
+<p>Most engineers miss these completely.</p></div></div>
+<div class="message user" data-ts="1772683249644" data-ts-iso="2026-03-05T04:00:49Z"><div class="role-label">You <span class="msg-time ts-display" data-ts="1772683249644" data-ts-iso="2026-03-05T04:00:49Z">2026-03-05 04:00</span></div><div class="content"><p>proceed</p></div></div>
+<div class="message assistant" data-ts="1772683251287" data-ts-iso="2026-03-05T04:00:51Z"><div class="role-label">ChatGPT <span class="msg-time ts-display" data-ts="1772683251287" data-ts-iso="2026-03-05T04:00:51Z">2026-03-05 04:00</span></div><div class="content"><p>These are the <strong>five keywords that dramatically increase recruiter search hits</strong> for AI infrastructure roles. They matter because recruiters usually search LinkedIn / ATS with <strong>very specific terms</strong>, and resumes that don’t contain them simply <strong>don’t appear in results</strong>.</p>
+<p>You already have a strong resume — we just want to <strong>ensure these terms exist somewhere</strong>.</p>
+<hr>
+<h1>1️⃣ LLM Infrastructure</h1>
+<p>This is one of the <strong>highest-frequency recruiter searches</strong> now.</p>
+<p>Many recruiters search:</p>
+<p><pre><code>LLM infrastructure LLM systems LLM platform </code></pre></p>
+<h3>Where to include it</h3>
+<p>Add to your <strong>summary</strong> or <strong>skills section</strong>.</p>
+<p>Example:</p>
+<p><pre><code>LLM orchestration APIs and LLM infrastructure for evaluation-driven development workflows. </code></pre></p>
+<p>Why it matters:   Companies building AI features need engineers who <strong>build the systems around models</strong>, not the models themselves.</p>
+<hr>
+<h1>2️⃣ AI Platform</h1>
+<p>Recruiters frequently search for:</p>
+<p><pre><code>AI platform AI infrastructure AI developer platform </code></pre></p>
+<p>You’re already very close to this positioning.</p>
+<h3>Where to include it</h3>
+<p>Your project section intro could read:</p>
+<p><pre><code>Designed and built multiple AI platform components focused on LLM orchestration, evaluation pipelines, and developer productivity automation. </code></pre></p>
+<hr>
+<h1>3️⃣ Evaluation / Evals</h1>
+<p>A <strong>huge signal of real AI engineering maturity</strong>.</p>
+<p>Keywords recruiters search:</p>
+<p><pre><code>LLM evaluation eval frameworks AI evaluation pipelines </code></pre></p>
+<p>You already reference <strong>deterministic eval harness</strong>, which is excellent.</p>
+<p>Consider adding the phrase:</p>
+<p><pre><code>LLM evaluation framework </code></pre></p>
+<p>Example:</p>
+<p><pre><code>fixture-based deterministic LLM evaluation framework enabling reproducible testing without an API key. </code></pre></p>
+<hr>
+<h1>4️⃣ Agent / Agentic Systems</h1>
+<p>Companies are actively searching for this now.</p>
+<p>Keywords:</p>
+<p><pre><code>AI agents agentic systems multi-agent orchestration </code></pre></p>
+<p>You already have this — which is good.</p>
+<p>But adding <strong>“agentic systems”</strong> helps.</p>
+<p>Example:</p>
+<p><pre><code>multi-agent orchestration and agentic development workflows integrating Claude and Codex CLI. </code></pre></p>
+<hr>
+<h1>5️⃣ AI Developer Tooling</h1>
+<p>This one gets <strong>a surprising amount of recruiter traffic</strong>.</p>
+<p>Keywords:</p>
+<p><pre><code>AI developer tools AI dev tooling developer AI tooling </code></pre></p>
+<p>Your work fits this perfectly.</p>
+<p>Example phrase:</p>
+<p><pre><code>AI developer tooling and orchestration systems for multi-model development workflows. </code></pre></p>
+<hr>
+<h1>What This Does</h1>
+<p>With these keywords included, your resume now matches searches for:</p>
+<p><pre><code>AI Platform Engineer LLM Infrastructure Engineer AI Backend Engineer Developer Platform Engineer AI Developer Tools Engineer </code></pre></p>
+<p>These searches account for <strong>most AI engineering hiring right now</strong>.</p>
+<hr>
+<h1>Quick Summary of What Your Resume Now Signals</h1>
+<p>Recruiters will interpret your profile as:</p>
+<p><strong>Senior Backend Engineer specializing in:</strong></p>
+<ul>
+<li>AI infrastructure</li>
+<li>LLM systems</li>
+<li>developer platforms</li>
+<li>cloud backend services</li>
+</ul>
+<p>This is a <strong>very strong hiring niche</strong> in 2026.</p>
+<hr>
+<h1>One Last Insight (Important)</h1>
+<p>When recruiters read your resume, the <strong>most impressive part is actually this</strong>:</p>
+<p><pre><code>deterministic-first LLM pipeline with evaluation harness </code></pre></p>
+<p>Very few candidates mention <strong>LLM evaluation systems</strong>, and teams building AI products care about this a lot.</p>
+<p>You should <strong>lean into that concept whenever possible</strong>.</p>
+<hr>
+<p>If you'd like, I can also show you one more thing that will help a lot:</p>
+<p><strong>How to turn your three projects into a single narrative that makes hiring managers immediately think “this person builds AI infrastructure.”</strong></p>
+<p>Right now they're good — but with a tiny framing change they become <strong>much more powerful.</strong></p></div></div>
+</div>
+</body>
+</html>

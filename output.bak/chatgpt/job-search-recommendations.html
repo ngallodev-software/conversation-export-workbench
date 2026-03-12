@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Job search recommendations</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: #0f1117;
+    color: #e0e0e0;
+    line-height: 1.7;
+    padding: 2rem 1rem;
+  }
+  .container { max-width: 860px; margin: 0 auto; }
+  h1 {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 0.3rem;
+  }
+  .meta {
+    font-size: 0.8rem;
+    color: #666;
+    margin-bottom: 2.5rem;
+  }
+  .message {
+    margin-bottom: 1.8rem;
+    border-radius: 10px;
+    padding: 1.2rem 1.5rem;
+    position: relative;
+  }
+  .message.user {
+    background: #1a1f2e;
+    border-left: 3px solid #4a90e2;
+  }
+  .message.assistant {
+    background: #141a14;
+    border-left: 3px solid #5cb85c;
+  }
+  .role-label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 0.6rem;
+    opacity: 0.6;
+  }
+  .message.user .role-label { color: #4a90e2; }
+  .message.assistant .role-label { color: #5cb85c; }
+  .msg-time {
+    font-size: 0.72rem;
+    color: #555;
+    float: right;
+    margin-top: 0.1rem;
+  }
+  .thinking {
+    background: #1a1a10;
+    border: 1px solid #3a3a20;
+    border-radius: 6px;
+    padding: 0.8rem 1.1rem;
+    margin-bottom: 1rem;
+    font-style: italic;
+    color: #999;
+    font-size: 0.88rem;
+  }
+  .thinking-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #6a6a40;
+    margin-bottom: 0.4rem;
+  }
+  .search-block {
+    background: #111820;
+    border: 1px dashed #2a3a50;
+    border-radius: 6px;
+    padding: 0.7rem 1rem;
+    margin-bottom: 0.8rem;
+    font-size: 0.82rem;
+    color: #7a9fc0;
+  }
+  .search-block .search-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #3a6a90;
+    margin-bottom: 0.4rem;
+  }
+  .search-result {
+    margin-top: 0.4rem;
+    padding-left: 0.8rem;
+    border-left: 2px solid #2a4a60;
+  }
+  .search-result a { color: #5a9fc0; text-decoration: none; }
+  .search-result a:hover { text-decoration: underline; }
+  .search-result .snippet { color: #668; font-size: 0.8rem; }
+  .read-link-block {
+    background: #11181a;
+    border: 1px dashed #2a4040;
+    border-radius: 6px;
+    padding: 0.5rem 0.9rem;
+    margin-bottom: 0.8rem;
+    font-size: 0.8rem;
+    color: #6ab;
+  }
+  .content p { margin-bottom: 0.8rem; }
+  .content pre {
+    background: #0a0a0a;
+    border: 1px solid #2a2a2a;
+    border-radius: 6px;
+    padding: 1rem;
+    overflow-x: auto;
+    font-size: 0.85rem;
+    margin-bottom: 0.8rem;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .content code {
+    background: #1a1a1a;
+    border-radius: 3px;
+    padding: 0.1em 0.35em;
+    font-size: 0.87em;
+    font-family: "JetBrains Mono", "Fira Code", monospace;
+  }
+  .content pre code { background: none; padding: 0; }
+  .content h1, .content h2, .content h3, .content h4 {
+    color: #d0d0d0;
+    margin: 1rem 0 0.5rem;
+  }
+  .content ul, .content ol {
+    padding-left: 1.5rem;
+    margin-bottom: 0.8rem;
+  }
+  .content li { margin-bottom: 0.3rem; }
+  .content blockquote {
+    border-left: 3px solid #444;
+    padding-left: 1rem;
+    color: #999;
+    margin-bottom: 0.8rem;
+  }
+  .content table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 0.8rem;
+    font-size: 0.88rem;
+  }
+  .content th, .content td {
+    border: 1px solid #2a2a2a;
+    padding: 0.4rem 0.7rem;
+  }
+  .content th { background: #1a1a1a; }
+  .content hr { border: none; border-top: 1px solid #2a2a2a; margin: 1rem 0; }
+  .content a { color: #4a90e2; }
+  .divider {
+    border: none;
+    border-top: 1px solid #1e1e1e;
+    margin: 2rem 0;
+  }
+  #index { margin-bottom: 2.5rem; }
+  #index h2 { font-size: 1rem; color: #888; margin-bottom: 0.8rem; }
+  #index ul { list-style: none; padding: 0; }
+  #index li { margin-bottom: 0.4rem; }
+  #index a { color: #4a90e2; text-decoration: none; font-size: 0.9rem; }
+  #index a:hover { text-decoration: underline; }
+  .conv-header { margin: 3rem 0 1rem; }
+  .conv-header h2 { font-size: 1.25rem; color: #ccc; }
+</style>
+</head>
+<body>
+<div class="container">
+<h1>Job search recommendations</h1>
+<div class="meta" data-started-ts="1760468531171" data-updated-ts="1760468724360" data-started-iso="2025-10-14T19:02:11Z" data-updated-iso="2025-10-14T19:05:24Z">Started <span class="ts-display">2025-10-14 19:02</span> &nbsp;·&nbsp; Last updated <span class="ts-display">2025-10-14 19:05</span></div>
+<div class="message user" data-ts="1760468530978" data-ts-iso="2025-10-14T19:02:10Z"><div class="role-label">You <span class="msg-time ts-display" data-ts="1760468530978" data-ts-iso="2025-10-14T19:02:10Z">2025-10-14 19:02</span></div><div class="content"><p>I'm looking for a senior full stack software engineering job, preferably .net can you recommend some places to find jobs other than LinkedIn, dice, and indeed?</p></div></div>
+<div class="message assistant" data-ts="1760468533801" data-ts-iso="2025-10-14T19:02:13Z"><div class="role-label">ChatGPT <span class="msg-time ts-display" data-ts="1760468533801" data-ts-iso="2025-10-14T19:02:13Z">2025-10-14 19:02</span></div><div class="content"><p>Great idea — going beyond the big general boards increases your chances of finding hidden or higher-quality roles. Here are some other places and strategies you might try, plus tips for maximizing them:</p>
+<hr>
+<h2>🎯 Niche / Tech-Focused Job Boards & Platforms</h2>
+<p>These tend to have more developer-specific, remote, or higher-level roles:</p>
+<ul>
+<li><strong>Arc.dev</strong> — focused on remote developer roles, includes senior and full-time listings. citeturn0search3  </li>
+<li><strong>Stack Overflow Jobs / Developer Jobs</strong> — many companies post tech roles there (though availability fluctuates). citeturn0search12turn0search3  </li>
+<li><strong>GitHub Jobs</strong> (or GitHub’s job board) — for roles that emphasize open source, dev tools, etc. citeturn0search12  </li>
+<li><strong>AngelList / Wellfound</strong> — especially good if you're open to startups or scaling tech companies. (Often used for remote / flexible work)  </li>
+<li><strong>WeAreDevelopers, Honeypot, OfferZen, Relocate.me</strong> — more global/remote listings, sometimes with relocation options. citeturn0search25turn0search3  </li>
+<li><strong>Tech Jobs for Good</strong> — for mission-driven / nonprofit / social impact tech roles. citeturn0search14  </li>
+</ul>
+<hr>
+<h2>🏢 Company / Industry Specific Strategies</h2>
+<ul>
+<li><strong>Check major tech / software companies’ own careers pages</strong>  </li>
+</ul>
+<p>Especially ones you admire or that do work in .NET, enterprise software, cloud, etc.</p>
+<ul>
+<li><strong>Filter by “Engineering & Development” on larger corporate career sites</strong>  </li>
+</ul>
+<p>Many companies don’t surface all tech roles on general “jobs” pages.</p>
+<ul>
+<li><strong>Look at consulting / services firms</strong>  </li>
+</ul>
+<p>Many enterprise clients use .NET stacks (e.g. systems integrators, finance/insurance firms).</p>
+<ul>
+<li><strong>Target verticals that use .NET heavily</strong>  </li>
+</ul>
+<p>Finance, health tech, insurance, government / defense, enterprise SaaS.</p>
+<hr>
+<h2>🌐 Remote / Distributed-First Companies</h2>
+<p>Because .NET is broadly used, many remote / hybrid companies will hire remotely. Use:</p>
+<ul>
+<li><strong>Remote-only job boards</strong> (e.g. Remote OK, We Work Remotely, Remote.co)  </li>
+<li><strong>Filter on the job boards above for “remote / anywhere / distributed”</strong>  </li>
+<li><strong>Tech aggregator sites</strong> (some consolidate remote + niche board listings)</li>
+</ul>
+<hr>
+<h2>👥 Networking & Community Channels</h2>
+<p>These often surface roles before they’re widely posted:</p>
+<ul>
+<li><strong>.NET / C# meetups, local or virtual</strong> — even in Seattle/WA, there are user groups  </li>
+<li><strong>Discord / Slack / Telegram groups for .NET, dev communities</strong>  </li>
+<li><strong>Open source contributions / visibility</strong> — companies sometimes reach out if they see your work  </li>
+<li><strong>Referrals via ex-colleagues, connections</strong> — ask your network if they know hiring managers  </li>
+</ul>
+<hr>
+<h2>✅ Tips to Maximize These</h2>
+<ul>
+<li>Use <strong>alerts / saved searches</strong> (e.g. by “.NET”, “C#”, “full stack”, “senior”) on all boards  </li>
+<li>Keep a <strong>target list of 10–20 companies</strong> you’d like to work for; check their careers pages weekly  </li>
+<li>Tailor your resume / profile to <strong>highlight full-stack + .NET + your strongest modules</strong>  </li>
+<li>Show evidence (GitHub, side projects, etc.) of your full stack work  </li>
+<li>Be proactive: if there’s a company you like, even if they have no open “senior .NET” role, you can reach out to their engineering leadership / HR with a brief intro + portfolio  </li>
+</ul>
+<hr>
+<p>If you like, I can pull up <strong>currently active senior .NET / full-stack roles</strong> from these niche sites (remote or in Seattle area) and send you direct links. Do you want me to do that for you now?</p></div></div>
+<div class="message user" data-ts="1760468611377" data-ts-iso="2025-10-14T19:03:31Z"><div class="role-label">You <span class="msg-time ts-display" data-ts="1760468611377" data-ts-iso="2025-10-14T19:03:31Z">2025-10-14 19:03</span></div><div class="content"><p>yes please, and can you recommend some specific companies I should watch for .net jobs</p></div></div>
+<div class="message assistant" data-ts="1760468613994" data-ts-iso="2025-10-14T19:03:33Z"><div class="role-label">ChatGPT <span class="msg-time ts-display" data-ts="1760468613994" data-ts-iso="2025-10-14T19:03:33Z">2025-10-14 19:03</span></div><div class="content"><p>Cool — I poked around and found a mix of <strong>live job leads</strong> and <strong>companies to keep an eye on</strong> (especially in the/around Seattle or remote) for senior/full-stack/.NET roles. Use these as leads + target companies to track.</p>
+<hr>
+<h2>🔍 Sample Active Job Leads & Boards</h2>
+<p>Here are a few current opportunities or specialized boards showing .NET / full-stack roles:</p>
+<table><thead><tr><th>Role / Board</th><th>Highlights</th></tr></thead><tbody>
+<tr><td><strong>Arc.dev – Remote .NET roles</strong></td><td>Arc has a “Remote .NET developer” listings page. citeturn0search29</td></tr>
+<tr><td><strong>We Work Remotely – Senior .NET Full-stack</strong></td><td>Their remote full-stack category lists “Senior .NET Full-stack developer” roles. citeturn0search10</td></tr>
+<tr><td><strong>Arc Remote .NET Jobs</strong></td><td>Featured remote .NET developer roles via their portal. citeturn0search29</td></tr>
+<tr><td><strong>Glassdoor – Remote Full Stack .NET Developer</strong></td><td>~177 roles found currently for full stack .NET remote. citeturn0search18</td></tr>
+<tr><td><strong>Job aggregators / shops</strong></td><td>— “Senior Software Engineer (.NET/EF/Azure)” remote via Swan Island Networks citeturn0search12 <br> — “Stage Front” .NET / full-stack role remote citeturn0search18 <br> — Dice has many “full stack .NET developer” listings. citeturn0search20turn0search23</td></tr>
+</tbody></table>
+<p>You can filter those leads (e.g. by “Senior”, “Remote”, “Seattle/WA”) to narrow to what fits you.</p>
+<hr>
+<h2>🏢 Companies (Local / Remote-Focused) to Watch for .NET Jobs</h2>
+<p>These are companies, consultancies, or sectors with a history of .NET (or enterprise / backend / web) development that you should monitor or target:</p>
+<h3>In Seattle / Regionally</h3>
+<ul>
+<li><strong>PwC</strong> — listed among “Top ASP.NET Companies in Seattle” citeturn0search11  </li>
+<li><strong>Mastercard</strong> — appears in local tech company listings in Seattle. citeturn0search6turn0search24  </li>
+<li><strong>BAE Systems, Analytics8, Healthcare Management Administrators (HMA)</strong> — in the ASP.NET / enterprise area locally. citeturn0search11  </li>
+<li><strong>UKAD</strong> — IT / software services company in Kirkland / Seattle area. citeturn0search30  </li>
+<li><strong>Atomicus</strong> — Seattle‐based custom software firm, .NET services included. citeturn0search30  </li>
+<li><strong>Convoy, ExtraHop, Redfin, Remitly, PitchBook</strong> — notable tech firms in the Seattle area; might have backend / platform roles (not always .NET, but good to watch). citeturn0search14turn0search24  </li>
+<li><strong>Top Seattle tech / startups community</strong> via Built In Seattle — many companies there may use diverse stacks including .NET. citeturn0search6turn0search24  </li>
+</ul>
+<h3>Remote / Enterprise / Mid-Size Firms</h3>
+<ul>
+<li><strong>EverCommerce</strong> — shown in Glassdoor .NET full stack listings. citeturn0search18  </li>
+<li><strong>Origami Risk LLC</strong> — “Full Stack Engineer (remote)” in .NET-style backends. citeturn0search18  </li>
+<li><strong>Prodigy Consulting LLC</strong> — listed in remote .NET / full stack role listings. citeturn0search18  </li>
+<li><strong>Stage Front</strong> — remote .NET / full stack developer role. citeturn0search18  </li>
+</ul>
+<p>Also, many <strong>consulting / systems integrator firms</strong>, <strong>financial / insurance companies</strong>, <strong>health tech</strong>, and <strong>government / defense contractors</strong> often use .NET stacks — keep those sectors on your radar even if names don’t leap out immediately.</p>
+<hr>
+<h2>📌 Strategy Tips for Using These</h2>
+<ul>
+<li><strong>Set alerts</strong> on Arc, WeWorkRemotely, Glassdoor, Dice, etc. with search terms like <em>“.NET full stack”, “Senior .NET”, “C# / ASP.NET / .NET Core”</em>  </li>
+<li><strong>Watch the careers pages</strong> of companies above (even if no .NET roles open now) — sometimes roles open quietly or are hidden.  </li>
+<li><strong>Network / engage</strong> with dev communities near those companies. If you can connect to people inside (via meetups, LinkedIn, alumni networks, conferences), you might hear of roles early.  </li>
+<li><strong>Track consulting / services firms</strong> (like UKAD, Atomicus above) — they often staff clients using .NET, so they may have recurring demand.  </li>
+<li><strong>Broaden stack adjacency</strong> — even if a company doesn’t currently use .NET heavily, if they have backend/web teams they might adopt or integrate .NET. Your strong full-stack + .NET experience gives you leverage.</li>
+</ul>
+<p>If you like, I can pull <strong>5–10 live roles</strong> <strong>right now</strong> (filtered to senior/full stack/.NET, remote or in Seattle area) and send you direct links plus contact tips. Do you want me to send those for <em>this week’s</em> batch?</p></div></div>
+<div class="message user" data-ts="1760468711345" data-ts-iso="2025-10-14T19:05:11Z"><div class="role-label">You <span class="msg-time ts-display" data-ts="1760468711345" data-ts-iso="2025-10-14T19:05:11Z">2025-10-14 19:05</span></div><div class="content"><p>please do</p></div></div>
+<div class="message assistant" data-ts="1760468715824" data-ts-iso="2025-10-14T19:05:15Z"><div class="role-label">ChatGPT <span class="msg-time ts-display" data-ts="1760468715824" data-ts-iso="2025-10-14T19:05:15Z">2025-10-14 19:05</span></div><div class="content"><p>Here are several <strong>live / recent leads</strong> I found (remote or Seattle / WA area) for senior / full-stack / .NET roles — plus advice on how to vet them quickly. Use these as leads to apply <em>and</em> as examples of what to watch for in your alerts.</p>
+<hr>
+<h2>🔎 Live / Recent Job Leads</h2>
+<table><thead><tr><th>Role</th><th>Location / Remote</th><th>Highlights / Notes</th></tr></thead><tbody>
+<tr><td><strong>Sr. .NET Full Stack Developer (Microsoft Technologies)</strong></td><td>Redmond, WA</td><td>Artic Consulting is hiring for a senior full stack dev using Microsoft tech in Redmond, WA. citeturn0search5</td></tr>
+<tr><td><strong>Senior Software Engineer (.NET / EF / Azure)</strong></td><td>Remote (Portland, OR / elsewhere)</td><td>Swan Island Networks has a role for a senior engineer with .NET / Entity Framework / Azure. citeturn0search21</td></tr>
+<tr><td><strong>Remote .NET Developer roles</strong></td><td>Remote / “work from anywhere”</td><td>Arc.dev has a listing of remote .NET developer roles. citeturn0search42</td></tr>
+<tr><td><strong>Full Stack .NET Developer (remote)</strong></td><td>Remote</td><td>Glassdoor shows ~177 remote full stack .NET developer jobs currently. citeturn0search30</td></tr>
+<tr><td><strong>Net Full Stack / Senior Software Engineer, Full Stack</strong></td><td>Seattle / hybrid / remote</td><td>Indeed shows “Senior Software Engineer, Full Stack (Seattle)” role (hybrid) in Seattle area. citeturn0search19</td></tr>
+<tr><td><strong>Lead Backend .NET Developer</strong></td><td>Seattle, WA</td><td>Dice has listings for lead backend/.NET roles in Seattle. citeturn0search43</td></tr>
+<tr><td><strong>Full Stack .NET Developer (Seattle, WA)</strong></td><td>Seattle, WA</td><td>ZipRecruiter has “Full Stack .NET Developer” roles in Seattle. citeturn0search33</td></tr>
+<tr><td><strong>Lead .NET Full Stack Developer</strong></td><td>Seattle / Dallas / Chicago</td><td>A “Lead .NET Full Stack Developer” with multiple possible locations including Seattle. citeturn0search39</td></tr>
+</tbody></table>
+<hr>
+<h2>✅ Tips to Evaluate & Act on These Quickly</h2>
+<ul>
+<li><strong>Check the tech stack & seniority match</strong> — make sure the role really expects full-stack work (frontend, backend, DB) and uses .NET / C#.  </li>
+<li><strong>Look for remote / hybrid options</strong> if you prefer flexibility.  </li>
+<li><strong>Check for strong descriptions of architecture / domain experience</strong> — roles that mention “scalable systems,” “microservices,” “cloud / Azure,” etc. tend to be better fits for senior engineers.  </li>
+<li><strong>Apply quickly and tailor your resume</strong> — use keywords from the job (e.g. “Entity Framework”, “ASP.NET Core”, “Azure DevOps”) so it passes screening.  </li>
+<li><strong>Track the companies behind these roles</strong> — even if they don’t have a perfect role now, follow their career pages or set alerts.</li>
+</ul>
+<p>If you like, I can filter <em>only roles in Seattle / WA</em> (or within your preferred commute radius or remote) and send <strong>direct application links</strong> (not just role names) so you can click and apply immediately. Want me to send those next?</p></div></div>
+</div>
+</body>
+</html>

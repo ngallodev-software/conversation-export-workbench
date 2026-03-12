@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Check Usage Limits</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: #0f1117;
+    color: #e0e0e0;
+    line-height: 1.7;
+    padding: 2rem 1rem;
+  }
+  .container { max-width: 860px; margin: 0 auto; }
+  h1 {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 0.3rem;
+  }
+  .meta {
+    font-size: 0.8rem;
+    color: #666;
+    margin-bottom: 2.5rem;
+  }
+  .message {
+    margin-bottom: 1.8rem;
+    border-radius: 10px;
+    padding: 1.2rem 1.5rem;
+    position: relative;
+  }
+  .message.user {
+    background: #1a1f2e;
+    border-left: 3px solid #4a90e2;
+  }
+  .message.assistant {
+    background: #141a14;
+    border-left: 3px solid #5cb85c;
+  }
+  .role-label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 0.6rem;
+    opacity: 0.6;
+  }
+  .message.user .role-label { color: #4a90e2; }
+  .message.assistant .role-label { color: #5cb85c; }
+  .msg-time {
+    font-size: 0.72rem;
+    color: #555;
+    float: right;
+    margin-top: 0.1rem;
+  }
+  .thinking {
+    background: #1a1a10;
+    border: 1px solid #3a3a20;
+    border-radius: 6px;
+    padding: 0.8rem 1.1rem;
+    margin-bottom: 1rem;
+    font-style: italic;
+    color: #999;
+    font-size: 0.88rem;
+  }
+  .thinking-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #6a6a40;
+    margin-bottom: 0.4rem;
+  }
+  .search-block {
+    background: #111820;
+    border: 1px dashed #2a3a50;
+    border-radius: 6px;
+    padding: 0.7rem 1rem;
+    margin-bottom: 0.8rem;
+    font-size: 0.82rem;
+    color: #7a9fc0;
+  }
+  .search-block .search-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #3a6a90;
+    margin-bottom: 0.4rem;
+  }
+  .search-result {
+    margin-top: 0.4rem;
+    padding-left: 0.8rem;
+    border-left: 2px solid #2a4a60;
+  }
+  .search-result a { color: #5a9fc0; text-decoration: none; }
+  .search-result a:hover { text-decoration: underline; }
+  .search-result .snippet { color: #668; font-size: 0.8rem; }
+  .read-link-block {
+    background: #11181a;
+    border: 1px dashed #2a4040;
+    border-radius: 6px;
+    padding: 0.5rem 0.9rem;
+    margin-bottom: 0.8rem;
+    font-size: 0.8rem;
+    color: #6ab;
+  }
+  .content p { margin-bottom: 0.8rem; }
+  .content pre {
+    background: #0a0a0a;
+    border: 1px solid #2a2a2a;
+    border-radius: 6px;
+    padding: 1rem;
+    overflow-x: auto;
+    font-size: 0.85rem;
+    margin-bottom: 0.8rem;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .content code {
+    background: #1a1a1a;
+    border-radius: 3px;
+    padding: 0.1em 0.35em;
+    font-size: 0.87em;
+    font-family: "JetBrains Mono", "Fira Code", monospace;
+  }
+  .content pre code { background: none; padding: 0; }
+  .content h1, .content h2, .content h3, .content h4 {
+    color: #d0d0d0;
+    margin: 1rem 0 0.5rem;
+  }
+  .content ul, .content ol {
+    padding-left: 1.5rem;
+    margin-bottom: 0.8rem;
+  }
+  .content li { margin-bottom: 0.3rem; }
+  .content blockquote {
+    border-left: 3px solid #444;
+    padding-left: 1rem;
+    color: #999;
+    margin-bottom: 0.8rem;
+  }
+  .content table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 0.8rem;
+    font-size: 0.88rem;
+  }
+  .content th, .content td {
+    border: 1px solid #2a2a2a;
+    padding: 0.4rem 0.7rem;
+  }
+  .content th { background: #1a1a1a; }
+  .content hr { border: none; border-top: 1px solid #2a2a2a; margin: 1rem 0; }
+  .content a { color: #4a90e2; }
+  .divider {
+    border: none;
+    border-top: 1px solid #1e1e1e;
+    margin: 2rem 0;
+  }
+  #index { margin-bottom: 2.5rem; }
+  #index h2 { font-size: 1rem; color: #888; margin-bottom: 0.8rem; }
+  #index ul { list-style: none; padding: 0; }
+  #index li { margin-bottom: 0.4rem; }
+  #index a { color: #4a90e2; text-decoration: none; font-size: 0.9rem; }
+  #index a:hover { text-decoration: underline; }
+  .conv-header { margin: 3rem 0 1rem; }
+  .conv-header h2 { font-size: 1.25rem; color: #ccc; }
+</style>
+</head>
+<body>
+<div class="container">
+<h1>Check Usage Limits</h1>
+<div class="meta" data-started-ts="1771117646188" data-updated-ts="1771117669855" data-started-iso="2026-02-15T01:07:26Z" data-updated-iso="2026-02-15T01:07:49Z">Started <span class="ts-display">2026-02-15 01:07</span> &nbsp;·&nbsp; Last updated <span class="ts-display">2026-02-15 01:07</span></div>
+<div class="message user" data-ts="1771117642790" data-ts-iso="2026-02-15T01:07:22Z"><div class="role-label">You <span class="msg-time ts-display" data-ts="1771117642790" data-ts-iso="2026-02-15T01:07:22Z">2026-02-15 01:07</span></div><div class="content"><p>how do i check my usage limits for chatgpt and codex</p></div></div>
+<div class="message assistant" data-ts="1771117649629" data-ts-iso="2026-02-15T01:07:29Z"><div class="role-label">ChatGPT <span class="msg-time ts-display" data-ts="1771117649629" data-ts-iso="2026-02-15T01:07:29Z">2026-02-15 01:07</span></div><div class="content"><p>Here’s the <strong>clear, practical way</strong> to check your usage limits — because ChatGPT and Codex actually track usage in <strong>different places</strong>, and this confuses almost everyone.</p>
+<hr>
+<h1>✅ 1. Check <strong>ChatGPT (subscription) usage limits</strong></h1>
+<p>This is your <strong>Plus / Pro chat usage</strong> — the limits that affect how many messages or heavy requests you can send.</p>
+<h3>Where to check</h3>
+<p>Inside ChatGPT:</p>
+<ol>
+<li>Click your <strong>profile icon</strong> (bottom-left).</li>
+<li>Open <strong>Settings</strong></li>
+<li>Go to <strong>My Plan</strong> (or <strong>Subscription</strong>)</li>
+</ol>
+<p>You’ll see:</p>
+<ul>
+<li>Your current plan (Plus / Pro / etc.)</li>
+<li>Upgrade options</li>
+<li>Sometimes notices when you’re approaching limits</li>
+</ul>
+<p>👉 Important reality:</p>
+<ul>
+<li>ChatGPT <strong>does NOT show a live counter</strong> of messages remaining.</li>
+<li>Limits are dynamic and based on load + model usage.</li>
+<li>You usually only see limits when you hit or approach them.</li>
+</ul>
+<p>This lack of a visible counter is expected behavior — usage isn’t exposed as an exact remaining quota in the UI.</p>
+<hr>
+<h1>✅ 2. Check <strong>Codex usage limits (THIS is separate)</strong></h1>
+<p>Codex has its <strong>own quota system</strong> tied to coding workload.</p>
+<h3>Option A — Web usage page (easiest)</h3>
+<p>Open:</p>
+<p>👉 <strong>https://chatgpt.com/codex/settings/usage</strong></p>
+<p>This shows:</p>
+<ul>
+<li>Usage consumed</li>
+<li>Remaining allowance</li>
+<li>Credit usage (if applicable)</li>
+</ul>
+<p>Recent updates added clearer “limits remaining” displays in Codex dashboards. citeturn0reddit24</p>
+<hr>
+<h3>Option B — Inside Codex CLI / IDE</h3>
+<p>If you’re using Codex locally:</p>
+<p><pre><code class="language-bash">/status </code></pre></p>
+<p>This shows:</p>
+<ul>
+<li>% of quota used</li>
+<li>5-hour window usage</li>
+<li>Weekly usage window</li>
+<li>Active model + limits</li>
+</ul>
+<p>Many developers miss this — it’s the primary built-in tracker.</p>
+<hr>
+<h3>How Codex limits actually work (important)</h3>
+<p>Your allowance depends on plan and task size:</p>
+<ul>
+<li>Limits are shared across <strong>local + cloud tasks</strong></li>
+<li>Larger repos or long sessions consume more quota</li>
+<li>Simple scripts use only a fraction</li>
+</ul>
+<p>For example (Plus plan averages):</p>
+<ul>
+<li>~45–225 local messages OR</li>
+<li>~10–60 cloud tasks per 5-hour window  </li>
+</ul>
+<p>(with a shared weekly cap) citeturn0search2</p>
+<p>So usage feels inconsistent because context size affects consumption.</p>
+<hr>
+<h1>✅ 3. Check <strong>API usage (if you use API keys)</strong></h1>
+<p>This is separate again — only applies if you run OpenAI via API.</p>
+<p>Go here:</p>
+<p>👉 https://platform.openai.com/account/usage</p>
+<p>You’ll see:</p>
+<ul>
+<li>Token usage</li>
+<li>Daily/monthly cost</li>
+<li>Model breakdown</li>
+<li>Billing activity</li>
+</ul>
+<p>The dashboard shows usage by activity or cost across billing cycles. citeturn0search4</p>
+<hr>
+<h1>🧭 Quick mental model (most people mix these up)</h1>
+<table><thead><tr><th>Thing</th><th>Where to check</th><th>What it controls</th></tr></thead><tbody>
+<tr><td>ChatGPT app usage</td><td>ChatGPT → Settings → My Plan</td><td>Chat conversations</td></tr>
+<tr><td>Codex usage</td><td><code>/codex/settings/usage</code> or <code>/status</code></td><td>Coding sessions</td></tr>
+<tr><td>API usage</td><td>platform.openai.com/usage</td><td>Pay-as-you-go API calls</td></tr>
+</tbody></table>
+<p>They are <strong>three independent meters</strong>.</p>
+<hr>
+<h1>⚠️ Why limits sometimes feel random</h1>
+<p>This is normal because:</p>
+<ul>
+<li>Usage depends on <strong>context size</strong>, not message count.</li>
+<li>Long coding sessions consume more allowance.</li>
+<li>Limits reset on rolling windows (≈5-hour + weekly periods for Codex). citeturn0search3</li>
+</ul>
+<hr>
+<h2>If you want, I can also tell you:</h2>
+<ul>
+<li>✅ How to estimate <strong>how fast you’re burning Codex quota</strong></li>
+<li>✅ The safest workflow to avoid hitting limits mid-project</li>
+<li>✅ Whether Plus is enough for your current AI engineering workload (based on what you’ve been building)</li>
+</ul>
+<p>Just tell me 👍.</p></div></div>
+</div>
+</body>
+</html>

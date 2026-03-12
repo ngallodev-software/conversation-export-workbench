@@ -22,6 +22,13 @@ except ImportError:
         tomllib = None  # type: ignore
 
 
+def _data_dir() -> Path:
+    """Return the bundled data root when frozen (PyInstaller), else the repo root."""
+    if getattr(sys, "frozen", False):
+        return Path(sys._MEIPASS)  # type: ignore[attr-defined]
+    return Path(__file__).parent.parent
+
+
 # ---------------------------------------------------------------------------
 # Config
 # ---------------------------------------------------------------------------
@@ -943,11 +950,11 @@ def build_spa(
     if config_path is None:
         config_path = output_dir.parent / "config" / "spa.toml"
         if not config_path.exists():
-            # Try sibling config/ (when output_dir is inside the project)
-            config_path = Path(__file__).parent.parent / "config" / "spa.toml"
+            # Try sibling config/ (when output_dir is inside the project or frozen binary)
+            config_path = _data_dir() / "config" / "spa.toml"
 
     config   = load_config(config_path)
-    base_dir = Path(__file__).parent.parent  # project root
+    base_dir = _data_dir()
 
     if providers is None:
         providers = [p for p in PROVIDERS if (output_dir / p).is_dir()
