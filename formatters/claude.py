@@ -91,8 +91,8 @@ def conv_to_html_body(conv: dict) -> str:
                         "</div>"
                     )
                 elif btype == "text":
-                    html = markdown_to_html(block.get("text", ""))
-                    inner_parts.append(f'<div class="content">{html}</div>')
+                    rendered_html = markdown_to_html(block.get("text", ""))
+                    inner_parts.append(f'<div class="content">{rendered_html}</div>')
                 # tool_use / tool_result blocks silently skipped
             inner = "\n".join(inner_parts) or "<em>(empty)</em>"
             parts.append(

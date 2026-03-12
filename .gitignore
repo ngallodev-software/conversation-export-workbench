@@ -3,7 +3,11 @@ conversations.json
 user.json
 *.zip
 output/
+output.bak/ 
 *.zip
+tmp/
+tmp_*/
+release_instructions.md
 
 # Sample data — tracked in git (screenshots for README)
 !sample_data/

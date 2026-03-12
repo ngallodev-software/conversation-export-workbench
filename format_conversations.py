@@ -151,17 +151,21 @@ def _extract_zip(zip_path: Path, cwd: Path) -> list[Path]:
     return found
 
 
-def _process_json(json_path: Path, fmt: str, yes: bool):
+def _process_json(json_path: Path, fmt: str, yes: bool, allow_prompt: bool = True):
     """Load, detect, and export a single conversations.json."""
     print(f"\nProcessing {json_path} …")
     data = load_conversations(str(json_path))
     fmt_mod = detect_provider(data)
     if not fmt_mod:
         print(f"  Could not auto-detect provider.")
-        ans = input("  Enter provider [deepseek/claude/chatgpt]: ").strip().lower()
-        fmt_mod = {"deepseek": deepseek, "claude": claude, "chatgpt": chatgpt}.get(ans)
-        if not fmt_mod:
-            print("  Unknown provider — skipping.")
+        if allow_prompt and sys.stdin.isatty():
+            ans = input("  Enter provider [deepseek/claude/chatgpt]: ").strip().lower()
+            fmt_mod = {"deepseek": deepseek, "claude": claude, "chatgpt": chatgpt}.get(ans)
+            if not fmt_mod:
+                print("  Unknown provider — skipping.")
+                return
+        else:
+            print("  Non-interactive mode: skipping file. Use --provider with --input to force.")
             return
 
     print(f"  Provider: {fmt_mod.PROVIDER}  ({len(data)} conversations)")
@@ -206,6 +210,36 @@ def _process_json(json_path: Path, fmt: str, yes: bool):
         else:
             content = fmt_mod.build_json_single(conv)
         safe_write(out_path, content, yes)
+
+
+def non_interactive_mode():
+    """
+    Zero-args non-interactive mode:
+    auto-discover zips/conversations.json and process all with defaults.
+    """
+    cwd = Path(".")
+    print("No arguments given — non-interactive auto mode (format=html, overwrite=yes).\n")
+
+    zips = sorted(cwd.glob("*.zip"))
+    json_candidates: list[Path] = []
+    if zips:
+        print(f"Found {len(zips)} zip file(s):")
+        for z in zips:
+            print(f"  {z.name}")
+            json_candidates.extend(_extract_zip(z, cwd))
+        print()
+
+    all_json = list(cwd.glob("conversations.json"))
+    for p in json_candidates:
+        if p not in all_json:
+            all_json.append(p)
+
+    if not all_json:
+        print("No conversations.json files found. Nothing to do.")
+        return
+
+    for json_path in all_json:
+        _process_json(json_path, fmt="html", yes=True, allow_prompt=False)
 
 
 def interactive_mode():
@@ -271,14 +305,10 @@ def interactive_mode():
 def main():
     # Zero-args → interactive mode
     if len(sys.argv) == 1:
-        if not sys.stdin.isatty():
-            print(
-                "No arguments provided and no interactive input is available. "
-                "Use --input <conversations.json|zip> and --yes for non-interactive runs.",
-                file=sys.stderr,
-            )
-            sys.exit(2)
-        interactive_mode()
+        if sys.stdin.isatty():
+            interactive_mode()
+        else:
+            non_interactive_mode()
         return
 
     parser = argparse.ArgumentParser(

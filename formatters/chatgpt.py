@@ -165,9 +165,9 @@ def conv_to_html_body(conv: dict) -> str:
     ]
 
     for msg in messages:
-        html = _message_to_html(msg)
-        if html:
-            parts.append(html)
+        message_html = _message_to_html(msg)
+        if message_html:
+            parts.append(message_html)
 
     return "\n".join(parts)
 
