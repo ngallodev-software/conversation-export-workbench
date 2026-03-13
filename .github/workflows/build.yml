@@ -71,6 +71,19 @@ jobs:
           cp "artifacts/conv-tool-${version}-macos/conv-tool-${version}-macos" "release-assets/conv-tool-${version}-macos"
           cp "artifacts/conv-tool-${version}-windows/conv-tool-${version}-windows.exe" "release-assets/conv-tool-${version}-windows.exe"
 
+      - name: Generate checksums
+        shell: bash
+        run: |
+          cd release-assets
+          sha256sum "conv-tool-${GITHUB_REF_NAME}-linux" > "conv-tool-${GITHUB_REF_NAME}-linux.sha256"
+          sha256sum "conv-tool-${GITHUB_REF_NAME}-macos" > "conv-tool-${GITHUB_REF_NAME}-macos.sha256"
+          sha256sum "conv-tool-${GITHUB_REF_NAME}-windows.exe" > "conv-tool-${GITHUB_REF_NAME}-windows.exe.sha256"
+          sha256sum \
+            "conv-tool-${GITHUB_REF_NAME}-linux" \
+            "conv-tool-${GITHUB_REF_NAME}-macos" \
+            "conv-tool-${GITHUB_REF_NAME}-windows.exe" \
+            > SHA256SUMS
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
@@ -78,3 +91,7 @@ jobs:
             release-assets/conv-tool-${{ github.ref_name }}-linux
             release-assets/conv-tool-${{ github.ref_name }}-macos
             release-assets/conv-tool-${{ github.ref_name }}-windows.exe
+            release-assets/conv-tool-${{ github.ref_name }}-linux.sha256
+            release-assets/conv-tool-${{ github.ref_name }}-macos.sha256
+            release-assets/conv-tool-${{ github.ref_name }}-windows.exe.sha256
+            release-assets/SHA256SUMS
