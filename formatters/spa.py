@@ -1009,11 +1009,11 @@ def build_spa(
     js_provider_labels = json.dumps(labels, ensure_ascii=False)
     js_provider_labels = js_provider_labels.replace("<", "\\u003c").replace(">", "\\u003e").replace("&", "\\u0026")
 
-    html = _HTML_TEMPLATE
-    html = html.replace("%%CSS%%", css)
-    html = html.replace("%%PROVIDER_MENU_SECTION%%", provider_section)
-    html = html.replace("%%ALL_CONVERSATIONS%%", js_data)
-    html = html.replace("%%DEFAULT_PROVIDER%%", default_provider)
-    html = html.replace("%%PROVIDER_LABELS%%", js_provider_labels)
+    page_html = _HTML_TEMPLATE
+    page_html = page_html.replace("%%CSS%%", css)
+    page_html = page_html.replace("%%PROVIDER_MENU_SECTION%%", provider_section)
+    page_html = page_html.replace("%%ALL_CONVERSATIONS%%", js_data)
+    page_html = page_html.replace("%%DEFAULT_PROVIDER%%", default_provider)
+    page_html = page_html.replace("%%PROVIDER_LABELS%%", js_provider_labels)
 
-    return html
+    return page_html

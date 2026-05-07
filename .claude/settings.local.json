@@ -56,7 +56,8 @@
       "Bash(echo \"=== CBM baseline routes ===\" && jq '.routes[] | \"\\\\\\(.method\\) \\\\\\(.path\\) -> \\\\\\(.handler\\)\"' /tmp/cbm-test/baseline-cbm-arch.json)",
       "Bash(rm -f ~/.cache/codebase-memory-mcp/lump-apps-*.db* && cp ~/.cache/codebase-memory-mcp/baseline-snapshot/*.db ~/.cache/codebase-memory-mcp/ 2>/dev/null; echo \"DBs restored\")",
       "Bash(gh release:*)",
-      "Bash(gh api:*)"
+      "Bash(gh api:*)",
+      "Bash(cd /lump/apps/codebase-memory-mcp && go build -o ~/.local/bin/codebase-memory-mcp ./cmd/codebase-memory-mcp/ 2>&1 | grep -v \"warning:\" | head -5 && echo \"INSTALLED\" && ~/.local/bin/codebase-memory-mcp --version)"
     ]
   },
   "enableAllProjectMcpServers": true,
