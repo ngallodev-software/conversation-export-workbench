@@ -34,6 +34,7 @@ jobs:
   build:
     needs: gate
     uses: ./.github/workflows/release-candidate.yml
+    secrets: inherit
 
   release:
     needs: [gate, build]
