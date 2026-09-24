@@ -50,7 +50,17 @@ python3 format_conversations.py --input conversations.json --provider deepseek -
 
 # Build a portable offline bundle
 python3 bundle_conversations.py --input export.zip --output my-chats.cew
+
+# Include a directory of attachment payloads
+python3 bundle_conversations.py --input export.zip --attachments-dir export-files --output my-chats-with-files.cew
+
+# Merge CEW archives with duplicate resolution
+python3 bundle_conversations.py --merge archive-a.cew archive-b.cew --output merged.cew
 ```
+
+## Mobile / PWA
+
+The mobile client can import `.cew`, raw provider ZIPs, or raw provider JSON directly. See [mobile/README.md](mobile/README.md) for Capacitor, Android/iOS signing, TestFlight, PWA, app-lock, and profiling instructions.
 
 ## Build the local viewer
 
