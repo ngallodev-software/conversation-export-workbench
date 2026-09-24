@@ -17,7 +17,8 @@
 
 - optional stable Android release signing produces signed APK and AAB when repository keystore secrets are configured;
 - optional signed iOS IPA and TestFlight upload path using Apple Developer/App Store Connect credentials;
-- unsigned Android sideload and iOS Simulator artifacts remain available when signing credentials are absent.
+- optional Windows Authenticode signing and macOS Developer ID signing/notarization hooks;
+- unsigned desktop/mobile fallbacks remain available when signing credentials are absent.
 
 ### Security
 
