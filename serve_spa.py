@@ -20,6 +20,19 @@ from pathlib import Path
 
 
 MAX_TCP_PORT = 65535
+LOOPBACK_HOSTS = {"127.0.0.1", "::1", "localhost"}
+
+
+class PrivateConversationHandler(SimpleHTTPRequestHandler):
+    """Static handler with privacy-oriented browser headers."""
+
+    def end_headers(self):
+        self.send_header("Cache-Control", "no-store")
+        self.send_header("X-Content-Type-Options", "nosniff")
+        self.send_header("Referrer-Policy", "no-referrer")
+        self.send_header("Cross-Origin-Opener-Policy", "same-origin")
+        self.send_header("Cross-Origin-Resource-Policy", "same-origin")
+        super().end_headers()
 
 
 def is_port_free(host: str, port: int) -> bool:
@@ -44,11 +57,29 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Serve SPA output on the first available port.")
     parser.add_argument("--output", default="output", help="Directory to serve (default: output)")
     parser.add_argument("--host", default="127.0.0.1", help="Bind host (default: 127.0.0.1)")
+    parser.add_argument(
+        "--allow-network",
+        action="store_true",
+        help="Explicitly allow binding outside loopback; this can expose private conversations on your network",
+    )
     parser.add_argument("--start-port", type=int, default=8080,
                         help="First port to check (default: 8080)")
     parser.add_argument("--end-port", type=int, default=8090,
                         help="Last port to check (default: 8090, clamped to 65535)")
     args = parser.parse_args()
+
+    if args.host not in LOOPBACK_HOSTS and not args.allow_network:
+        print(
+            "Error: refusing non-loopback bind without --allow-network. "
+            "Conversation exports may contain sensitive data.",
+            file=sys.stderr,
+        )
+        return 1
+    if args.host not in LOOPBACK_HOSTS:
+        print(
+            f"WARNING: serving private conversation data on network interface {args.host!r}.",
+            file=sys.stderr,
+        )
 
     output_dir = Path(args.output)
     if not output_dir.is_dir():
@@ -73,7 +104,7 @@ def main() -> int:
         )
         return 1
 
-    handler = partial(SimpleHTTPRequestHandler, directory=str(output_dir))
+    handler = partial(PrivateConversationHandler, directory=str(output_dir))
     server = ThreadingHTTPServer((args.host, port), handler)
 
     print(f"Serving '{output_dir}' on http://{args.host}:{port}/")

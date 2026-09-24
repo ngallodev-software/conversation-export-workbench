@@ -6,9 +6,13 @@ on:
       - "v*"
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   build:
     strategy:
+      fail-fast: false
       matrix:
         include:
           - os: ubuntu-latest
@@ -24,14 +28,14 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
 
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
         with:
-          python-version: "3.11"
+          python-version: "3.14"
 
-      - name: Install dependencies
-        run: pip install pyinstaller
+      - name: Install pinned build dependency
+        run: python -m pip install --disable-pip-version-check pyinstaller==6.22.3
 
       - name: Build binary
         run: pyinstaller conv-tool.spec
@@ -43,7 +47,7 @@ jobs:
           cp "dist/conv-tool${{ matrix.extension }}" "dist/conv-tool-${version}-${{ matrix.platform }}${{ matrix.extension }}"
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         with:
           name: conv-tool-${{ github.ref_name || 'dev' }}-${{ matrix.platform }}
           path: dist/conv-tool-${{ github.ref_name || 'dev' }}-${{ matrix.platform }}${{ matrix.extension }}
@@ -55,10 +59,12 @@ jobs:
 
     permissions:
       contents: write
+      id-token: write
+      attestations: write
 
     steps:
       - name: Download all artifacts
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
         with:
           path: artifacts
 
@@ -84,8 +90,13 @@ jobs:
             "conv-tool-${GITHUB_REF_NAME}-windows.exe" \
             > SHA256SUMS
 
+      - name: Attest release assets
+        uses: actions/attest-build-provenance@977bb373ede98d70efdf65b84cb5f73e068dcc2a # v3
+        with:
+          subject-path: "release-assets/*"
+
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
         with:
           files: |
             release-assets/conv-tool-${{ github.ref_name }}-linux

@@ -2,8 +2,7 @@
 #
 # Build with:
 #   pip install pyinstaller
-#   pip install tomli  # only needed for Python < 3.11
-#   pyinstaller conv-tool.spec
+##   pyinstaller conv-tool.spec
 #
 # Output: dist/conv-tool
 
@@ -15,7 +14,7 @@ a = Analysis(
         ("provider_templates", "provider_templates"),
         ("config",             "config"),
     ],
-    hiddenimports=["tomllib", "tomli"],
+    hiddenimports=["tomllib"],
     hookspath=[],
     runtime_hooks=[],
     excludes=[],

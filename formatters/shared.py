@@ -4,6 +4,7 @@ import html
 import re
 from datetime import datetime
 from pathlib import Path
+from urllib.parse import urlsplit
 
 
 # ---------------------------------------------------------------------------
@@ -58,6 +59,31 @@ def safe_write(path: Path, content: str, yes: bool) -> bool:
 
 
 # ---------------------------------------------------------------------------
+# URL / HTML safety
+# ---------------------------------------------------------------------------
+
+_ALLOWED_LINK_SCHEMES = {"http", "https"}
+
+
+def sanitize_href(value: str) -> str | None:
+    """Return a safe navigable URL, or None for unsafe/unsupported schemes."""
+    raw = str(value or "").strip()
+    if not raw:
+        return None
+    if raw.startswith("#"):
+        return raw
+    try:
+        parsed = urlsplit(raw)
+    except ValueError:
+        return None
+    if parsed.scheme.lower() not in _ALLOWED_LINK_SCHEMES:
+        return None
+    if not parsed.netloc:
+        return None
+    return raw
+
+
+# ---------------------------------------------------------------------------
 # HTML template (shared across providers)
 # ---------------------------------------------------------------------------
 
@@ -67,6 +93,8 @@ HTML_TEMPLATE = """\
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="referrer" content="no-referrer">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; img-src data:; font-src data:; base-uri 'none'; form-action 'none'; object-src 'none'">
 <title>%%TITLE%%</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -253,15 +281,22 @@ def render_template(title: str, body: str) -> str:
 # ---------------------------------------------------------------------------
 
 def markdown_to_html(text: str) -> str:
-    """Very lightweight Markdown → HTML converter."""
-    def replace_code_block(m):
-        lang = m.group(1) or ""
-        code = m.group(2)
-        code = code.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
-        cls = f' class="language-{lang}"' if lang else ""
-        return f"<pre><code{cls}>{code}</code></pre>"
+    """Render a deliberately small, safe Markdown subset.
 
-    text = re.sub(r"```(\w*)\n(.*?)```", replace_code_block, text, flags=re.DOTALL)
+    Raw HTML is always escaped. Links are restricted to http(s) or same-document
+    fragments. Generated formatter HTML is never accepted from conversation text.
+    """
+    code_blocks: dict[str, str] = {}
+
+    def stash_code_block(m):
+        token = f"@@CEW_CODE_BLOCK_{len(code_blocks)}@@"
+        lang = re.sub(r"[^A-Za-z0-9_+-]", "", m.group(1) or "")
+        code = html.escape(m.group(2), quote=False)
+        cls = f' class="language-{lang}"' if lang else ""
+        code_blocks[token] = f"<pre><code{cls}>{code}</code></pre>"
+        return token
+
+    text = re.sub(r"```([A-Za-z0-9_+-]*)\n(.*?)```", stash_code_block, str(text), flags=re.DOTALL)
 
     lines = text.split("\n")
     html_lines = []
@@ -294,19 +329,36 @@ def markdown_to_html(text: str) -> str:
             html_lines.append("</tbody></table>")
             in_table = False
 
-    def inline(s: str) -> str:
+    def inline(value: str) -> str:
+        s = html.escape(str(value), quote=False)
         s = re.sub(r"\*\*\*(.*?)\*\*\*", r"<strong><em>\1</em></strong>", s)
         s = re.sub(r"\*\*(.*?)\*\*", r"<strong>\1</strong>", s)
         s = re.sub(r"__(.*?)__", r"<strong>\1</strong>", s)
         s = re.sub(r"\*(.*?)\*", r"<em>\1</em>", s)
         s = re.sub(r"_((?!_).*?)_", r"<em>\1</em>", s)
-        s = re.sub(r"`([^`]+)`", lambda m: f"<code>{m.group(1).replace('<','&lt;').replace('>','&gt;')}</code>", s)
-        s = re.sub(r"\[([^\]]+)\]\(([^)]+)\)", r'<a href="\2">\1</a>', s)
+        s = re.sub(r"`([^`]+)`", lambda m: f"<code>{m.group(1)}</code>", s)
+
+        def safe_link(m):
+            label = m.group(1)
+            candidate = html.unescape(m.group(2))
+            href = sanitize_href(candidate)
+            if href is None:
+                return label
+            href_attr = html.escape(href, quote=True)
+            return f'<a href="{href_attr}" target="_blank" rel="noopener noreferrer">{label}</a>'
+
+        s = re.sub(r"\[([^\]]+)\]\(([^)]+)\)", safe_link, s)
         return s
 
     i = 0
     while i < len(lines):
         line = lines[i]
+
+        if line in code_blocks:
+            flush_para(); flush_ul(); flush_ol(); flush_table()
+            html_lines.append(code_blocks[line])
+            i += 1
+            continue
 
         hm = re.match(r"^(#{1,4})\s+(.*)", line)
         if hm:
@@ -354,9 +406,8 @@ def markdown_to_html(text: str) -> str:
                                       "</tr></thead><tbody>")
                     in_table = True
                     i += 2; continue
-                else:
-                    html_lines.append('<table><tbody>')
-                    in_table = True
+                html_lines.append("<table><tbody>")
+                in_table = True
             html_lines.append("<tr>" + "".join(f"<td>{inline(c)}</td>" for c in cells) + "</tr>")
             i += 1; continue
 
@@ -370,3 +421,4 @@ def markdown_to_html(text: str) -> str:
 
     flush_para(); flush_ul(); flush_ol(); flush_table()
     return "\n".join(html_lines)
+

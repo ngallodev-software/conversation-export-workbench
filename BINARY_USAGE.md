@@ -16,7 +16,7 @@ Assets are versioned by tag:
 | macOS | `conv-tool-vX.Y.Z-macos` |
 | Windows | `conv-tool-vX.Y.Z-windows.exe` |
 
-Each release also includes per-file SHA-256 checksum files and a combined `SHA256SUMS`.
+Each release also includes per-file SHA-256 checksum files, a combined `SHA256SUMS`, and GitHub build-provenance attestations for tagged release assets.
 
 ## Make it executable
 
@@ -38,6 +38,7 @@ The packaged executable uses subcommands:
 conv-tool format [format options]
 conv-tool generate-spa [viewer options]
 conv-tool serve [server options]
+conv-tool bundle [bundle options]
 ```
 
 This differs from source mode, where the equivalent entry points are `format_conversations.py`, `generate_spa.py`, and `serve_spa.py`.
@@ -95,7 +96,16 @@ Examples:
 ./conv-tool-vX.Y.Z-linux serve --output output
 ```
 
-Open the local URL printed by the `serve` command.
+Open the local URL printed by the `serve` command. Serving outside loopback requires `--allow-network`.
+
+## Build a portable .cew archive
+
+```bash
+./conv-tool-vX.Y.Z-linux bundle --input export.zip --output my-chats.cew
+./conv-tool-vX.Y.Z-linux bundle --input my-chats.cew --inspect
+```
+
+The `.cew` archive contains versioned provider-neutral conversation records and local search data for offline clients, including the mobile viewer source in this repository.
 
 ## Verify checksums
 

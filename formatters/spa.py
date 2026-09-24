@@ -136,6 +136,14 @@ def _extract_meta(html_path: Path) -> dict:
     return {"file": html_path.name, "title": title, "ts": ts}
 
 
+def _searchable_text_from_generated_html(text: str) -> str:
+    """Extract readable conversation text without CSS/chrome from generated HTML."""
+    match = re.search(r'<div class="container">(.*?)</div>\s*</body>', text, flags=re.DOTALL)
+    fragment = match.group(1) if match else text
+    fragment = re.sub(r"<[^>]+>", " ", fragment)
+    return re.sub(r"\s+", " ", html.unescape(fragment)).strip()
+
+
 def scan_provider(output_dir: Path, provider: str) -> list[dict]:
     """Return sorted list of conversation metadata dicts for one provider."""
     provider_dir = output_dir / provider
@@ -150,6 +158,26 @@ def scan_provider(output_dir: Path, provider: str) -> list[dict]:
         metas.append(meta)
     metas.sort(key=lambda m: m["ts"], reverse=True)
     return metas
+
+
+def build_search_index(
+    output_dir: Path,
+    providers: list[str] | None = None,
+) -> dict[str, str]:
+    """Build a deterministic local full-text index keyed by provider:file."""
+    if providers is None:
+        providers = [p for p in PROVIDERS if (output_dir / p).is_dir()]
+    index: dict[str, str] = {}
+    for provider in providers:
+        provider_dir = output_dir / provider
+        if not provider_dir.is_dir():
+            continue
+        for html_file in sorted(provider_dir.glob("*.html")):
+            if html_file.name == "index.html":
+                continue
+            text = html_file.read_text(encoding="utf-8")
+            index[f"{provider}:{html_file.name}"] = _searchable_text_from_generated_html(text)
+    return index
 
 
 # ---------------------------------------------------------------------------
@@ -182,24 +210,8 @@ _HTML_TEMPLATE = """\
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Chats</title>
-<script src="https://cdn.tailwindcss.com"></script>
-<script>
-  tailwind.config = {
-    darkMode: 'class',
-    theme: {
-      extend: {
-        colors: {
-          surface: { 900:'#0c0e14', 800:'#111318', 700:'#16181f', 600:'#1c1f28', 500:'#232733' },
-          accent:  { blue:'#4a90e2', green:'#4ade80', amber:'#f59e0b', muted:'#6b7280' }
-        },
-        fontFamily: {
-          sans: ['-apple-system','BlinkMacSystemFont','"Segoe UI"','Roboto','sans-serif'],
-          mono: ['"JetBrains Mono"','"Fira Code"','monospace'],
-        }
-      }
-    }
-  }
-</script>
+<meta name="referrer" content="no-referrer">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data: blob:; font-src data:; connect-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'">
 <style>
 %%CSS%%
 </style>
@@ -354,6 +366,7 @@ let filteredConvs      = [];
 let currentSearchQuery = '';
 let currentSearchHits  = null;
 let isFullTextSearch   = false;
+let globalSearchIndex  = null;
 
 const loadedContent    = new Map();  // "provider:file" → { bodyHtml }
 const contentTextCache = new Map();  // "provider:file" → plaintext
@@ -398,6 +411,43 @@ function escapeRegex(s) { return s.replace(/[.*+?^${}()|[\\]\\\\]/g,'\\\\$&'); }
 function fmtTs(ts) {
   if (!ts) return '';
   return new Date(ts).toLocaleDateString('en-GB', {day:'2-digit',month:'short',year:'numeric'});
+}
+
+function safeExternalHref(raw) {
+  try {
+    const u = new URL(raw, window.location.href);
+    if (u.protocol === 'http:' || u.protocol === 'https:') return u.href;
+  } catch {}
+  return null;
+}
+
+function sanitizeConversationRoot(root) {
+  root.querySelectorAll('script,iframe,object,embed,link,meta,base,form,input,button,textarea,select').forEach(el => el.remove());
+  root.querySelectorAll('*').forEach(el => {
+    [...el.attributes].forEach(attr => {
+      const name = attr.name.toLowerCase();
+      if (name.startsWith('on') || name === 'srcdoc' || name === 'style') {
+        el.removeAttribute(attr.name);
+      }
+    });
+  });
+  root.querySelectorAll('[src]').forEach(el => {
+    const raw = (el.getAttribute('src') || '').trim().toLowerCase();
+    if (!(raw.startsWith('data:') || raw.startsWith('blob:'))) el.removeAttribute('src');
+  });
+  root.querySelectorAll('a[href]').forEach(a => {
+    const href = safeExternalHref(a.getAttribute('href'));
+    if (!href) {
+      a.removeAttribute('href');
+      a.removeAttribute('target');
+      a.removeAttribute('rel');
+      return;
+    }
+    a.setAttribute('href', href);
+    a.setAttribute('target', '_blank');
+    a.setAttribute('rel', 'noopener noreferrer');
+  });
+  return root;
 }
 
 // ─── Provider filter ────────────────────────────────────────────────────────
@@ -584,6 +634,19 @@ function renderMenuFileList() {
 let searchDebounce = null;
 searchInput.addEventListener('input', () => { clearTimeout(searchDebounce); searchDebounce = setTimeout(handleSearch, 180); });
 
+async function loadSearchIndex() {
+  if (globalSearchIndex !== null) return globalSearchIndex;
+  try {
+    const res = await fetch('search-index.json');
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const parsed = await res.json();
+    globalSearchIndex = parsed && typeof parsed === 'object' ? parsed : {};
+  } catch {
+    globalSearchIndex = {};
+  }
+  return globalSearchIndex;
+}
+
 async function handleSearch() {
   const q = searchInput.value.trim();
   currentSearchQuery = q;
@@ -600,6 +663,7 @@ async function handleSearch() {
   }
 
   const lq = q.toLowerCase();
+  await loadSearchIndex();
   const titleMatchKeys = new Set(
     getVisibleConvs().filter(c => c.title.toLowerCase().includes(lq)).map(fileKey)
   );
@@ -607,14 +671,12 @@ async function handleSearch() {
   const searchHits = new Map();
   getVisibleConvs().forEach((conv, i) => {
     const key = fileKey(conv);
-    let text = contentTextCache.get(key);
-    if (text === undefined) {
-      if (loadedContent.has(key)) {
-        const tmp = document.createElement('div');
-        tmp.innerHTML = loadedContent.get(key).bodyHtml;
-        text = tmp.textContent || '';
-        contentTextCache.set(key, text);
-      } else { text = null; }
+    let text = (globalSearchIndex && globalSearchIndex[key]) || contentTextCache.get(key);
+    if (text === undefined && loadedContent.has(key)) {
+      const tmp = document.createElement('div');
+      tmp.innerHTML = loadedContent.get(key).bodyHtml;
+      text = tmp.textContent || '';
+      contentTextCache.set(key, text);
     }
     if (text && text.toLowerCase().includes(lq)) {
       const snippets = []; let idx2 = 0; const tl = text.toLowerCase();
@@ -836,6 +898,7 @@ async function loadConversation(idx) {
 
     const tempDiv = document.createElement('div');
     tempDiv.innerHTML = bodyHtml;
+    sanitizeConversationRoot(tempDiv);
 
     // Convert .thinking blocks to collapsible <details>
     tempDiv.querySelectorAll('.thinking').forEach(el => {
@@ -846,7 +909,7 @@ async function loadConversation(idx) {
       details.className = 'thinking-toggle';
       details.innerHTML =
         '<summary class="flex items-center gap-1.5 cursor-pointer select-none mb-1">' +
-          '<span class="thinking-label">' + labelText + '</span>' +
+          '<span class="thinking-label">' + escHtml(labelText) + '</span>' +
           '<svg class="w-3 h-3" style="color:#4a4a28" fill="none" stroke="currentColor" viewBox="0 0 24 24">' +
             '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>' +
           '</svg>' +

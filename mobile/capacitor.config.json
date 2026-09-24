@@ -1,0 +1,8 @@
+{
+  "appId": "software.ngallodev.conversationexportworkbench",
+  "appName": "Conversation Export Workbench",
+  "webDir": "dist",
+  "server": {
+    "androidScheme": "https"
+  }
+}

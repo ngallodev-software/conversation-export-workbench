@@ -12,7 +12,7 @@ Contributions are welcome for ChatGPT, Claude, and DeepSeek export compatibility
 
 ## Development setup
 
-Runtime requires Python 3.10+.
+Runtime requires Python 3.11+.
 
 ```bash
 git clone https://github.com/ngallodev-software/conversation-export-workbench.git

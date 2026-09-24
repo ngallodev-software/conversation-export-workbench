@@ -34,6 +34,45 @@ _FORMATTERS = [deepseek, claude, chatgpt]
 # Directory containing provider detection templates
 _TEMPLATES_DIR = Path(__file__).parent / "provider_templates"
 
+MAX_JSON_BYTES = 256 * 1024 * 1024
+MAX_ZIP_ENTRIES = 10_000
+MAX_CONVERSATION_FILES_PER_ZIP = 64
+MAX_ZIP_COMPRESSION_RATIO = 200
+
+
+def _validate_zip_info(info: zipfile.ZipInfo) -> None:
+    if info.file_size > MAX_JSON_BYTES:
+        raise ValueError(
+            f"Refusing oversized archive member {info.filename!r}: "
+            f"{info.file_size} bytes exceeds {MAX_JSON_BYTES}"
+        )
+    if info.file_size and info.compress_size == 0:
+        raise ValueError(f"Refusing suspicious zero-size compressed member: {info.filename!r}")
+    if info.compress_size:
+        ratio = info.file_size / info.compress_size
+        if ratio > MAX_ZIP_COMPRESSION_RATIO:
+            raise ValueError(
+                f"Refusing suspicious compression ratio for {info.filename!r}: {ratio:.1f}:1"
+            )
+
+
+def _conversation_members(zf: zipfile.ZipFile) -> list[zipfile.ZipInfo]:
+    infos = zf.infolist()
+    if len(infos) > MAX_ZIP_ENTRIES:
+        raise ValueError(f"Refusing archive with {len(infos)} entries (limit {MAX_ZIP_ENTRIES})")
+    matches = sorted(
+        (info for info in infos if not info.is_dir() and Path(info.filename).name == "conversations.json"),
+        key=lambda info: info.filename,
+    )
+    if len(matches) > MAX_CONVERSATION_FILES_PER_ZIP:
+        raise ValueError(
+            f"Refusing archive with {len(matches)} conversations.json files "
+            f"(limit {MAX_CONVERSATION_FILES_PER_ZIP})"
+        )
+    for info in matches:
+        _validate_zip_info(info)
+    return matches
+
 
 # ---------------------------------------------------------------------------
 # Template-based provider detection
@@ -97,11 +136,14 @@ def load_conversations(path: str) -> list:
     input_path = Path(path)
     if input_path.suffix.lower() == ".zip":
         with zipfile.ZipFile(input_path) as zf:
-            json_names = sorted(n for n in zf.namelist() if Path(n).name == "conversations.json")
-            if not json_names:
+            members = _conversation_members(zf)
+            if not members:
                 raise ValueError(f"No conversations.json found in zip: {input_path}")
-            return json.loads(zf.read(json_names[0]).decode("utf-8"))
+            return json.loads(zf.read(members[0]).decode("utf-8"))
 
+    size = input_path.stat().st_size
+    if size > MAX_JSON_BYTES:
+        raise ValueError(f"Refusing oversized JSON input: {size} bytes exceeds {MAX_JSON_BYTES}")
     with open(path, encoding="utf-8") as f:
         return json.load(f)
 
@@ -126,13 +168,13 @@ def _extract_zip(zip_path: Path, cwd: Path) -> list[Path]:
     """
     found = []
     with zipfile.ZipFile(zip_path) as zf:
-        names = zf.namelist()
-        json_names = [n for n in names if Path(n).name == "conversations.json"]
-        if not json_names:
+        json_members = _conversation_members(zf)
+        if not json_members:
             print(f"  No conversations.json found inside {zip_path.name}")
             return []
         used_stems: set[str] = set()
-        for name in json_names:
+        for info in json_members:
+            name = info.filename
             # Extract to a sibling path named after the zip (without extension)
             dest_dir = cwd / zip_path.stem
             dest_dir.mkdir(exist_ok=True)
@@ -145,7 +187,7 @@ def _extract_zip(zip_path: Path, cwd: Path) -> list[Path]:
                 stem = f"{stem}-{n}"
             used_stems.add(stem)
             dest_path = dest_dir / f"{stem}.json"
-            dest_path.write_bytes(zf.read(name))
+            dest_path.write_bytes(zf.read(info))
             print(f"  Extracted → {dest_path}")
             found.append(dest_path)
     return found
@@ -289,11 +331,17 @@ def interactive_mode():
     # Offer to regenerate SPA
     print()
     if _prompt("Regenerate SPA viewer (output/index.html)?"):
-        from formatters.spa import build_spa
+        from formatters.spa import build_search_index, build_spa
         out_dir = Path("output")
         try:
             html = build_spa(out_dir)
             safe_write(out_dir / "index.html", html, yes=True)
+            search_index = build_search_index(out_dir)
+            safe_write(
+                out_dir / "search-index.json",
+                json.dumps(search_index, ensure_ascii=False, sort_keys=True),
+                yes=True,
+            )
         except ValueError as e:
             print(f"  SPA generation skipped: {e}")
 

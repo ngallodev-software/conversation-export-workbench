@@ -3,6 +3,7 @@
 import html
 import json
 
+from canonical import canonical_conversation, canonical_message
 from .shared import (
     fmt_date, iso_to_epoch_ms, markdown_to_html, render_template
 )
@@ -46,9 +47,9 @@ def conv_to_html_body(conv: dict) -> str:
         f' data-updated-ts="{updated_epoch}"'
         f' data-started-iso="{created_iso_attr}"'
         f' data-updated-iso="{updated_iso_attr}">'
-        f'Started <span class="ts-display">{fmt_date(created_iso)}</span>'
+        f'Started <span class="ts-display">{html.escape(fmt_date(created_iso), quote=False)}</span>'
         f' &nbsp;·&nbsp; '
-        f'Last updated <span class="ts-display">{fmt_date(updated_iso)}</span>'
+        f'Last updated <span class="ts-display">{html.escape(fmt_date(updated_iso), quote=False)}</span>'
         f'</div>',
     ]
 
@@ -69,7 +70,7 @@ def conv_to_html_body(conv: dict) -> str:
             parts.append(
                 f'<div class="message user" data-ts="{msg_epoch}" data-ts-iso="{msg_iso_attr}">'
                 f'<div class="role-label">You'
-                f' <span class="msg-time ts-display" data-ts="{msg_epoch}" data-ts-iso="{msg_iso_attr}">{timestamp}</span>'
+                f' <span class="msg-time ts-display" data-ts="{msg_epoch}" data-ts-iso="{msg_iso_attr}">{html.escape(timestamp, quote=False)}</span>'
                 f'</div>'
                 f'<div class="content">{html_content}</div>'
                 f"</div>"
@@ -98,7 +99,7 @@ def conv_to_html_body(conv: dict) -> str:
             parts.append(
                 f'<div class="message assistant" data-ts="{msg_epoch}" data-ts-iso="{msg_iso_attr}">'
                 f'<div class="role-label">Claude'
-                f' <span class="msg-time ts-display" data-ts="{msg_epoch}" data-ts-iso="{msg_iso_attr}">{timestamp}</span>'
+                f' <span class="msg-time ts-display" data-ts="{msg_epoch}" data-ts-iso="{msg_iso_attr}">{html.escape(timestamp, quote=False)}</span>'
                 f'</div>'
                 f"{inner}"
                 f"</div>"
@@ -185,18 +186,35 @@ def conv_to_json_clean(conv: dict) -> dict:
                 parts.append({"type": "text", "content": block.get("text", "")})
             elif btype == "thinking":
                 parts.append({"type": "thinking", "content": block.get("thinking", "")})
-        clean_messages.append({
-            "role": role,
-            "timestamp": msg.get("created_at", ""),
-            "parts": parts,
-        })
-    return {
-        "id": conv["uuid"],
-        "title": conv.get("name", ""),
-        "started_at": conv.get("created_at", ""),
-        "updated_at": conv.get("updated_at", ""),
-        "messages": clean_messages,
-    }
+            elif btype == "tool_use":
+                parts.append({
+                    "type": "tool_use",
+                    "id": block.get("id", ""),
+                    "name": block.get("name", ""),
+                    "input": block.get("input", {}),
+                })
+            elif btype == "tool_result":
+                parts.append({
+                    "type": "tool_result",
+                    "tool_use_id": block.get("tool_use_id", ""),
+                    "content": block.get("content", ""),
+                })
+        clean_messages.append(
+            canonical_message(
+                role,
+                msg.get("created_at", ""),
+                parts,
+                source_id=str(msg.get("uuid", "")),
+            )
+        )
+    return canonical_conversation(
+        PROVIDER,
+        conv["uuid"],
+        conv.get("name", ""),
+        conv.get("created_at", ""),
+        conv.get("updated_at", ""),
+        clean_messages,
+    )
 
 
 def build_json_single(conv: dict) -> str:

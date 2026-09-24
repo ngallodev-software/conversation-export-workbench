@@ -1,0 +1,25 @@
+{
+  "name": "conversation-export-workbench-mobile",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "build": "vite build",
+    "cap:sync": "npm run build && cap sync",
+    "android:add": "cap add android",
+    "android:open": "npm run cap:sync && cap open android",
+    "ios:add": "cap add ios",
+    "ios:open": "npm run cap:sync && cap open ios"
+  },
+  "dependencies": {
+    "@capacitor/core": "8.5.2",
+    "fflate": "0.8.3"
+  },
+  "devDependencies": {
+    "@capacitor/android": "8.5.2",
+    "@capacitor/cli": "8.5.2",
+    "@capacitor/ios": "8.5.2",
+    "vite": "8.3.0"
+  }
+}
