@@ -244,3 +244,84 @@ jobs:
           name: release-candidate-ios-simulator
           path: mobile/release/*.zip
           if-no-files-found: error
+
+  ios-device:
+    needs: verify-version
+    runs-on: macos-latest
+    defaults:
+      run:
+        working-directory: mobile
+    env:
+      APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+      APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+      APPLE_API_ISSUER_ID: ${{ secrets.APPLE_API_ISSUER_ID }}
+      APPLE_API_PRIVATE_KEY_BASE64: ${{ secrets.APPLE_API_PRIVATE_KEY_BASE64 }}
+      IOS_BUNDLE_ID: ${{ vars.IOS_BUNDLE_ID }}
+
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: "22.16.0"
+          package-manager-cache: false
+
+      - name: Detect signing configuration
+        id: signing
+        shell: bash
+        run: |
+          if [ -n "$APPLE_TEAM_ID" ] && [ -n "$APPLE_API_KEY_ID" ] && [ -n "$APPLE_API_ISSUER_ID" ] && [ -n "$APPLE_API_PRIVATE_KEY_BASE64" ] && [ -n "$IOS_BUNDLE_ID" ]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "Apple signing credentials are not configured; skipping device/TestFlight build."
+          fi
+
+      - name: Build native iOS project
+        if: steps.signing.outputs.enabled == 'true'
+        run: |
+          npm install --ignore-scripts --no-audit --no-fund
+          npm run build
+          npx cap add ios
+          npx cap sync ios
+
+      - name: Configure App Store Connect API key
+        if: steps.signing.outputs.enabled == 'true'
+        shell: bash
+        run: |
+          mkdir -p "$HOME/.appstoreconnect/private_keys"
+          key_path="$HOME/.appstoreconnect/private_keys/AuthKey_${APPLE_API_KEY_ID}.p8"
+          printf '%s' "$APPLE_API_PRIVATE_KEY_BASE64" | base64 --decode > "$key_path"
+          chmod 600 "$key_path"
+          echo "APPLE_API_KEY_PATH=$key_path" >> "$GITHUB_ENV"
+
+      - name: Archive signed iOS app
+        if: steps.signing.outputs.enabled == 'true'
+        shell: bash
+        run: |
+          version="$(tr -d '[:space:]' < ../VERSION)"
+          xcodebuild -project ios/App/App.xcodeproj -scheme App -configuration Release -destination "generic/platform=iOS" -archivePath build/App.xcarchive -allowProvisioningUpdates -authenticationKeyPath "$APPLE_API_KEY_PATH" -authenticationKeyID "$APPLE_API_KEY_ID" -authenticationKeyIssuerID "$APPLE_API_ISSUER_ID" DEVELOPMENT_TEAM="$APPLE_TEAM_ID" CODE_SIGN_STYLE=Automatic PRODUCT_BUNDLE_IDENTIFIER="$IOS_BUNDLE_ID" MARKETING_VERSION="$version" CURRENT_PROJECT_VERSION="${GITHUB_RUN_NUMBER}" archive
+
+      - name: Export signed IPA
+        if: steps.signing.outputs.enabled == 'true'
+        shell: bash
+        run: |
+          cp scripts/ExportOptions.plist build/ExportOptions.plist
+          /usr/libexec/PlistBuddy -c "Add :teamID string $APPLE_TEAM_ID" build/ExportOptions.plist
+          xcodebuild -exportArchive -archivePath build/App.xcarchive -exportOptionsPlist build/ExportOptions.plist -exportPath release -allowProvisioningUpdates -authenticationKeyPath "$APPLE_API_KEY_PATH" -authenticationKeyID "$APPLE_API_KEY_ID" -authenticationKeyIssuerID "$APPLE_API_ISSUER_ID"
+
+      - name: Upload IPA to TestFlight
+        if: steps.signing.outputs.enabled == 'true' && vars.ENABLE_TESTFLIGHT_UPLOAD == 'true'
+        shell: bash
+        run: |
+          ipa="$(find release -maxdepth 1 -name '*.ipa' -print -quit)"
+          test -n "$ipa"
+          xcrun altool --upload-app -f "$ipa" -t ios --apiKey "$APPLE_API_KEY_ID" --apiIssuer "$APPLE_API_ISSUER_ID"
+
+      - name: Upload signed iOS artifact
+        if: steps.signing.outputs.enabled == 'true'
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: release-candidate-ios-device
+          path: mobile/release/*.ipa
+          if-no-files-found: error
