@@ -16,5 +16,5 @@ def test_release_version_metadata_is_synchronized():
     assert root_version == mobile_version
 
 
-def test_v020_release_version():
-    assert __version__ == "0.2.0"
+def test_v030_release_version():
+    assert __version__ == "0.3.0"
