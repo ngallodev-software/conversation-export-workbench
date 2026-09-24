@@ -58,6 +58,32 @@ jobs:
       - name: Build portable binary
         run: pyinstaller conv-tool.spec
 
+      - name: Configure macOS Developer ID signing
+        if: runner.os == 'macOS'
+        shell: bash
+        env:
+          MACOS_CERTIFICATE_P12_BASE64: ${{ secrets.MACOS_CERTIFICATE_P12_BASE64 }}
+          MACOS_CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
+          MACOS_APPLICATION_IDENTITY: ${{ vars.MACOS_APPLICATION_IDENTITY }}
+          MACOS_INSTALLER_IDENTITY: ${{ vars.MACOS_INSTALLER_IDENTITY }}
+        run: |
+          if [ -n "$MACOS_CERTIFICATE_P12_BASE64" ] && [ -n "$MACOS_CERTIFICATE_PASSWORD" ] && [ -n "$MACOS_APPLICATION_IDENTITY" ] && [ -n "$MACOS_INSTALLER_IDENTITY" ]; then
+            keychain="$RUNNER_TEMP/cew-signing.keychain-db"
+            password="$(openssl rand -hex 24)"
+            security create-keychain -p "$password" "$keychain"
+            security set-keychain-settings -lut 21600 "$keychain"
+            security unlock-keychain -p "$password" "$keychain"
+            printf '%s' "$MACOS_CERTIFICATE_P12_BASE64" | base64 --decode > "$RUNNER_TEMP/cew-signing.p12"
+            security import "$RUNNER_TEMP/cew-signing.p12" -k "$keychain" -P "$MACOS_CERTIFICATE_PASSWORD" -T /usr/bin/codesign -T /usr/bin/productsign -T /usr/bin/pkgbuild
+            security list-keychains -d user -s "$keychain"
+            security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$password" "$keychain"
+            codesign --force --timestamp --options runtime --sign "$MACOS_APPLICATION_IDENTITY" dist/conv-tool
+            codesign --verify --strict --verbose=2 dist/conv-tool
+            echo "MACOS_SIGNING_ENABLED=1" >> "$GITHUB_ENV"
+          else
+            echo "MACOS_SIGNING_ENABLED=0" >> "$GITHUB_ENV"
+          fi
+
       - name: Verify built CLI version
         shell: bash
         run: |
