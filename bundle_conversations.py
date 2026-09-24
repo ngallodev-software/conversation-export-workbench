@@ -5,7 +5,7 @@ import argparse
 import json
 import sys
 
-from workbench_bundle import build_bundle, read_bundle
+from workbench_bundle import build_bundle, merge_bundles, read_bundle
 
 
 def main() -> int:
@@ -16,12 +16,20 @@ def main() -> int:
     parser.add_argument("--output", default="conversation-workbench.cew", help="Output .cew path")
     parser.add_argument("--provider", choices=["chatgpt", "claude", "deepseek"], help="Force provider")
     parser.add_argument("--inspect", action="store_true", help="Inspect an existing .cew bundle")
+    parser.add_argument("--merge", nargs="+", metavar="CEW", help="Merge two or more .cew bundles deterministically")
     args = parser.parse_args()
 
-    if not args.input:
-        parser.error("--input is required")
+    if not args.input and not args.merge:
+        parser.error("--input is required unless --merge is used")
 
     try:
+        if args.merge:
+            if len(args.merge) < 2:
+                parser.error("--merge requires at least two .cew files")
+            manifest = merge_bundles(args.merge, args.output)
+            print(json.dumps(manifest, indent=2, ensure_ascii=False))
+            return 0
+
         if args.inspect:
             manifest, conversations, search_index = read_bundle(args.input)
             print(json.dumps(
