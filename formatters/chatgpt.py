@@ -5,6 +5,7 @@ import json
 from datetime import datetime, timezone
 
 from canonical import canonical_conversation, canonical_message
+from canonical_render import render_canonical_html_body, render_canonical_markdown
 from .shared import (
     fmt_date, markdown_to_html, render_template
 )
@@ -143,40 +144,8 @@ def _message_to_html(msg: dict) -> str:
 
 
 def conv_to_html_body(conv: dict) -> str:
-    """Return the inner HTML body for a single conversation (no full-page wrapper)."""
-    title         = str(conv.get("title", "Untitled"))
-    title_html    = html.escape(title, quote=False)
-    create_float  = conv.get("create_time")
-    update_float  = conv.get("update_time")
-    created_iso   = str(_epoch_to_iso(create_float))
-    updated_iso   = str(_epoch_to_iso(update_float))
-    created_iso_attr = html.escape(created_iso, quote=True)
-    updated_iso_attr = html.escape(updated_iso, quote=True)
-    created_epoch = _epoch_to_epoch_ms(create_float)
-    updated_epoch = _epoch_to_epoch_ms(update_float)
-
-    messages = walk_tree(conv["mapping"], conv["current_node"])
-
-    parts = [
-        f'<h1>{title_html}</h1>',
-        f'<div class="meta"'
-        f' data-started-ts="{created_epoch}"'
-        f' data-updated-ts="{updated_epoch}"'
-        f' data-started-iso="{created_iso_attr}"'
-        f' data-updated-iso="{updated_iso_attr}">'
-        f'Started <span class="ts-display">{_fmt_epoch(create_float)}</span>'
-        f' &nbsp;·&nbsp; '
-        f'Last updated <span class="ts-display">{_fmt_epoch(update_float)}</span>'
-        f'</div>',
-    ]
-
-    for msg in messages:
-        message_html = _message_to_html(msg)
-        if message_html:
-            parts.append(message_html)
-
-    return "\n".join(parts)
-
+    """Normalize provider input, then render the canonical model."""
+    return render_canonical_html_body(conv_to_json_clean(conv))
 
 def build_html_single(conv: dict) -> str:
     body = conv_to_html_body(conv)
@@ -210,27 +179,8 @@ def build_html_all(convs: list) -> str:
 # ---------------------------------------------------------------------------
 
 def conv_to_md(conv: dict) -> str:
-    title    = conv.get("title", "Untitled")
-    created  = _fmt_epoch(conv.get("create_time"))
-    updated  = _fmt_epoch(conv.get("update_time"))
-    messages = walk_tree(conv["mapping"], conv["current_node"])
-
-    lines = [f"# {title}", "", f"*Started: {created} | Last updated: {updated}*", "", "---", ""]
-    for msg in messages:
-        role = msg.get("author", {}).get("role", "")
-        if role not in ("user", "assistant"):
-            continue
-        content = msg.get("content", {})
-        if content.get("content_type") not in ("text", "multimodal_text"):
-            continue
-        parts = content.get("parts", [])
-        text = "\n".join(str(p) for p in parts if isinstance(p, str)).strip()
-        if not text:
-            continue
-        timestamp = _fmt_epoch(msg.get("create_time"))
-        label = "You" if role == "user" else "ChatGPT"
-        lines += [f"## {label}  _{timestamp}_", "", text, "", "---", ""]
-    return "\n".join(lines)
+    """Normalize provider input, then render the canonical model."""
+    return render_canonical_markdown(conv_to_json_clean(conv))
 
 
 # ---------------------------------------------------------------------------
