@@ -2,6 +2,9 @@ name: Publish versioned release
 
 on:
   create:
+  push:
+    branches:
+      - "publish/v*"
   workflow_dispatch:
 
 permissions:
@@ -9,7 +12,7 @@ permissions:
 
 jobs:
   gate:
-    if: github.event_name == 'workflow_dispatch' || (github.event.ref_type == 'branch' && startsWith(github.event.ref, 'publish/v'))
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'create' && github.event.ref_type == 'branch' && startsWith(github.event.ref, 'publish/v')) || (github.event_name == 'push' && startsWith(github.ref_name, 'publish/v'))
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.version.outputs.version }}
@@ -26,6 +29,8 @@ jobs:
           if [ "${{ github.event_name }}" = "create" ]; then
             test "${{ github.event.ref_type }}" = "branch"
             test "${{ github.event.ref }}" = "publish/${tag}"
+          elif [ "${{ github.event_name }}" = "push" ]; then
+            test "${{ github.ref_name }}" = "publish/${tag}"
           fi
           echo "version=${version}" >> "$GITHUB_OUTPUT"
           echo "tag=${tag}" >> "$GITHUB_OUTPUT"
