@@ -136,6 +136,14 @@ def _extract_meta(html_path: Path) -> dict:
     return {"file": html_path.name, "title": title, "ts": ts}
 
 
+def _searchable_text_from_generated_html(text: str) -> str:
+    """Extract readable conversation text without CSS/chrome from generated HTML."""
+    match = re.search(r'<div class="container">(.*?)</div>\s*</body>', text, flags=re.DOTALL)
+    fragment = match.group(1) if match else text
+    fragment = re.sub(r"<[^>]+>", " ", fragment)
+    return re.sub(r"\s+", " ", html.unescape(fragment)).strip()
+
+
 def scan_provider(output_dir: Path, provider: str) -> list[dict]:
     """Return sorted list of conversation metadata dicts for one provider."""
     provider_dir = output_dir / provider
@@ -150,6 +158,26 @@ def scan_provider(output_dir: Path, provider: str) -> list[dict]:
         metas.append(meta)
     metas.sort(key=lambda m: m["ts"], reverse=True)
     return metas
+
+
+def build_search_index(
+    output_dir: Path,
+    providers: list[str] | None = None,
+) -> dict[str, str]:
+    """Build a deterministic local full-text index keyed by provider:file."""
+    if providers is None:
+        providers = [p for p in PROVIDERS if (output_dir / p).is_dir()]
+    index: dict[str, str] = {}
+    for provider in providers:
+        provider_dir = output_dir / provider
+        if not provider_dir.is_dir():
+            continue
+        for html_file in sorted(provider_dir.glob("*.html")):
+            if html_file.name == "index.html":
+                continue
+            text = html_file.read_text(encoding="utf-8")
+            index[f"{provider}:{html_file.name}"] = _searchable_text_from_generated_html(text)
+    return index
 
 
 # ---------------------------------------------------------------------------
@@ -338,6 +366,7 @@ let filteredConvs      = [];
 let currentSearchQuery = '';
 let currentSearchHits  = null;
 let isFullTextSearch   = false;
+let globalSearchIndex  = null;
 
 const loadedContent    = new Map();  // "provider:file" → { bodyHtml }
 const contentTextCache = new Map();  // "provider:file" → plaintext
@@ -605,6 +634,19 @@ function renderMenuFileList() {
 let searchDebounce = null;
 searchInput.addEventListener('input', () => { clearTimeout(searchDebounce); searchDebounce = setTimeout(handleSearch, 180); });
 
+async function loadSearchIndex() {
+  if (globalSearchIndex !== null) return globalSearchIndex;
+  try {
+    const res = await fetch('search-index.json');
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const parsed = await res.json();
+    globalSearchIndex = parsed && typeof parsed === 'object' ? parsed : {};
+  } catch {
+    globalSearchIndex = {};
+  }
+  return globalSearchIndex;
+}
+
 async function handleSearch() {
   const q = searchInput.value.trim();
   currentSearchQuery = q;
@@ -621,6 +663,7 @@ async function handleSearch() {
   }
 
   const lq = q.toLowerCase();
+  await loadSearchIndex();
   const titleMatchKeys = new Set(
     getVisibleConvs().filter(c => c.title.toLowerCase().includes(lq)).map(fileKey)
   );
@@ -628,14 +671,12 @@ async function handleSearch() {
   const searchHits = new Map();
   getVisibleConvs().forEach((conv, i) => {
     const key = fileKey(conv);
-    let text = contentTextCache.get(key);
-    if (text === undefined) {
-      if (loadedContent.has(key)) {
-        const tmp = document.createElement('div');
-        tmp.innerHTML = loadedContent.get(key).bodyHtml;
-        text = tmp.textContent || '';
-        contentTextCache.set(key, text);
-      } else { text = null; }
+    let text = (globalSearchIndex && globalSearchIndex[key]) || contentTextCache.get(key);
+    if (text === undefined && loadedContent.has(key)) {
+      const tmp = document.createElement('div');
+      tmp.innerHTML = loadedContent.get(key).bodyHtml;
+      text = tmp.textContent || '';
+      contentTextCache.set(key, text);
     }
     if (text && text.toLowerCase().includes(lq)) {
       const snippets = []; let idx2 = 0; const tl = text.toLowerCase();
