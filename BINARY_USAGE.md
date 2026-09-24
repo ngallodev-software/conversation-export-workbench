@@ -102,10 +102,12 @@ Open the local URL printed by the `serve` command. Serving outside loopback requ
 
 ```bash
 ./conv-tool-vX.Y.Z-linux bundle --input export.zip --output my-chats.cew
-./conv-tool-vX.Y.Z-linux bundle --input my-chats.cew --inspect
+./conv-tool-vX.Y.Z-linux bundle --input export.zip --attachments-dir export-files --output with-files.cew
+./conv-tool-vX.Y.Z-linux bundle --merge archive-a.cew archive-b.cew --output merged.cew
+./conv-tool-vX.Y.Z-linux bundle --input merged.cew --inspect
 ```
 
-The `.cew` archive contains versioned provider-neutral conversation records and local search data for offline clients, including the mobile viewer source in this repository.
+CEW v2 contains provider-neutral conversations, deterministic search data, source provenance, duplicate-aware merge history, and optional SHA-256-verified attachment payloads. CEW v1 remains readable.
 
 ## Verify checksums
 
