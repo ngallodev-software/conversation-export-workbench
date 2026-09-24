@@ -105,10 +105,10 @@ Prefer sharing parser logic rather than maintaining three independent mobile imp
 ## Current implementation status
 
 - [x] Phase 0 constraints documented.
-- [ ] Phase 1.
-- [ ] Phase 2.
-- [ ] Phase 3.
-- [ ] Phase 4.
-- [ ] Phase 5.
+- [x] Phase 1 security/offline hardening implemented with hostile-input tests.
+- [x] Phase 2 Python CI/release supply-chain hardening implemented; mobile lockfile generation remains a follow-up reproducibility improvement.
+- [~] Phase 3 canonical `cew.conversation/v1` model is implemented and used by normalized JSON/bundles/mobile; HTML/Markdown renderers still consume provider source structures.
+- [~] Phase 4 `.cew` v1 bundle and corpus-wide search index are implemented; attachment payloads, duplicate-aware merge/update, and import provenance remain.
+- [~] Phase 5 Capacitor mobile source is implemented for `.cew` import/search/offline viewing; native Android/iOS projects, signing, biometrics, and device smoke tests remain.
 - [ ] Phase 6.
 - [ ] Phase 7.
