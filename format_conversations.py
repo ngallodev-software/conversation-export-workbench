@@ -331,11 +331,17 @@ def interactive_mode():
     # Offer to regenerate SPA
     print()
     if _prompt("Regenerate SPA viewer (output/index.html)?"):
-        from formatters.spa import build_spa
+        from formatters.spa import build_search_index, build_spa
         out_dir = Path("output")
         try:
             html = build_spa(out_dir)
             safe_write(out_dir / "index.html", html, yes=True)
+            search_index = build_search_index(out_dir)
+            safe_write(
+                out_dir / "search-index.json",
+                json.dumps(search_index, ensure_ascii=False, sort_keys=True),
+                yes=True,
+            )
         except ValueError as e:
             print(f"  SPA generation skipped: {e}")
 
