@@ -1,68 +1,70 @@
 # Installation
 
-Conversation Export Workbench 0.2.0 publishes platform-specific release artifacts from the GitHub Releases page.
+Conversation Export Workbench 0.3.0 publishes platform-specific artifacts from the GitHub Releases page.
 
 ## Windows
 
 Recommended artifact:
 
-`ConversationExportWorkbench-0.2.0-Setup.exe`
+`ConversationExportWorkbench-0.3.0-Setup.exe`
 
-The installer is per-user and does not require administrator rights. It installs `conv-tool.exe` under the user's local Programs directory and adds Start Menu shortcuts for guided conversion and viewer generation.
+The installer is per-user and installs `conv-tool.exe` plus Start Menu shortcuts. A portable `conv-tool-v0.3.0-windows.exe` is also published.
 
-A portable `conv-tool-v0.2.0-windows.exe` is also published.
+The release workflow supports Authenticode signing when Windows certificate secrets are configured. Unsigned builds remain available when those credentials are absent.
 
 ## macOS
 
 Recommended artifact:
 
-`ConversationExportWorkbench-0.2.0-macos.pkg`
+`ConversationExportWorkbench-0.3.0-macos.pkg`
 
-The package installs:
+The package installs `/usr/local/bin/conv-tool` plus an Applications launcher. A portable `conv-tool-v0.3.0-macos` is also published.
 
-- `/usr/local/bin/conv-tool`;
-- an Applications launcher that opens guided mode in Terminal.
-
-The current package is not Developer-ID signed/notarized yet, so macOS may require explicit approval in Privacy & Security before first launch.
-
-A portable `conv-tool-v0.2.0-macos` is also published.
+The release workflow can code-sign/notarize macOS artifacts when Developer ID and App Store Connect notarization credentials are configured. Without those credentials macOS may require explicit approval in Privacy & Security on first launch.
 
 ## Linux
 
 Recommended Debian/Ubuntu artifact:
 
-`conversation-export-workbench_0.2.0_amd64.deb`
+`conversation-export-workbench_0.3.0_amd64.deb`
 
-Install by opening it in the system package installer or with:
+Install with the graphical package installer or:
 
 ```bash
-sudo apt install ./conversation-export-workbench_0.2.0_amd64.deb
+sudo apt install ./conversation-export-workbench_0.3.0_amd64.deb
 ```
 
-A portable `conv-tool-v0.2.0-linux` is also published.
+A portable `conv-tool-v0.3.0-linux` is also published.
 
 ## Android
 
-Artifact:
+The release pipeline has two modes.
 
-`ConversationExportWorkbench-v0.2.0-android-sideload.apk`
+With stable Android signing secrets configured:
 
-Open the downloaded APK on the Android device and allow installation from the download source when prompted.
+- `ConversationExportWorkbench-v0.3.0-android.apk`
+- `ConversationExportWorkbench-v0.3.0-android.aab`
 
-For v0.2.0 this APK uses the CI/debug signing identity. It is intended for direct sideload evaluation, not as the permanent Play Store/update signing channel. A stable release keystore must be configured before Play Store publication or long-lived sideload upgrades.
+Without stable signing credentials:
+
+- `ConversationExportWorkbench-v0.3.0-android-sideload.apk`
+
+The sideload APK is directly installable after Android permits installation from the download source, but it should not be treated as the permanent Play Store/update signing channel.
 
 ## iPhone / iPad
 
-There is no unsigned one-click iOS package that can be installed normally on arbitrary devices.
+CI always produces an unsigned Simulator validation artifact:
 
-The repository builds an unsigned iOS Simulator artifact to verify the Capacitor/Xcode project. A device-installable build requires an Apple Developer team, a matching bundle ID/App Store Connect app record, distribution signing, and provisioning. TestFlight is the intended first distribution channel once those credentials are configured.
+`ConversationExportWorkbench-v0.3.0-ios-simulator.zip`
 
-The GitHub release may contain:
+When Apple Developer/App Store Connect credentials and `IOS_BUNDLE_ID` are configured, release CI also exports a signed IPA. Setting repository variable `ENABLE_TESTFLIGHT_UPLOAD=true` uploads that signed build to TestFlight.
 
-`ConversationExportWorkbench-v0.2.0-ios-simulator.zip`
+An unsigned Simulator ZIP is not installable on an iPhone/iPad.
 
-That ZIP is for Simulator validation and is **not** an iPhone/iPad installer.
+## Web / PWA
+
+The mobile web client is also an installable PWA. Run it from a secure local/hosted origin, then use the browser's Install/Add to Home Screen action. Application-shell resources are cached locally; imported archives remain local to browser storage.
 
 ## Verify downloads
 
-The release publishes a `SHA256SUMS` file and GitHub build-provenance attestations for release assets.
+Published releases include `SHA256SUMS` and GitHub build-provenance attestations.
