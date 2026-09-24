@@ -1,169 +1,156 @@
-# Chat Export Viewer
+# Conversation Export Workbench
 
-A Python CLI with no Python package dependencies that converts **DeepSeek**, **Claude (Anthropic)**, and **ChatGPT (OpenAI)** conversation exports into styled HTML, Markdown, or cleaned JSON — with a built-in interactive single-page viewer.
+**Local-first ChatGPT, Claude, and DeepSeek conversation export viewer and converter.**
 
-> **Quick start:** see [QUICKSTART.md](QUICKSTART.md)
-> **Pre-built binary (no Python needed):** see [BINARY_USAGE.md](BINARY_USAGE.md)
+[![Regression tests](https://github.com/ngallodev-software/conversation-export-workbench/actions/workflows/tests.yml/badge.svg)](https://github.com/ngallodev-software/conversation-export-workbench/actions/workflows/tests.yml)
+[![Latest release](https://img.shields.io/github/v/release/ngallodev-software/conversation-export-workbench)](https://github.com/ngallodev-software/conversation-export-workbench/releases/latest)
+[![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](#source-install)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-![All providers view](readme_assets/sample-all.png)
+Conversation Export Workbench turns exported AI chat histories from **OpenAI ChatGPT**, **Anthropic Claude**, and **DeepSeek** into readable HTML, Markdown, or normalized JSON. It can also build a searchable local single-page workbench for browsing conversations across providers.
+
+The runtime is Python-standard-library only. Conversion happens on your machine: the tool reads local export files and writes local output; it does not require a hosted backend or an API key.
+
+> **Start here:** [Quick start](QUICKSTART.md) · [Pre-built binaries](BINARY_USAGE.md) · [Latest release](https://github.com/ngallodev-software/conversation-export-workbench/releases/latest)
+
+![Conversation Export Workbench showing multiple providers](readme_assets/sample-all.png)
 
 <p align="center">
-  <img src="readme_assets/sample-deepseek.png" width="49%" alt="DeepSeek view">
-  <img src="readme_assets/sample-claude.png" width="49%" alt="Claude view">
+  <img src="readme_assets/sample-deepseek.png" width="49%" alt="DeepSeek conversation export rendered in Conversation Export Workbench">
+  <img src="readme_assets/sample-claude.png" width="49%" alt="Claude conversation export rendered in Conversation Export Workbench">
 </p>
 
----
+## What it supports
 
-## Features
+| Provider | Input | Auto-detect | HTML | Markdown | Normalized JSON |
+|---|---|---:|---:|---:|---:|
+| **ChatGPT / OpenAI** | official conversation export JSON or ZIP containing `conversations.json` | Yes | Yes | Yes | Yes |
+| **Claude / Anthropic** | conversation export JSON or ZIP containing `conversations.json` | Yes | Yes | Yes | Yes |
+| **DeepSeek** | conversation export JSON or ZIP containing `conversations.json` | Yes | Yes | Yes | Yes |
 
-- **Multi-provider support** — handles DeepSeek, Claude, and ChatGPT export formats out of the box
-- **Template-based auto-detection** — identifies the provider from JSON templates; if no template matches, the tool asks for explicit provider confirmation
-- **Three output formats** — styled dark-theme HTML, plain Markdown, and normalized JSON
-- **Interactive SPA viewer** — browse all exported conversations in one page with search, filtering, sort, and per-message jump navigation
-- **Thinking blocks** — DeepSeek `THINK` fragments and Claude extended thinking blocks rendered as collapsible sections
-- **Web search results** — DeepSeek `SEARCH` fragments displayed inline with titles, URLs, and snippets
-- **No Python package dependencies** — pure Python 3.10+ stdlib; nothing to install
-- **Interactive mode** — run with no arguments to be guided through zip extraction, provider detection, and export step by step
-- **Extensible** — drop a new template into `provider_templates/` to add support for additional providers
+Provider detection is structural and template-based. If an export does not match a known provider signature, the CLI asks you to choose a provider instead of silently guessing.
 
----
+## Why use it
 
-## Download pre-built binary
+- **One workbench for three AI chat providers** — browse ChatGPT, Claude, and DeepSeek histories with the same local tooling.
+- **Local-first processing** — no account credentials, API keys, telemetry service, or remote conversion backend required.
+- **Readable exports** — produce styled HTML, portable Markdown, or a provider-neutral JSON representation.
+- **Searchable conversation viewer** — generate a single-page browser with provider filters, full-text search, sorting, jump navigation, and scroll memory.
+- **Reasoning-aware rendering** — preserve DeepSeek THINK fragments and Claude thinking blocks as collapsible sections.
+- **DeepSeek search rendering** — render SEARCH fragments with titles, URLs, and snippets.
+- **Zero runtime package dependencies** — source mode uses Python 3.10+ standard library only.
+- **Pre-built executables** — release binaries are published for Linux, macOS, and Windows with SHA-256 checksums.
+- **Extensible provider model** — detection templates and provider-specific formatter modules are separated cleanly.
 
-No Python required. Grab the latest `conv-tool` binary for your platform from the [Releases page](https://github.com/ngallodev-software/conversation-export-workbench/releases/latest):
+## Fastest path
 
-| Platform | File |
+### Option A: pre-built binary
+
+Download the current release from the [Releases page](https://github.com/ngallodev-software/conversation-export-workbench/releases/latest). Asset names are versioned:
+
+| Platform | Release asset pattern |
 |---|---|
-| Linux (x86_64) | `conv-tool-linux` |
-| macOS | `conv-tool-macos` |
-| Windows | `conv-tool-windows.exe` |
+| Linux x86_64 | `conv-tool-vX.Y.Z-linux` |
+| macOS | `conv-tool-vX.Y.Z-macos` |
+| Windows | `conv-tool-vX.Y.Z-windows.exe` |
 
-See [BINARY_USAGE.md](BINARY_USAGE.md) for setup and usage instructions.
+The binary has three subcommands:
 
----
-
-## Requirements (source install)
-
-- Python **3.10 or newer** (uses `match`-free type hints; no third-party packages)
-
-## Quick verification
-
-Run the repository smoke test (all three providers + SPA generation):
-
-```bash
-./scripts/smoke_test.sh
+```text
+conv-tool format        # convert an export
+conv-tool generate-spa  # build output/index.html
+conv-tool serve         # serve the local viewer
 ```
 
----
+See [BINARY_USAGE.md](BINARY_USAGE.md) for examples and checksum verification.
 
-## Installation
+### Option B: source install
 
 ```bash
-git clone <repo-url>
+git clone https://github.com/ngallodev-software/conversation-export-workbench.git
 cd conversation-export-workbench
+python3 format_conversations.py --input /path/to/export.zip --format html --yes
+python3 generate_spa.py --output output --yes
+python3 serve_spa.py
 ```
 
-No virtual environment or Python package installation needed.
+**Requirements:** Python 3.10 or newer. No `pip install` is required for runtime use.
 
----
-
-## Getting your export file
-
-### DeepSeek
-1. Open [chat.deepseek.com](https://chat.deepseek.com) → Settings → **Export Data**
-2. Download the `.zip` archive — it contains `conversations.json`
-
-### Claude (Anthropic)
-1. Go to [claude.ai](https://claude.ai) → Settings → **Account** → **Export Data**
-2. Download the `.zip` — it contains `conversations.json` (and optional `projects.json`, `users.json`, etc.)
-
----
-
-## Usage
-
-### Interactive mode (recommended for first use)
+## Common source examples
 
 ```bash
-python3 format_conversations.py
+# List conversations from an export
+python3 format_conversations.py --input ~/Downloads/export.zip --list
+
+# Convert everything to HTML
+python3 format_conversations.py --input ~/Downloads/export.zip --format html --yes
+
+# Convert to Markdown
+python3 format_conversations.py --input ~/Downloads/export.zip --format md --yes
+
+# Export one conversation by provider ID
+python3 format_conversations.py --input conversations.json --id <conversation-id>
+
+# Force a provider only when detection is ambiguous
+python3 format_conversations.py --input conversations.json --provider claude --format html
+
+# Combine all conversations into one HTML document
+python3 format_conversations.py --input conversations.json --format html --combined --yes
 ```
 
-Scans the current directory for `.zip` archives and `conversations.json` files, prompts before each action, and optionally regenerates the SPA viewer at the end.
+Run `python3 format_conversations.py` with no arguments in a terminal for guided discovery of ZIP and JSON files in the current directory.
 
-### CLI mode
+## Local conversation workbench
+
+After generating HTML files:
 
 ```bash
-python3 format_conversations.py [options]
+python3 generate_spa.py --output output --yes
+python3 serve_spa.py --output output
 ```
 
-#### Options
+The generated viewer includes:
 
-| Option | Default | Description |
-|---|---|---|
-| `--input FILE` | `conversations.json` | Path to input JSON |
-| `--output DIR` | `output/<provider>/` | Where to write output files |
-| `--provider NAME` | auto-detected | Force provider: `deepseek` \| `claude` \| `chatgpt` |
-| `--format FORMAT` | `html` | Output format: `html` \| `md` \| `json` |
-| `--id ID` | all | Export only the conversation with this ID |
-| `--list` | — | Print all conversations with IDs and exit |
-| `--combined` | — | Write all conversations to a single file (html/md) |
-| `--yes` / `-y` | prompt | Overwrite existing files without prompting |
+- provider filtering for ChatGPT, Claude, DeepSeek, or all conversations;
+- full-text search and in-conversation highlighting;
+- newest/oldest and alphabetical sorting;
+- jump navigation across user turns and assistant headings;
+- timestamp visibility controls;
+- per-conversation visibility controls;
+- scroll-position memory;
+- lazy loading and in-memory caching;
+- collapsible reasoning/thinking sections;
+- provider-specific visual accents.
 
-#### Common examples
+![Conversation workbench settings and provider controls](readme_assets/sample-menu.png)
 
-```bash
-# List available conversations
-python3 format_conversations.py --list
+The viewer is intentionally served over local HTTP because its conversation pages are loaded with browser `fetch()`.
 
-# Export all as HTML (auto-detects provider)
-python3 format_conversations.py --format html --yes
-
-# Export a single conversation
-python3 format_conversations.py --id <uuid>
-
-# Export from a specific file to a specific directory
-python3 format_conversations.py --input ~/Downloads/claude-export.json \
-    --output ~/Documents/claude-html --format html --yes
-
-# One combined HTML file for all conversations
-python3 format_conversations.py --format html --combined --yes
-
-# Force provider when auto-detection is ambiguous
-python3 format_conversations.py --provider deepseek --format md
-```
-
----
-
-## Output formats
+## Output model
 
 ### HTML
-Styled dark-theme pages — one file per conversation. Features:
-- Thinking blocks as collapsible `<details>` elements
-- Web search results rendered inline
-- Per-message timestamps (toggleable)
-- Clean code blocks with language labeling
+
+One styled HTML document per conversation, or a combined document. Provider-specific structures such as thinking blocks and DeepSeek search results are retained in readable form.
 
 ### Markdown
-Plain `.md` files suitable for editors, note-taking apps, or further processing. Thinking blocks are quoted, search results listed as links.
 
-### JSON
-Normalized, provider-agnostic JSON:
+Portable text suitable for source control, note systems, search/indexing pipelines, or downstream processing.
+
+### Normalized JSON
+
+Provider-specific exports are converted into a common shape:
+
 ```json
 {
   "id": "...",
   "title": "...",
-  "started_at": "2025-06-01T09:00:00Z",
-  "updated_at": "2025-06-01T09:05:00Z",
+  "started_at": "...",
+  "updated_at": "...",
   "messages": [
     {
       "role": "user",
       "timestamp": "...",
-      "parts": [{ "type": "text", "content": "..." }]
-    },
-    {
-      "role": "assistant",
-      "timestamp": "...",
       "parts": [
-        { "type": "thinking", "content": "..." },
         { "type": "text", "content": "..." }
       ]
     }
@@ -171,197 +158,73 @@ Normalized, provider-agnostic JSON:
 }
 ```
 
----
+This is useful when ChatGPT, Claude, and DeepSeek history need to feed the same downstream tooling.
 
-## SPA viewer
+## Provider detection and extension
 
-Generate an interactive single-page viewer from your exported HTML files:
+Detection templates live in `provider_templates/`. Each describes structural keys that must or must not exist in a provider's conversation objects. Formatter code lives in `formatters/`.
 
-```bash
-python3 generate_spa.py --output output/ --yes
-```
+To add another provider:
 
-Then serve it locally (the SPA uses `fetch()` so it requires a real HTTP server):
+1. add a `provider_templates/<provider>.conversations-template.json` signature;
+2. add a formatter module implementing the provider adapter functions;
+3. register the formatter in `format_conversations.py`;
+4. add sample data and regression coverage.
 
-```bash
-python3 serve_spa.py
-# Open the printed URL (first free port from 8080 up to 80890, clamped at 65535)
-```
+This keeps provider recognition separate from rendering and prevents heuristic guessing from being mixed into formatter logic.
 
-Or with explicit settings:
+## Project layout
 
-```bash
-python3 serve_spa.py --host 0.0.0.0 --start-port 8080 --end-port 80890
-```
-
-### SPA config and CSS templates
-
-The SPA's appearance is controlled by CSS template files in `config/spa_output_templates/` and wired together via `config/spa.toml`:
-
-```toml
-[spa]
-main_template   = "config/spa_output_templates/main_spa.css"
-thread_template = "config/spa_output_templates/thread.css"
-
-[providers.deepseek]
-thread_template = "config/spa_output_templates/deepseek_thread.css"
-
-[providers.claude]
-thread_template = "config/spa_output_templates/claude_thread.css"
-
-[providers.chatgpt]
-thread_template = "config/spa_output_templates/chatgpt_thread.css"
-```
-
-To use a custom config:
-
-```bash
-python3 generate_spa.py --config path/to/custom.toml --output output/ --yes
-```
-
-### Viewer features
-
-| Feature | Details |
-|---|---|
-| **Provider filter** | Settings menu lets you narrow to DeepSeek, Claude, ChatGPT, or All |
-| **Live search** | Filters sidebar list and highlights matches inside the open conversation; full-text search across loaded conversations |
-| **Sort** | Newest first, oldest first, A→Z, Z→A |
-| **Jump navigation** | Sidebar panel lists every user turn and assistant heading; scrolls to it on click; active entry tracks scroll position via IntersectionObserver |
-| **Timestamp toggle** | Show/hide per-message timestamps across the whole viewer |
-| **Conversation visibility** | Hide individual conversations from the settings menu |
-| **Scroll memory** | Returns to your scroll position when switching back to a conversation |
-| **Lazy loading** | Conversations are fetched on demand and cached in memory |
-| **Collapsible thinking** | `<thinking>` blocks converted to `<details>` on load |
-| **Provider colour theming** | DeepSeek (blue/green), Claude (violet/teal), and ChatGPT (OpenAI green/warm sand) accents applied automatically |
-
-**Settings menu** — provider filter, sort, timestamp toggle, conversation visibility
-
-![Settings menu](readme_assets/sample-menu.png)
-
----
-
-## Provider auto-detection
-
-The tool loads detection templates from `provider_templates/` at startup. Each template is a JSON file named `<provider>.conversations-template.json` and contains a `_detection_signature` block:
-
-```json
-{
-  "_detection_signature": {
-    "root_type": "array",
-    "item_must_contain": ["chat_messages", "uuid"],
-    "item_must_not_contain": ["mapping"]
-  }
-}
-```
-
-Detection logic: the top-level JSON must be an array; the first item must contain all keys in `item_must_contain` and none in `item_must_not_contain`. The first matching template wins. If no template matches, the tool does not guess from formatter heuristics and asks you to choose `--provider` (or prompts interactively).
-
-### Adding a custom provider
-
-1. Create `provider_templates/myprovider.conversations-template.json` with a `_detection_signature` and `_template_meta.provider` set to your provider name.
-2. Add a formatter module at `formatters/myprovider.py` implementing `PROVIDER`, `ID_FIELD`, `TITLE_FIELD`, `build_html_single()`, `conv_to_md()`, and `build_json_single()`.
-3. Register the module in `_FORMATTERS` in `format_conversations.py`.
-
----
-
-## Project structure
-
-```
+```text
 conversation-export-workbench/
-├── format_conversations.py   # Main CLI entry point
-├── generate_spa.py            # SPA builder CLI
-├── formatters/
-│   ├── __init__.py
-│   ├── chatgpt.py             # ChatGPT formatter + active-branch tree walk
-│   ├── claude.py              # Claude formatter
-│   ├── deepseek.py            # DeepSeek formatter
-│   ├── shared.py              # Shared utils: dates, slugify, markdown→HTML, HTML template
-│   └── spa.py                 # SPA generator (CSS loader + metadata scanner)
-├── config/
-│   ├── spa.toml               # SPA config: which CSS templates to use per provider
-│   └── spa_output_templates/
-│       ├── main_spa.css       # SPA chrome: header, sidebar, menus, search
-│       ├── thread.css         # Thread content area base styles
-│       ├── deepseek_thread.css# DeepSeek accent colour overrides
-│       ├── claude_thread.css  # Claude accent colour overrides
-│       └── chatgpt_thread.css # ChatGPT accent colour overrides
-├── provider_templates/
-│   ├── chatgpt.conversations-template.json
-│   ├── claude.conversations-template.json
-│   └── deepseek.conversations-template.json
-├── sample_data/
-│   ├── chatgpt-convo.json     # Sample ChatGPT export (2 conversations)
-│   ├── claude-convo.json      # Sample Claude export (3 conversations)
-│   ├── deepseek-convo.json    # Sample DeepSeek export (3 conversations)
-│   └── sample_output/         # Pre-rendered HTML + SPA from sample data
-│       ├── index.html
-│       ├── chatgpt/
-│       ├── claude/
-│       └── deepseek/
-├── scripts/
-│   └── smoke_test.sh          # Fast regression check for exports + SPA build
-├── output/                    # Your personal exports (git-ignored)
-├── QUICKSTART.md
-└── README.md
+├── format_conversations.py      # source CLI: detect + convert exports
+├── generate_spa.py              # build the local multi-conversation viewer
+├── serve_spa.py                 # local HTTP server for the viewer
+├── cli_main.py                  # packaged binary entry point
+├── formatters/                  # ChatGPT, Claude, DeepSeek + shared rendering
+├── provider_templates/          # structural provider detection signatures
+├── config/                      # SPA config and CSS templates
+├── sample_data/                 # synthetic fixtures and generated samples
+├── readme_assets/               # README screenshots
+├── scripts/smoke_test.sh        # all-provider smoke test
+└── tests/test_regressions.py    # regression suite
 ```
 
----
+## Development and verification
 
-## Data model
+Runtime code intentionally stays dependency-light. The test suite uses `pytest`.
 
-### DeepSeek export (`conversations.json`)
-
-```
-[ conversation, ... ]
-  conversation:
-    id, title, inserted_at, updated_at
-    mapping: { node_id → node }
-      node: { id, parent, children[], message }
-        message: { files[], model, inserted_at, fragments[] }
-          fragment types:
-            REQUEST   → { type, content }
-            RESPONSE  → { type, content }
-            THINK     → { type, content }
-            SEARCH    → { type, results[{ url, title, snippet, cite_index }] }
-            READ_LINK → { type, url }
+```bash
+python -m pip install pytest
+python -m pytest -q tests/test_regressions.py
+./scripts/smoke_test.sh
 ```
 
-The conversation tree is walked from `"root"` following the first child at each node.
+GitHub Actions runs the regression suite on pushes and pull requests. Tagged releases build Linux, macOS, and Windows executables and publish SHA-256 checksum files.
 
-### Claude export (`conversations.json`)
+## Privacy and security
 
-```
-[ conversation, ... ]
-  conversation:
-    uuid, name, created_at, updated_at
-    chat_messages: [ message, ... ]
-      message:
-        uuid, sender (human|assistant), created_at, updated_at
-        content: [ block, ... ]
-          block types:
-            { type: "text",        text: "..." }
-            { type: "thinking",    thinking: "..." }
-            { type: "tool_use",    id, name, input }
-            { type: "tool_result", tool_use_id, content }
-```
+AI conversation exports can contain sensitive personal or business information. Keep real exports outside source control.
 
----
+The repository ignores common local export paths and generated output:
 
-## Privacy
-
-| Path | Git status |
+| Path | Repository behavior |
 |---|---|
-| `conversations.json` | Ignored |
-| `*.zip` / `*data*.zip` | Ignored |
-| `output/` | Ignored |
-| `sample_data/` | **Tracked** (sample data only, no personal content) |
-| `provider_templates/` | **Tracked** |
-| `formatters/` | **Tracked** |
+| `conversations.json` | ignored |
+| `*.zip` | ignored |
+| `output/` | ignored |
+| `sample_data/` | tracked synthetic/sample data |
+| `provider_templates/` | tracked |
+| `formatters/` | tracked |
 
-Never commit your own `conversations.json` or export zips. The `.gitignore` is configured to block them by default.
+The tool does not need your ChatGPT, Claude, or DeepSeek credentials. For security reporting, see [SECURITY.md](SECURITY.md).
 
----
+## Contributing
+
+Contributions are welcome for provider compatibility, rendering fidelity, viewer usability, tests, and documentation. See [CONTRIBUTING.md](CONTRIBUTING.md).
+
+Please do not submit real conversation exports or other private chat data as fixtures.
 
 ## License
 
-MIT
+MIT — see [LICENSE](LICENSE).

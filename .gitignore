@@ -1,15 +1,14 @@
-# Personal / generated exports
+# Personal / generated conversation exports
 conversations.json
 user.json
 *.zip
 output/
-output.bak/ 
-*.zip
+output.bak/
 tmp/
 tmp_*/
 release_instructions.md
 
-# Sample data — tracked in git (screenshots for README)
+# Sample data is intentionally tracked
 !sample_data/
 !sample_data/**
 
@@ -17,8 +16,13 @@ release_instructions.md
 __pycache__/
 *.py[cod]
 
-# Environment
+# Environments / local secrets
 *.env
 *.venv/
 Screenshot*
 
+# Local agent/tooling state
+.claude/settings.local.json
+.mcp.json
+.dev-report-cache.md
+.forked-work-modified
