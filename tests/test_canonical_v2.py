@@ -8,7 +8,7 @@ if str(ROOT) not in sys.path:
 
 from canonical import canonical_conversation, canonical_message
 from canonical_render import render_canonical_html_body, render_canonical_markdown
-from workbench_bundle import BUNDLE_SCHEMA, build_bundle, merge_bundles, read_bundle
+from workbench_bundle import BUNDLE_SCHEMA, build_bundle, extract_attachment, merge_bundles, read_bundle
 
 
 def test_canonical_renderer_preserves_tool_blocks_and_safe_text():
@@ -73,3 +73,34 @@ def test_bundle_merge_is_duplicate_aware_and_records_history(tmp_path):
     assert manifest["duplicate_records_resolved"] >= manifest["conversation_count"]
     assert len(manifest["history"]) == 2
     assert len(conversations) == manifest["conversation_count"]
+
+
+def test_cew_v2_attachment_payload_round_trip_and_merge(tmp_path):
+    attachments = tmp_path / "attachments"
+    attachments.mkdir()
+    attachments.joinpath("notes.txt").write_text("offline attachment", encoding="utf-8")
+
+    first = tmp_path / "with-attachment.cew"
+    second = tmp_path / "without-attachment.cew"
+    merged = tmp_path / "merged-attachment.cew"
+
+    first_manifest = build_bundle(
+        "sample_data/chatgpt-convo.json",
+        first,
+        attachments_dir=attachments,
+    )
+    build_bundle("sample_data/chatgpt-convo.json", second)
+
+    assert len(first_manifest["attachments"]) == 1
+    entry = first_manifest["attachments"][0]
+    assert entry["path"].startswith("attachments/")
+    assert len(entry["sha256"]) == 64
+
+    extracted = tmp_path / "extracted.txt"
+    extract_attachment(first, entry["path"], extracted)
+    assert extracted.read_text(encoding="utf-8") == "offline attachment"
+
+    merge_bundles([first, second], merged)
+    merged_manifest, _, _ = read_bundle(merged)
+    assert len(merged_manifest["attachments"]) == 1
+    assert merged_manifest["attachments"][0]["sha256"] == entry["sha256"]
