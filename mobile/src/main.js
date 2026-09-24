@@ -1,7 +1,12 @@
 import { strFromU8, unzipSync } from 'fflate';
+import {
+  CONVERSATION_SCHEMA,
+  buildSearchIndex,
+  detectProvider,
+  normalizeProviderExport,
+} from './providers.js';
 
-const BUNDLE_SCHEMA = 'cew.bundle/v1';
-const CONVERSATION_SCHEMA = 'cew.conversation/v1';
+const BUNDLE_SCHEMAS = new Set(['cew.bundle/v1', 'cew.bundle/v2']);
 const REQUIRED_FILES = new Set(['manifest.json', 'conversations.json', 'search.json']);
 const MAX_COMPRESSED_BYTES = 128 * 1024 * 1024;
 const MAX_MEMBER_BYTES = 256 * 1024 * 1024;
@@ -72,13 +77,75 @@ function parseBundle(fileBytes) {
   const conversations = decodeJson(files['conversations.json'], 'conversations.json');
   const searchIndex = decodeJson(files['search.json'], 'search.json');
 
-  if (manifest.schema_version !== BUNDLE_SCHEMA) throw new Error('Unsupported .cew bundle schema');
+  if (!BUNDLE_SCHEMAS.has(manifest.schema_version)) throw new Error('Unsupported .cew bundle schema');
   if (manifest.conversation_schema !== CONVERSATION_SCHEMA) throw new Error('Unsupported canonical conversation schema');
   if (!Array.isArray(conversations) || !Array.isArray(searchIndex)) throw new Error('Invalid bundle payload');
   if (manifest.conversation_count !== conversations.length) throw new Error('Bundle conversation count mismatch');
   conversations.forEach(validateConversation);
 
   return { manifest, conversations, searchIndex };
+}
+
+
+function rawImportManifest(conversations, filename, provider) {
+  return {
+    schema_version: 'cew.mobile-import/v1',
+    conversation_schema: CONVERSATION_SCHEMA,
+    conversation_count: conversations.length,
+    providers: [...new Set(conversations.map(record => record.provider))].sort(),
+    sources: [{ kind: 'provider-export', filename, provider }],
+  };
+}
+
+function parseProviderData(data, filename) {
+  const provider = detectProvider(data);
+  if (!provider) throw new Error('Could not detect ChatGPT, Claude, or DeepSeek export');
+  const conversations = normalizeProviderExport(data, provider);
+  conversations.forEach(validateConversation);
+  return {
+    manifest: rawImportManifest(conversations, filename, provider),
+    conversations,
+    searchIndex: buildSearchIndex(conversations),
+  };
+}
+
+function parseRawZip(fileBytes, filename) {
+  const rejected = [];
+  const matches = [];
+  const files = unzipSync(fileBytes, {
+    filter(info) {
+      const basename = String(info.name || '').split('/').pop();
+      if (basename !== 'conversations.json') return false;
+      if (info.originalSize > MAX_MEMBER_BYTES) {
+        rejected.push(`${info.name}: member too large`);
+        return false;
+      }
+      if (info.size > 0 && info.originalSize / info.size > MAX_RATIO) {
+        rejected.push(`${info.name}: suspicious compression ratio`);
+        return false;
+      }
+      matches.push(info.name);
+      return true;
+    },
+  });
+  if (rejected.length) throw new Error(rejected[0]);
+  const names = Object.keys(files).filter(name => name.split('/').pop() === 'conversations.json').sort();
+  if (!names.length) throw new Error('ZIP does not contain conversations.json');
+  if (names.length > 64) throw new Error('ZIP contains too many conversations.json files');
+  const data = decodeJson(files[names[0]], names[0]);
+  return parseProviderData(data, filename);
+}
+
+async function parseImportedFile(file) {
+  if (file.size > MAX_COMPRESSED_BYTES) throw new Error('Import file is too large');
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  const lower = file.name.toLowerCase();
+  if (lower.endsWith('.cew')) return parseBundle(bytes);
+  if (lower.endsWith('.zip')) return parseRawZip(bytes, file.name);
+  if (lower.endsWith('.json')) {
+    return parseProviderData(decodeJson(bytes, file.name), file.name);
+  }
+  throw new Error('Choose a .cew, provider export .zip, or conversations .json file');
 }
 
 function openDatabase() {
@@ -274,9 +341,8 @@ input.addEventListener('change', async () => {
   const file = input.files?.[0];
   if (!file) return;
   try {
-    if (file.size > MAX_COMPRESSED_BYTES) throw new Error('Bundle is too large for mobile import');
     setStatus('Importing archive…');
-    const parsed = parseBundle(new Uint8Array(await file.arrayBuffer()));
+    const parsed = await parseImportedFile(file);
     archive = parsed;
     activeId = null;
     await storeArchive(parsed);
