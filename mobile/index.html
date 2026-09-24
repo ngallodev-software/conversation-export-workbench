@@ -15,8 +15,8 @@
       <p>Offline ChatGPT, Claude, and DeepSeek archive viewer</p>
     </div>
     <label class="import-button">
-      Import .cew
-      <input id="bundle-input" type="file" accept=".cew,application/zip">
+      Import archive
+      <input id="bundle-input" type="file" accept=".cew,.zip,.json,application/zip,application/json">
     </label>
   </header>
 
@@ -32,7 +32,7 @@
 
     <section class="content">
       <div id="empty-state" class="empty-state">
-        Import a <code>.cew</code> archive created by Conversation Export Workbench.
+        Import a <code>.cew</code> archive or a ChatGPT, Claude, or DeepSeek export ZIP/JSON.
       </div>
       <article id="conversation" class="conversation" hidden></article>
     </section>
