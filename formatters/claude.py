@@ -4,6 +4,7 @@ import html
 import json
 
 from canonical import canonical_conversation, canonical_message
+from canonical_render import render_canonical_html_body, render_canonical_markdown
 from .shared import (
     fmt_date, iso_to_epoch_ms, markdown_to_html, render_template
 )
@@ -29,84 +30,8 @@ def detect(data: list) -> bool:
 # ---------------------------------------------------------------------------
 
 def conv_to_html_body(conv: dict) -> str:
-    """Return the inner HTML body for a single conversation (no full-page wrapper)."""
-    title = str(conv.get("name", "Untitled"))
-    title_html = html.escape(title, quote=False)
-    created_iso = str(conv.get("created_at", ""))
-    updated_iso = str(conv.get("updated_at", ""))
-    created_iso_attr = html.escape(created_iso, quote=True)
-    updated_iso_attr = html.escape(updated_iso, quote=True)
-    created_epoch = iso_to_epoch_ms(created_iso)
-    updated_epoch = iso_to_epoch_ms(updated_iso)
-    messages = conv.get("chat_messages", [])
-
-    parts = [
-        f'<h1>{title_html}</h1>',
-        f'<div class="meta"'
-        f' data-started-ts="{created_epoch}"'
-        f' data-updated-ts="{updated_epoch}"'
-        f' data-started-iso="{created_iso_attr}"'
-        f' data-updated-iso="{updated_iso_attr}">'
-        f'Started <span class="ts-display">{html.escape(fmt_date(created_iso), quote=False)}</span>'
-        f' &nbsp;·&nbsp; '
-        f'Last updated <span class="ts-display">{html.escape(fmt_date(updated_iso), quote=False)}</span>'
-        f'</div>',
-    ]
-
-    for msg in messages:
-        sender = msg.get("sender", "")
-        msg_iso   = str(msg.get("created_at", ""))
-        msg_iso_attr = html.escape(msg_iso, quote=True)
-        msg_epoch = iso_to_epoch_ms(msg_iso)
-        timestamp = fmt_date(msg_iso)
-        content_blocks = _get_content_blocks(msg)
-
-        if sender == "human":
-            html_parts = []
-            for block in content_blocks:
-                if isinstance(block, dict) and block.get("type") == "text":
-                    html_parts.append(markdown_to_html(block.get("text", "")))
-            html_content = "\n".join(html_parts) or "<em>(empty)</em>"
-            parts.append(
-                f'<div class="message user" data-ts="{msg_epoch}" data-ts-iso="{msg_iso_attr}">'
-                f'<div class="role-label">You'
-                f' <span class="msg-time ts-display" data-ts="{msg_epoch}" data-ts-iso="{msg_iso_attr}">{html.escape(timestamp, quote=False)}</span>'
-                f'</div>'
-                f'<div class="content">{html_content}</div>'
-                f"</div>"
-            )
-        elif sender == "assistant":
-            inner_parts = []
-            for block in content_blocks:
-                if not isinstance(block, dict):
-                    continue
-                btype = block.get("type", "")
-                if btype == "thinking":
-                    raw = block.get("thinking", "")
-                    escaped = raw.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
-                    lines_html = "<br>".join(escaped.splitlines())
-                    inner_parts.append(
-                        '<div class="thinking">'
-                        '<div class="thinking-label">Thinking</div>'
-                        f"{lines_html}"
-                        "</div>"
-                    )
-                elif btype == "text":
-                    rendered_html = markdown_to_html(block.get("text", ""))
-                    inner_parts.append(f'<div class="content">{rendered_html}</div>')
-                # tool_use / tool_result blocks silently skipped
-            inner = "\n".join(inner_parts) or "<em>(empty)</em>"
-            parts.append(
-                f'<div class="message assistant" data-ts="{msg_epoch}" data-ts-iso="{msg_iso_attr}">'
-                f'<div class="role-label">Claude'
-                f' <span class="msg-time ts-display" data-ts="{msg_epoch}" data-ts-iso="{msg_iso_attr}">{html.escape(timestamp, quote=False)}</span>'
-                f'</div>'
-                f"{inner}"
-                f"</div>"
-            )
-
-    return "\n".join(parts)
-
+    """Normalize provider input, then render the canonical model."""
+    return render_canonical_html_body(conv_to_json_clean(conv))
 
 def build_html_single(conv: dict) -> str:
     body = conv_to_html_body(conv)
@@ -140,31 +65,8 @@ def build_html_all(convs: list) -> str:
 # ---------------------------------------------------------------------------
 
 def conv_to_md(conv: dict) -> str:
-    title = conv.get("name", "Untitled")
-    created = fmt_date(conv.get("created_at", ""))
-    updated = fmt_date(conv.get("updated_at", ""))
-    messages = conv.get("chat_messages", [])
-
-    lines = [f"# {title}", "", f"*Started: {created} | Last updated: {updated}*", "", "---", ""]
-    for msg in messages:
-        sender = msg.get("sender", "")
-        timestamp = fmt_date(msg.get("created_at", ""))
-        label = "You" if sender == "human" else "Claude"
-        lines.append(f"## {label}  _{timestamp}_")
-        lines.append("")
-        for block in _get_content_blocks(msg):
-            if not isinstance(block, dict):
-                continue
-            btype = block.get("type", "")
-            if btype == "thinking":
-                raw = block.get("thinking", "")
-                block_lines = raw.splitlines()
-                formatted = "\n".join(f"> *{l}*" if l.strip() else ">" for l in block_lines)
-                lines.append(f"**Thinking:**\n\n{formatted}\n")
-            elif btype == "text":
-                lines.append(block.get("text", ""))
-        lines += ["", "---", ""]
-    return "\n".join(lines)
+    """Normalize provider input, then render the canonical model."""
+    return render_canonical_markdown(conv_to_json_clean(conv))
 
 
 # ---------------------------------------------------------------------------
