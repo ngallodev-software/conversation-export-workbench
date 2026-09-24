@@ -1,0 +1,114 @@
+name: Publish versioned release
+
+on:
+  create:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  gate:
+    if: github.event_name == 'workflow_dispatch' || (github.event.ref_type == 'branch' && startsWith(github.event.ref, 'publish/v'))
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      tag: ${{ steps.version.outputs.tag }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: master
+      - id: version
+        shell: bash
+        run: |
+          version="$(tr -d '[:space:]' < VERSION)"
+          tag="v${version}"
+          if [ "${{ github.event_name }}" = "create" ]; then
+            test "${{ github.event.ref_type }}" = "branch"
+            test "${{ github.event.ref }}" = "publish/${tag}"
+          fi
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+          echo "tag=${tag}" >> "$GITHUB_OUTPUT"
+
+  build:
+    needs: gate
+    uses: ./.github/workflows/release-candidate.yml
+
+  release:
+    needs: [gate, build]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
+
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: master
+          fetch-depth: 0
+
+      - name: Ensure tag does not already exist
+        shell: bash
+        env:
+          TAG: ${{ needs.gate.outputs.tag }}
+        run: |
+          if git rev-parse "$TAG" >/dev/null 2>&1; then
+            echo "Tag $TAG already exists" >&2
+            exit 1
+          fi
+
+      - name: Download release artifacts
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
+        with:
+          path: artifacts
+
+      - name: Flatten release assets and generate checksums
+        shell: bash
+        run: |
+          mkdir release-assets
+          find artifacts -type f -maxdepth 3 -print0 | while IFS= read -r -d '' file; do
+            cp "$file" "release-assets/$(basename "$file")"
+          done
+          cd release-assets
+          sha256sum * > SHA256SUMS
+
+      - name: Attest release assets
+        uses: actions/attest-build-provenance@977bb373ede98d70efdf65b84cb5f73e068dcc2a # v3
+        with:
+          subject-path: "release-assets/*"
+
+      - name: Create version tag
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.gate.outputs.tag }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "$TAG" -m "Conversation Export Workbench $TAG"
+          git push origin "$TAG"
+
+      - name: Create GitHub release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.gate.outputs.tag }}
+        run: |
+          cat > release-notes.md <<'NOTES'
+          This release introduces the hardened offline workbench, the versioned canonical conversation model, portable .cew archives, corpus-wide search, and the mobile viewer foundation.
+
+          Installers:
+          - Windows Setup EXE: user-level one-click desktop/CLI installation.
+          - macOS PKG: installs the CLI plus an Applications launcher. This build is not Apple-notarized yet.
+          - Linux DEB: installs conv-tool system-wide.
+          - Android sideload APK: directly installable after allowing installs from the download source. This v0.2.0 APK uses the CI debug signing identity and should be treated as a sideload preview rather than the future Play Store upgrade channel.
+          - iOS simulator ZIP: validation artifact only; it is not installable on an iPhone/iPad. Device/TestFlight distribution requires Apple Developer signing and provisioning.
+
+          See CHANGELOG.md in the source repository for the detailed v0.2.0 changes.
+          NOTES
+
+          gh release create "$TAG" release-assets/* \
+            --title "$TAG" \
+            --notes-file release-notes.md \
+            --verify-tag
