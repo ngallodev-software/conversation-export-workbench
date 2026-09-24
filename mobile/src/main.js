@@ -11,6 +11,7 @@ const BUNDLE_SCHEMAS = new Set(['cew.bundle/v1', 'cew.bundle/v2']);
 const REQUIRED_FILES = new Set(['manifest.json', 'conversations.json', 'search.json']);
 const MAX_COMPRESSED_BYTES = 128 * 1024 * 1024;
 const MAX_MEMBER_BYTES = 256 * 1024 * 1024;
+const MAX_ATTACHMENT_TOTAL_BYTES = 128 * 1024 * 1024;
 const MAX_RATIO = 200;
 const THEME_KEY = 'cew-theme';
 const THEMES = ['system', 'dark', 'light'];
@@ -30,6 +31,10 @@ const lockScreen = document.getElementById('lock-screen');
 const unlockForm = document.getElementById('unlock-form');
 const unlockPin = document.getElementById('unlock-pin');
 const unlockError = document.getElementById('unlock-error');
+const attachmentsButton = document.getElementById('attachments-button');
+const attachmentsDialog = document.getElementById('attachments-dialog');
+const attachmentsClose = document.getElementById('attachments-close');
+const attachmentsList = document.getElementById('attachments-list');
 
 let archive = null;
 let activeId = null;
@@ -66,11 +71,25 @@ function validateConversation(record) {
   if (!Array.isArray(record.messages)) throw new Error('Conversation messages must be an array');
 }
 
-function parseBundle(fileBytes) {
+async function sha256Hex(bytes) {
+  const digest = await crypto.subtle.digest('SHA-256', bytes);
+  return Array.from(new Uint8Array(digest), value => value.toString(16).padStart(2, '0')).join('');
+}
+
+async function parseBundle(fileBytes) {
   const rejected = [];
+  let attachmentTotal = 0;
   const files = unzipSync(fileBytes, {
     filter(info) {
-      if (!REQUIRED_FILES.has(info.name)) return false;
+      const isAttachment = String(info.name || '').startsWith('attachments/');
+      if (!REQUIRED_FILES.has(info.name) && !isAttachment) return false;
+      if (isAttachment) {
+        attachmentTotal += Number(info.originalSize || 0);
+        if (attachmentTotal > MAX_ATTACHMENT_TOTAL_BYTES) {
+          rejected.push('attachment payloads exceed mobile import limit');
+          return false;
+        }
+      }
       if (info.originalSize > MAX_MEMBER_BYTES) {
         rejected.push(info.name + ': member too large');
         return false;
@@ -97,7 +116,26 @@ function parseBundle(fileBytes) {
   if (manifest.conversation_count !== conversations.length) throw new Error('Bundle conversation count mismatch');
   conversations.forEach(validateConversation);
 
-  return { manifest, conversations, searchIndex };
+  const attachmentEntries = Array.isArray(manifest.attachments) ? manifest.attachments : [];
+  const attachments = {};
+  for (const entry of attachmentEntries) {
+    if (!entry || typeof entry !== 'object') throw new Error('Invalid attachment metadata');
+    const path = String(entry.path || '');
+    if (!path.startsWith('attachments/')) throw new Error('Unsafe attachment path');
+    const payload = files[path];
+    if (!payload) throw new Error('Bundle attachment missing: ' + path);
+    if (Number(entry.size) !== payload.byteLength) throw new Error('Attachment size mismatch: ' + path);
+    const digest = await sha256Hex(payload);
+    if (digest !== String(entry.sha256 || '')) throw new Error('Attachment hash mismatch: ' + path);
+    attachments[path] = {
+      bytes: payload,
+      name: String(entry.name || path.split('/').pop() || 'attachment'),
+      mime_type: String(entry.mime_type || 'application/octet-stream'),
+      sha256: digest,
+    };
+  }
+
+  return { manifest, conversations, searchIndex, attachments };
 }
 
 function rawImportManifest(conversations, filename, provider) {
@@ -150,7 +188,7 @@ async function parseImportedFile(file) {
   if (file.size > MAX_COMPRESSED_BYTES) throw new Error('Import file is too large');
   const bytes = new Uint8Array(await file.arrayBuffer());
   const lower = file.name.toLowerCase();
-  if (lower.endsWith('.cew')) return parseBundle(bytes);
+  if (lower.endsWith('.cew')) return await parseBundle(bytes);
   if (lower.endsWith('.zip')) return parseRawZip(bytes, file.name);
   if (lower.endsWith('.json')) return parseProviderData(decodeJson(bytes, file.name), file.name);
   throw new Error('Choose a .cew, provider export .zip, or conversations .json file');
@@ -337,13 +375,13 @@ function renderConversation(record) {
 function archiveStats(value) {
   const providerCounts = new Map();
   let messages = 0;
-  let attachments = 0;
+  let attachmentParts = 0;
   for (const record of value.conversations) {
     providerCounts.set(record.provider, (providerCounts.get(record.provider) || 0) + 1);
     messages += Array.isArray(record.messages) ? record.messages.length : 0;
     for (const message of Array.isArray(record.messages) ? record.messages : []) {
       for (const part of Array.isArray(message.parts) ? message.parts : []) {
-        if (part?.type === 'attachment') attachments += 1;
+        if (part?.type === 'attachment') attachmentParts += 1;
       }
     }
   }
@@ -354,7 +392,7 @@ function archiveStats(value) {
   return {
     conversations: value.conversations.length,
     messages,
-    attachments,
+    attachments: Math.max(attachmentParts, Object.keys(value.attachments || {}).length),
     providers,
   };
 }
@@ -362,6 +400,7 @@ function archiveStats(value) {
 function renderArchive() {
   if (!archive) {
     archiveMeta.textContent = 'No archive imported.';
+    attachmentsButton.hidden = true;
     list.replaceChildren();
     article.hidden = true;
     emptyState.hidden = false;
@@ -374,7 +413,59 @@ function renderArchive() {
     stats.messages + ' messages' +
     attachmentText +
     (stats.providers ? ' · ' + stats.providers : '');
+  attachmentsButton.hidden = stats.attachments === 0;
+  attachmentsButton.textContent = 'Attachments (' + stats.attachments + ')';
   renderList();
+}
+
+async function shareOrDownloadAttachment(metadata) {
+  const attachment = archive?.attachments?.[metadata.path];
+  if (!attachment) {
+    setStatus('Attachment payload is not available in this archive.');
+    return;
+  }
+  const blob = new Blob([attachment.bytes], { type: attachment.mime_type || 'application/octet-stream' });
+  const file = new File([blob], attachment.name, { type: blob.type });
+  try {
+    if (navigator.canShare && navigator.canShare({ files: [file] }) && navigator.share) {
+      await navigator.share({ files: [file], title: attachment.name });
+      return;
+    }
+  } catch (error) {
+    if (error?.name === 'AbortError') return;
+  }
+
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = attachment.name;
+  anchor.rel = 'noopener';
+  document.body.append(anchor);
+  anchor.click();
+  anchor.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function renderAttachmentLibrary() {
+  attachmentsList.replaceChildren();
+  if (!archive) return;
+  const entries = Array.isArray(archive.manifest?.attachments) ? archive.manifest.attachments : [];
+  for (const entry of entries) {
+    const item = document.createElement('li');
+    const info = document.createElement('div');
+    const name = document.createElement('strong');
+    name.textContent = String(entry.name || 'attachment');
+    const detail = document.createElement('span');
+    detail.textContent = ' · ' + Math.round(Number(entry.size || 0) / 1024) + ' KB';
+    info.append(name, detail);
+    const action = document.createElement('button');
+    action.type = 'button';
+    action.className = 'subtle-button';
+    action.textContent = 'Share / Save';
+    action.addEventListener('click', () => shareOrDownloadAttachment(entry));
+    item.append(info, action);
+    attachmentsList.append(item);
+  }
 }
 
 function resolvedTheme(mode) {
@@ -446,6 +537,11 @@ input.addEventListener('change', async () => {
 
 search.addEventListener('input', renderList);
 themeToggle.addEventListener('click', cycleTheme);
+attachmentsButton.addEventListener('click', () => {
+  renderAttachmentLibrary();
+  attachmentsDialog.showModal();
+});
+attachmentsClose.addEventListener('click', () => attachmentsDialog.close());
 
 clearButton.addEventListener('click', async () => {
   if (archive && !window.confirm('Clear the imported archive from this device?')) return;
