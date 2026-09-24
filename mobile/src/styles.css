@@ -150,3 +150,42 @@ body.locked > :not(.lock-screen) { visibility: hidden; }
   .header-actions { gap: .35rem; }
   .header-actions .subtle-button, .header-actions .import-button { padding: .45rem .55rem; font-size: .72rem; }
 }
+
+
+.attachments-button {
+  width: calc(100% - 1.5rem);
+  margin: .55rem .75rem 0;
+  border: 1px solid #334155;
+  border-radius: .45rem;
+  background: #161b26;
+  color: #cbd5e1;
+  padding: .45rem .6rem;
+  text-align: left;
+  cursor: pointer;
+}
+.attachments-dialog {
+  width: min(92vw, 34rem);
+  max-height: 78vh;
+  border: 1px solid #334155;
+  border-radius: .75rem;
+  background: #111318;
+  color: #d1d5db;
+  padding: 1rem;
+}
+.attachments-dialog::backdrop { background: rgba(0,0,0,.66); }
+.attachments-dialog p { color: #94a3b8; font-size: .78rem; line-height: 1.45; }
+.dialog-header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+.dialog-header h2 { margin: 0; font-size: 1rem; }
+.attachments-list { list-style: none; margin: 1rem 0 0; padding: 0; display: grid; gap: .5rem; }
+.attachments-list li {
+  display: flex; align-items: center; justify-content: space-between; gap: .75rem;
+  border: 1px solid #293241; border-radius: .5rem; padding: .65rem;
+}
+.attachments-list li div { min-width: 0; overflow-wrap: anywhere; font-size: .78rem; }
+.attachments-list li span { color: #64748b; }
+
+:root[data-theme="light"] .attachments-button,
+:root[data-theme="light"] .attachments-dialog {
+  background: #fff; color: #334155; border-color: #cbd5e1;
+}
+:root[data-theme="light"] .attachments-list li { border-color: #e2e8f0; }
