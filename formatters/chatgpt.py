@@ -4,6 +4,7 @@ import html
 import json
 from datetime import datetime, timezone
 
+from canonical import canonical_conversation, canonical_message
 from .shared import (
     fmt_date, markdown_to_html, render_template
 )
@@ -250,18 +251,22 @@ def conv_to_json_clean(conv: dict) -> dict:
         text = "\n".join(str(p) for p in parts_raw if isinstance(p, str)).strip()
         if not text:
             continue
-        clean_messages.append({
-            "role": role,
-            "timestamp": _epoch_to_iso(msg.get("create_time")),
-            "parts": [{"type": "text", "content": text}],
-        })
-    return {
-        "id":         conv.get("id", ""),
-        "title":      conv.get("title", ""),
-        "started_at": _epoch_to_iso(conv.get("create_time")),
-        "updated_at": _epoch_to_iso(conv.get("update_time")),
-        "messages":   clean_messages,
-    }
+        clean_messages.append(
+            canonical_message(
+                role,
+                _epoch_to_iso(msg.get("create_time")),
+                [{"type": "text", "content": text}],
+                source_id=str(msg.get("id", "")),
+            )
+        )
+    return canonical_conversation(
+        PROVIDER,
+        conv.get("id", ""),
+        conv.get("title", ""),
+        _epoch_to_iso(conv.get("create_time")),
+        _epoch_to_iso(conv.get("update_time")),
+        clean_messages,
+    )
 
 
 def build_json_single(conv: dict) -> str:
