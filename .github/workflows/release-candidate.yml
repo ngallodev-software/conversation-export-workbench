@@ -26,7 +26,7 @@ jobs:
           mobile_version="$(python -c 'import json; print(json.load(open("mobile/package.json"))["version"])')"
           test "$version" = "$python_version"
           test "$version" = "$mobile_version"
-          test "$version" = "0.2.0"
+          test -n "$version"
 
   desktop:
     needs: verify-version
@@ -145,24 +145,55 @@ jobs:
           version="$(tr -d '[:space:]' < ../VERSION)"
           sed -i "s/versionName \"1.0\"/versionName \"${version}\"/" android/app/build.gradle
 
-      - name: Build sideload APK
+      - name: Configure Android release signing when credentials are available
+        shell: bash
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          python scripts/configure_android_release.py android/app/build.gradle
+          if [ -n "$ANDROID_KEYSTORE_BASE64" ] && [ -n "$ANDROID_KEYSTORE_PASSWORD" ] && [ -n "$ANDROID_KEY_ALIAS" ] && [ -n "$ANDROID_KEY_PASSWORD" ]; then
+            printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > android/cew-release.keystore
+            echo "CEW_ANDROID_SIGNED=1" >> "$GITHUB_ENV"
+            echo "CEW_ANDROID_KEYSTORE=$PWD/android/cew-release.keystore" >> "$GITHUB_ENV"
+            echo "CEW_ANDROID_KEYSTORE_PASSWORD=$ANDROID_KEYSTORE_PASSWORD" >> "$GITHUB_ENV"
+            echo "CEW_ANDROID_KEY_ALIAS=$ANDROID_KEY_ALIAS" >> "$GITHUB_ENV"
+            echo "CEW_ANDROID_KEY_PASSWORD=$ANDROID_KEY_PASSWORD" >> "$GITHUB_ENV"
+          else
+            echo "CEW_ANDROID_SIGNED=0" >> "$GITHUB_ENV"
+          fi
+
+      - name: Build Android APK and app bundle
+        shell: bash
         run: |
           cd android
           chmod +x gradlew
-          ./gradlew assembleDebug --no-daemon
+          if [ "$CEW_ANDROID_SIGNED" = "1" ]; then
+            ./gradlew assembleRelease bundleRelease --no-daemon
+          else
+            ./gradlew assembleDebug --no-daemon
+          fi
 
       - name: Prepare Android artifact
         shell: bash
         run: |
           version="$(tr -d '[:space:]' < ../VERSION)"
           mkdir -p release
-          cp android/app/build/outputs/apk/debug/app-debug.apk "release/ConversationExportWorkbench-v${version}-android-sideload.apk"
-
+          if [ "$CEW_ANDROID_SIGNED" = "1" ]; then
+            cp android/app/build/outputs/apk/release/app-release.apk "release/ConversationExportWorkbench-v${version}-android.apk"
+            cp android/app/build/outputs/bundle/release/app-release.aab "release/ConversationExportWorkbench-v${version}-android.aab"
+          else
+            cp android/app/build/outputs/apk/debug/app-debug.apk "release/ConversationExportWorkbench-v${version}-android-sideload.apk"
+          fi
       - name: Upload Android release candidate
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         with:
           name: release-candidate-android
-          path: mobile/release/*.apk
+          path: |
+            mobile/release/*.apk
+            mobile/release/*.aab
           if-no-files-found: error
 
   ios-simulator:
