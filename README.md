@@ -11,7 +11,7 @@ Conversation Export Workbench turns exported AI chat histories from **OpenAI Cha
 
 The runtime is Python-standard-library only. Conversion happens on your machine: the tool reads local export files and writes local output; it does not require a hosted backend or an API key.
 
-> **Start here:** [Quick start](QUICKSTART.md) · [Pre-built binaries](BINARY_USAGE.md) · [Latest release](https://github.com/ngallodev-software/conversation-export-workbench/releases/latest)
+> **Start here:** [Installers](INSTALL.md) · [Quick start](QUICKSTART.md) · [CLI binaries](BINARY_USAGE.md) · [Latest release](https://github.com/ngallodev-software/conversation-export-workbench/releases/latest)
 
 ![Conversation Export Workbench showing multiple providers](readme_assets/sample-all.png)
 
@@ -47,7 +47,13 @@ Provider detection is structural and template-based. If an export does not match
 
 ## Fastest path
 
-### Option A: pre-built binary
+### Option A: installer or mobile package
+
+For v0.2.0 the release pipeline produces a Windows Setup EXE, macOS PKG, Linux DEB, Android sideload APK, and portable desktop binaries. iOS device/TestFlight distribution requires Apple signing and provisioning; the automated unsigned iOS artifact is simulator-only.
+
+See [INSTALL.md](INSTALL.md) for platform-specific installation instructions.
+
+### Option B: pre-built CLI binary
 
 Download the current release from the [Releases page](https://github.com/ngallodev-software/conversation-export-workbench/releases/latest). Asset names are versioned:
 
@@ -68,7 +74,7 @@ conv-tool bundle        # build or inspect a portable .cew archive
 
 See [BINARY_USAGE.md](BINARY_USAGE.md) for examples and checksum verification.
 
-### Option B: source install
+### Option C: source install
 
 ```bash
 git clone https://github.com/ngallodev-software/conversation-export-workbench.git

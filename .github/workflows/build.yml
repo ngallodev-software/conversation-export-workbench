@@ -1,9 +1,6 @@
-name: Build conv-tool binaries
+name: Portable binary build
 
 on:
-  push:
-    tags:
-      - "v*"
   workflow_dispatch:
 
 permissions:
@@ -43,66 +40,17 @@ jobs:
       - name: Prepare versioned binary
         shell: bash
         run: |
-          version="${GITHUB_REF_NAME:-dev}"
-          cp "dist/conv-tool${{ matrix.extension }}" "dist/conv-tool-${version}-${{ matrix.platform }}${{ matrix.extension }}"
+          version="$(tr -d '[:space:]' < VERSION)"
+          cp "dist/conv-tool${{ matrix.extension }}" "dist/conv-tool-v${version}-${{ matrix.platform }}${{ matrix.extension }}"
+
+      - name: Verify version
+        shell: bash
+        run: |
+          version="$(tr -d '[:space:]' < VERSION)"
+          test "$(./dist/conv-tool${{ matrix.extension }} --version | awk '{print $2}')" = "$version"
 
       - name: Upload artifact
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         with:
-          name: conv-tool-${{ github.ref_name || 'dev' }}-${{ matrix.platform }}
-          path: dist/conv-tool-${{ github.ref_name || 'dev' }}-${{ matrix.platform }}${{ matrix.extension }}
-
-  release:
-    needs: build
-    if: startsWith(github.ref, 'refs/tags/')
-    runs-on: ubuntu-latest
-
-    permissions:
-      contents: write
-      id-token: write
-      attestations: write
-
-    steps:
-      - name: Download all artifacts
-        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
-        with:
-          path: artifacts
-
-      - name: Rename binaries for release
-        shell: bash
-        run: |
-          version="${GITHUB_REF_NAME}"
-          mkdir -p release-assets
-          cp "artifacts/conv-tool-${version}-linux/conv-tool-${version}-linux" "release-assets/conv-tool-${version}-linux"
-          cp "artifacts/conv-tool-${version}-macos/conv-tool-${version}-macos" "release-assets/conv-tool-${version}-macos"
-          cp "artifacts/conv-tool-${version}-windows/conv-tool-${version}-windows.exe" "release-assets/conv-tool-${version}-windows.exe"
-
-      - name: Generate checksums
-        shell: bash
-        run: |
-          cd release-assets
-          sha256sum "conv-tool-${GITHUB_REF_NAME}-linux" > "conv-tool-${GITHUB_REF_NAME}-linux.sha256"
-          sha256sum "conv-tool-${GITHUB_REF_NAME}-macos" > "conv-tool-${GITHUB_REF_NAME}-macos.sha256"
-          sha256sum "conv-tool-${GITHUB_REF_NAME}-windows.exe" > "conv-tool-${GITHUB_REF_NAME}-windows.exe.sha256"
-          sha256sum \
-            "conv-tool-${GITHUB_REF_NAME}-linux" \
-            "conv-tool-${GITHUB_REF_NAME}-macos" \
-            "conv-tool-${GITHUB_REF_NAME}-windows.exe" \
-            > SHA256SUMS
-
-      - name: Attest release assets
-        uses: actions/attest-build-provenance@977bb373ede98d70efdf65b84cb5f73e068dcc2a # v3
-        with:
-          subject-path: "release-assets/*"
-
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
-        with:
-          files: |
-            release-assets/conv-tool-${{ github.ref_name }}-linux
-            release-assets/conv-tool-${{ github.ref_name }}-macos
-            release-assets/conv-tool-${{ github.ref_name }}-windows.exe
-            release-assets/conv-tool-${{ github.ref_name }}-linux.sha256
-            release-assets/conv-tool-${{ github.ref_name }}-macos.sha256
-            release-assets/conv-tool-${{ github.ref_name }}-windows.exe.sha256
-            release-assets/SHA256SUMS
+          name: conv-tool-${{ matrix.platform }}
+          path: dist/conv-tool-v*-${{ matrix.platform }}${{ matrix.extension }}

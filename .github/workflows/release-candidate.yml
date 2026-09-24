@@ -1,0 +1,215 @@
+name: Release candidate installers
+
+on:
+  push:
+    branches:
+      - "release/**"
+  workflow_dispatch:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-version:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: "3.14"
+      - name: Verify synchronized version metadata
+        shell: bash
+        run: |
+          version="$(tr -d '[:space:]' < VERSION)"
+          python_version="$(python -c 'from version import __version__; print(__version__)')"
+          mobile_version="$(python -c 'import json; print(json.load(open("mobile/package.json"))["version"])')"
+          test "$version" = "$python_version"
+          test "$version" = "$mobile_version"
+          test "$version" = "0.2.0"
+
+  desktop:
+    needs: verify-version
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            platform: linux
+            extension: ""
+          - os: macos-latest
+            platform: macos
+            extension: ""
+          - os: windows-latest
+            platform: windows
+            extension: ".exe"
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: "3.14"
+
+      - name: Install pinned PyInstaller
+        run: python -m pip install --disable-pip-version-check pyinstaller==6.22.3
+
+      - name: Build portable binary
+        run: pyinstaller conv-tool.spec
+
+      - name: Verify built CLI version
+        shell: bash
+        run: |
+          expected="$(tr -d '[:space:]' < VERSION)"
+          actual="$(./dist/conv-tool${{ matrix.extension }} --version | awk '{print $2}')"
+          test "$actual" = "$expected"
+
+      - name: Package Linux installer
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          chmod +x installer/linux/build-deb.sh
+          version="$(tr -d '[:space:]' < VERSION)"
+          installer/linux/build-deb.sh "$version" dist/conv-tool dist amd64
+          cp dist/conv-tool "dist/conv-tool-v${version}-linux"
+
+      - name: Package macOS installer
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          chmod +x installer/macos/build-pkg.sh
+          version="$(tr -d '[:space:]' < VERSION)"
+          installer/macos/build-pkg.sh "$version" dist/conv-tool dist
+          cp dist/conv-tool "dist/conv-tool-v${version}-macos"
+
+      - name: Install Inno Setup
+        if: runner.os == 'Windows'
+        shell: powershell
+        run: choco install innosetup -y --no-progress
+
+      - name: Package Windows installer
+        if: runner.os == 'Windows'
+        shell: powershell
+        run: |
+          $version = (Get-Content VERSION).Trim()
+          $binary = (Resolve-Path "dist\conv-tool.exe").Path
+          $out = (Resolve-Path "dist").Path
+          $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          & $iscc "/DAppVersion=$version" "/DBinaryPath=$binary" "/DOutputDir=$out" "installer\windows\conversation-export-workbench.iss"
+          Copy-Item "dist\conv-tool.exe" "dist\conv-tool-v$version-windows.exe"
+
+      - name: Upload desktop release candidate
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: release-candidate-${{ matrix.platform }}
+          path: |
+            dist/conv-tool-v*-*
+            dist/*.deb
+            dist/*.pkg
+            dist/*Setup.exe
+          if-no-files-found: error
+
+  android:
+    needs: verify-version
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mobile
+
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: "22.16.0"
+          package-manager-cache: false
+
+      - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Install mobile dependencies
+        run: npm install --ignore-scripts --no-audit --no-fund
+
+      - name: Build web assets and Android project
+        run: |
+          npm run build
+          npx cap add android
+          npx cap sync android
+
+      - name: Set Android version
+        shell: bash
+        run: |
+          version="$(tr -d '[:space:]' < ../VERSION)"
+          sed -i "s/versionName \"1.0\"/versionName \"${version}\"/" android/app/build.gradle
+
+      - name: Build sideload APK
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon
+
+      - name: Prepare Android artifact
+        shell: bash
+        run: |
+          version="$(tr -d '[:space:]' < ../VERSION)"
+          mkdir -p release
+          cp android/app/build/outputs/apk/debug/app-debug.apk "release/ConversationExportWorkbench-v${version}-android-sideload.apk"
+
+      - name: Upload Android release candidate
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: release-candidate-android
+          path: mobile/release/*.apk
+          if-no-files-found: error
+
+  ios-simulator:
+    needs: verify-version
+    runs-on: macos-latest
+    defaults:
+      run:
+        working-directory: mobile
+
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: "22.16.0"
+          package-manager-cache: false
+
+      - name: Install mobile dependencies
+        run: npm install --ignore-scripts --no-audit --no-fund
+
+      - name: Build web assets and iOS project
+        run: |
+          npm run build
+          npx cap add ios
+          npx cap sync ios
+
+      - name: Build unsigned iOS simulator app
+        shell: bash
+        run: |
+          version="$(tr -d '[:space:]' < ../VERSION)"
+          /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString ${version}" ios/App/App/Info.plist || true
+          xcodebuild \
+            -project ios/App/App.xcodeproj \
+            -scheme App \
+            -configuration Release \
+            -sdk iphonesimulator \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            build
+          mkdir -p release
+          ditto -c -k --sequesterRsrc --keepParent \
+            build/Build/Products/Release-iphonesimulator/App.app \
+            "release/ConversationExportWorkbench-v${version}-ios-simulator.zip"
+
+      - name: Upload iOS simulator candidate
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: release-candidate-ios-simulator
+          path: mobile/release/*.zip
+          if-no-files-found: error
