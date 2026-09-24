@@ -84,6 +84,27 @@ jobs:
             echo "MACOS_SIGNING_ENABLED=0" >> "$GITHUB_ENV"
           fi
 
+      - name: Configure Windows Authenticode signing
+        if: runner.os == 'Windows'
+        shell: powershell
+        env:
+          WINDOWS_SIGNING_PFX_BASE64: ${{ secrets.WINDOWS_SIGNING_PFX_BASE64 }}
+          WINDOWS_SIGNING_PFX_PASSWORD: ${{ secrets.WINDOWS_SIGNING_PFX_PASSWORD }}
+        run: |
+          if ($env:WINDOWS_SIGNING_PFX_BASE64 -and $env:WINDOWS_SIGNING_PFX_PASSWORD) {
+            $pfx = Join-Path $env:RUNNER_TEMP "cew-signing.pfx"
+            [IO.File]::WriteAllBytes($pfx, [Convert]::FromBase64String($env:WINDOWS_SIGNING_PFX_BASE64))
+            $signtool = Get-ChildItem "${env:ProgramFiles(x86)}\Windows Kits\10\bin\*\x64\signtool.exe" | Sort-Object FullName -Descending | Select-Object -First 1
+            if (-not $signtool) { throw "signtool.exe not found" }
+            & $signtool.FullName sign /fd SHA256 /tr http://timestamp.digicert.com /td SHA256 /f $pfx /p $env:WINDOWS_SIGNING_PFX_PASSWORD "dist\conv-tool.exe"
+            & $signtool.FullName verify /pa /v "dist\conv-tool.exe"
+            "WINDOWS_SIGNING_ENABLED=1" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+            "WINDOWS_SIGNING_PFX=$pfx" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+            "WINDOWS_SIGNTOOL=$($signtool.FullName)" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          } else {
+            "WINDOWS_SIGNING_ENABLED=0" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          }
+
       - name: Verify built CLI version
         shell: bash
         run: |
