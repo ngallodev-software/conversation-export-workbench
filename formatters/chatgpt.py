@@ -66,7 +66,12 @@ def walk_tree(mapping: dict, current_node: str) -> list:
     """
     path = []
     node_id = current_node
+    visited: set[str] = set()
+    max_nodes = max(len(mapping) + 1, 1)
     while node_id:
+        if node_id in visited or len(visited) >= max_nodes:
+            break
+        visited.add(node_id)
         node = mapping.get(node_id)
         if not node:
             break
