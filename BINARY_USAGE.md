@@ -1,95 +1,116 @@
-# conv-tool — Binary Usage
+# conv-tool — Pre-built Binary Usage
 
-`conv-tool` is a self-contained executable (no Python required) that converts DeepSeek, Claude, and ChatGPT conversation exports into HTML, Markdown, or JSON.
+`conv-tool` is the packaged executable for Conversation Export Workbench. It processes exported **ChatGPT**, **Claude**, and **DeepSeek** histories locally and can convert them to HTML, Markdown, or normalized JSON.
 
 ## Download
 
-Grab the latest binary for your platform from the [Releases page](https://github.com/ngallodev-software/conversation-export-workbench/releases/latest):
+Use the latest release:
 
-| Platform | File |
+https://github.com/ngallodev-software/conversation-export-workbench/releases/latest
+
+Assets are versioned by tag:
+
+| Platform | Asset pattern |
 |---|---|
-| Linux (x86_64) | `conv-tool-linux` |
-| macOS | `conv-tool-macos` |
-| Windows | `conv-tool-windows.exe` |
+| Linux x86_64 | `conv-tool-vX.Y.Z-linux` |
+| macOS | `conv-tool-vX.Y.Z-macos` |
+| Windows | `conv-tool-vX.Y.Z-windows.exe` |
 
-## Setup
+Each release also includes per-file SHA-256 checksum files and a combined `SHA256SUMS`.
 
-**Linux / macOS** — make executable once:
-```bash
-chmod +x conv-tool-linux   # or conv-tool-macos
-```
+## Make it executable
 
-**Windows** — double-click opens interactive mode, or run from a terminal:
-```cmd
-conv-tool-windows.exe [options]
-```
-
-## Interactive mode (recommended for first use)
-
-Drop the binary in the same folder as your export `.zip` or `conversations.json`, then run with no arguments:
+Linux/macOS:
 
 ```bash
-./conv-tool-linux
+chmod +x conv-tool-vX.Y.Z-linux
+# or
+chmod +x conv-tool-vX.Y.Z-macos
 ```
 
-The tool scans for archives and JSON files, prompts before each action, and optionally builds the SPA viewer at the end.
+For convenience, you can rename the downloaded file to `conv-tool`.
 
-## CLI reference
+## Command structure
 
+The packaged executable uses subcommands:
+
+```text
+conv-tool format [format options]
+conv-tool generate-spa [viewer options]
+conv-tool serve [server options]
 ```
-conv-tool [options]
+
+This differs from source mode, where the equivalent entry points are `format_conversations.py`, `generate_spa.py`, and `serve_spa.py`.
+
+## Convert an export
+
+Linux example:
+
+```bash
+./conv-tool-vX.Y.Z-linux format --input ~/Downloads/export.zip --format html --yes
 ```
+
+macOS example:
+
+```bash
+./conv-tool-vX.Y.Z-macos format --input ~/Downloads/export.zip --format md --yes
+```
+
+Windows example:
+
+```powershell
+.\conv-tool-vX.Y.Z-windows.exe format --input .\export.zip --format html --yes
+```
+
+### Format options
 
 | Option | Default | Description |
 |---|---|---|
-| `--input FILE` | `conversations.json` | Path to input JSON or `.zip` archive |
-| `--output DIR` | `output/<provider>/` | Where to write output files |
-| `--provider NAME` | auto-detected | Force provider: `deepseek` \| `claude` \| `chatgpt` |
-| `--format FORMAT` | `html` | Output format: `html` \| `md` \| `json` |
-| `--id ID` | all | Export only the conversation with this ID |
-| `--list` | — | Print all conversations with IDs and exit |
-| `--combined` | — | Write all conversations to a single file |
-| `--yes` / `-y` | prompt | Overwrite existing files without prompting |
+| `--input FILE` | `conversations.json` | Input JSON or ZIP containing `conversations.json` |
+| `--output DIR` | `output/<provider>/` | Output directory |
+| `--provider NAME` | auto-detected | Force `chatgpt`, `claude`, or `deepseek` |
+| `--format FORMAT` | `html` | `html`, `md`, or `json` |
+| `--id ID` | all | Export one conversation by ID |
+| `--list` | — | List conversation IDs and titles |
+| `--combined` | — | Combine conversations into one HTML/Markdown file |
+| `--yes` / `-y` | prompt | Overwrite existing output without prompting |
 
-## Common examples
-
-```bash
-# List available conversations
-./conv-tool-linux --list
-
-# Export all as HTML (auto-detects provider)
-./conv-tool-linux --format html --yes
-
-# Export directly from a zip
-./conv-tool-linux --input ~/Downloads/claude-export.zip --format html --yes
-
-# Export a single conversation by ID
-./conv-tool-linux --id <uuid>
-
-# One combined HTML file for all conversations
-./conv-tool-linux --format html --combined --yes
-
-# Force provider when auto-detection is ambiguous
-./conv-tool-linux --provider deepseek --format md
-```
-
-## SPA viewer
-
-The binary also bundles the SPA generator. After exporting, build the interactive viewer:
+Examples:
 
 ```bash
-./conv-tool-linux --spa --output output/ --yes
+# List conversations
+./conv-tool-vX.Y.Z-linux format --input export.zip --list
+
+# Convert all conversations to HTML
+./conv-tool-vX.Y.Z-linux format --input export.zip --format html --yes
+
+# Force provider only if auto-detection cannot identify the export
+./conv-tool-vX.Y.Z-linux format --input conversations.json --provider claude --format md
 ```
 
-Then serve it (requires a real HTTP server for `fetch()`):
+## Generate and serve the workbench
 
 ```bash
-python3 -m http.server 8080 --directory output/
-# Open http://localhost:8080
+./conv-tool-vX.Y.Z-linux generate-spa --output output --yes
+./conv-tool-vX.Y.Z-linux serve --output output
 ```
+
+Open the local URL printed by the `serve` command.
+
+## Verify checksums
+
+Linux/macOS:
+
+```bash
+sha256sum -c conv-tool-vX.Y.Z-linux.sha256
+```
+
+Or download `SHA256SUMS` and verify the relevant asset against it.
 
 ## Notes
 
-- The binary is a PyInstaller bundle — no Python installation required.
-- Config and template files (`config/`, `provider_templates/`) are embedded; no extra files needed alongside the binary.
-- For source install, advanced configuration, or adding custom providers, see the [full README](README.md).
+- The executable is built with PyInstaller.
+- Provider templates and viewer configuration are bundled with the binary.
+- No ChatGPT, Claude, or DeepSeek API key is required.
+- Conversation conversion is local; no hosted conversion backend is used.
+- For source development and provider extension, see [README.md](README.md).
