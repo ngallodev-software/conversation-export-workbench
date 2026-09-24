@@ -10,7 +10,7 @@ Recommended artifact:
 
 The installer is per-user and installs `conv-tool.exe` plus Start Menu shortcuts. A portable `conv-tool-v0.3.0-windows.exe` is also published.
 
-The release workflow supports Authenticode signing when Windows certificate secrets are configured. Unsigned builds remain available when those credentials are absent.
+The release workflow supports Authenticode SHA-256/RFC 3161 signing when repository secrets `WINDOWS_SIGNING_PFX_BASE64` and `WINDOWS_SIGNING_PFX_PASSWORD` are configured. Unsigned builds remain available when those credentials are absent.
 
 ## macOS
 
@@ -20,7 +20,7 @@ Recommended artifact:
 
 The package installs `/usr/local/bin/conv-tool` plus an Applications launcher. A portable `conv-tool-v0.3.0-macos` is also published.
 
-The release workflow can code-sign/notarize macOS artifacts when Developer ID and App Store Connect notarization credentials are configured. Without those credentials macOS may require explicit approval in Privacy & Security on first launch.
+The release workflow can code-sign/notarize macOS artifacts when repository secrets `MACOS_CERTIFICATE_P12_BASE64` and `MACOS_CERTIFICATE_PASSWORD`, repository variables `MACOS_APPLICATION_IDENTITY` and `MACOS_INSTALLER_IDENTITY`, plus App Store Connect notarization credentials are configured. Without those credentials macOS may require explicit approval in Privacy & Security on first launch.
 
 ## Linux
 
@@ -49,7 +49,7 @@ Without stable signing credentials:
 
 - `ConversationExportWorkbench-v0.3.0-android-sideload.apk`
 
-The sideload APK is directly installable after Android permits installation from the download source, but it should not be treated as the permanent Play Store/update signing channel.
+Stable Android signing uses repository secrets `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, and `ANDROID_KEY_PASSWORD`. The fallback sideload APK is directly installable after Android permits installation from the download source, but it should not be treated as the permanent Play Store/update signing channel.
 
 ## iPhone / iPad
 
@@ -57,7 +57,7 @@ CI always produces an unsigned Simulator validation artifact:
 
 `ConversationExportWorkbench-v0.3.0-ios-simulator.zip`
 
-When Apple Developer/App Store Connect credentials and `IOS_BUNDLE_ID` are configured, release CI also exports a signed IPA. Setting repository variable `ENABLE_TESTFLIGHT_UPLOAD=true` uploads that signed build to TestFlight.
+Signed iOS builds use repository secrets `APPLE_TEAM_ID`, `APPLE_API_KEY_ID`, `APPLE_API_ISSUER_ID`, and `APPLE_API_PRIVATE_KEY_BASE64`, plus repository variable `IOS_BUNDLE_ID`. Setting repository variable `ENABLE_TESTFLIGHT_UPLOAD=true` uploads the exported IPA to TestFlight.
 
 An unsigned Simulator ZIP is not installable on an iPhone/iPad.
 
