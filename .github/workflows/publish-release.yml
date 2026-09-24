@@ -34,6 +34,7 @@ jobs:
   build:
     needs: gate
     uses: ./.github/workflows/release-candidate.yml
+    secrets: inherit
 
   release:
     needs: [gate, build]
@@ -96,17 +97,21 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ needs.gate.outputs.tag }}
         run: |
-          cat > release-notes.md <<'NOTES'
-          This release introduces the hardened offline workbench, the versioned canonical conversation model, portable .cew archives, corpus-wide search, and the mobile viewer foundation.
+          cat > release-notes.md <<NOTES
+          Conversation Export Workbench ${TAG} continues the local-first ChatGPT, Claude, and DeepSeek workbench.
 
-          Installers:
-          - Windows Setup EXE: user-level one-click desktop/CLI installation.
-          - macOS PKG: installs the CLI plus an Applications launcher. This build is not Apple-notarized yet.
-          - Linux DEB: installs conv-tool system-wide.
-          - Android sideload APK: directly installable after allowing installs from the download source. This v0.2.0 APK uses the CI debug signing identity and should be treated as a sideload preview rather than the future Play Store upgrade channel.
-          - iOS simulator ZIP: validation artifact only; it is not installable on an iPhone/iPad. Device/TestFlight distribution requires Apple Developer signing and provisioning.
+          This release includes the provider-neutral canonical rendering path, CEW v2 provenance/merge/attachment support, direct raw provider import on mobile, local app lock/themes/PWA/archive statistics, locked mobile dependencies, and production-signing hooks.
 
-          See CHANGELOG.md in the source repository for the detailed v0.2.0 changes.
+          Installers and mobile artifacts:
+          - Windows Setup EXE and portable CLI. Authenticode signatures are applied when Windows signing secrets are configured.
+          - macOS PKG and portable CLI. Developer ID signing/notarization are applied when Apple distribution credentials are configured.
+          - Linux DEB and portable CLI.
+          - Android signed APK/AAB when a stable release keystore is configured; otherwise a directly installable sideload APK.
+          - iOS Simulator validation ZIP. A signed IPA is included when Apple device-signing credentials are configured; optional TestFlight upload is controlled by repository configuration.
+
+          Published files are accompanied by SHA-256 checksums and GitHub build-provenance attestations.
+
+          See CHANGELOG.md in the source repository for the detailed ${TAG} changes.
           NOTES
 
           gh release create "$TAG" release-assets/* \

@@ -39,17 +39,17 @@ Provider detection is structural and template-based. If an export does not match
 - **Reasoning-aware rendering** — preserve DeepSeek THINK fragments and Claude thinking blocks as collapsible sections.
 - **DeepSeek search rendering** — render SEARCH fragments with titles, URLs, and snippets.
 - **Zero runtime package dependencies** — source mode uses Python 3.11+ standard library only.
-- **Portable `.cew` archives** — package canonical conversations plus a deterministic local search payload for transfer to offline clients.
+- **Portable `.cew` archives** — CEW v2 adds canonical conversations, deterministic search, source provenance, duplicate-aware merge/history, and optional verified attachment payloads.
 - **True offline viewer** — the generated SPA no longer loads Tailwind or other runtime resources from a CDN.
 - **Pre-built executables** — release binaries are published for Linux, macOS, and Windows with SHA-256 checksums and release provenance attestations.
-- **Android/iOS foundation** — a Capacitor mobile client under `mobile/` imports and searches `.cew` archives without provider credentials.
+- **Offline Android/iOS/PWA client** — imports `.cew` plus raw ChatGPT, Claude, and DeepSeek ZIP/JSON exports, with local search, themes, app lock, statistics, and safe attachment sharing.
 - **Extensible provider model** — detection templates and provider-specific formatter modules are separated cleanly.
 
 ## Fastest path
 
 ### Option A: installer or mobile package
 
-For v0.2.0 the release pipeline produces a Windows Setup EXE, macOS PKG, Linux DEB, Android sideload APK, and portable desktop binaries. iOS device/TestFlight distribution requires Apple signing and provisioning; the automated unsigned iOS artifact is simulator-only.
+The v0.3 release pipeline produces Windows Setup EXE, macOS PKG, Linux DEB, Android APK/AAB when release signing is configured (otherwise a sideload APK), portable desktop binaries, and an iOS Simulator artifact. A signed iOS IPA/TestFlight upload is produced when Apple signing credentials are configured.
 
 See [INSTALL.md](INSTALL.md) for platform-specific installation instructions.
 
@@ -116,10 +116,12 @@ Create a provider-neutral offline archive for transfer between desktop and mobil
 
 ```bash
 python3 bundle_conversations.py --input ~/Downloads/export.zip --output my-chats.cew
-python3 bundle_conversations.py --input my-chats.cew --inspect
+python3 bundle_conversations.py --input ~/Downloads/export.zip --attachments-dir ~/Downloads/export-files --output with-files.cew
+python3 bundle_conversations.py --merge archive-a.cew archive-b.cew --output merged.cew
+python3 bundle_conversations.py --input merged.cew --inspect
 ```
 
-A v1 bundle contains a manifest, canonical `cew.conversation/v1` records, and a deterministic local search payload. The bundle is ZIP-based but uses the `.cew` extension so clients can validate the workbench schema before use.
+CEW v2 contains canonical `cew.conversation/v1` records, deterministic search data, a canonical-payload bundle ID, source SHA-256 provenance, merge history, duplicate resolution metadata, and optional attachment payloads. CEW v1 remains readable.
 
 ## Local conversation workbench
 
@@ -185,9 +187,9 @@ This is useful when ChatGPT, Claude, and DeepSeek history need to feed the same 
 
 ## Android and iOS offline viewer
 
-The `mobile/` directory contains a Capacitor 8 client that imports `.cew` through the platform file chooser, stores the parsed archive in IndexedDB inside the app sandbox, searches the bundle-provided index, and renders canonical conversation parts with DOM text nodes rather than trusted HTML.
+The `mobile/` directory contains a Capacitor 8 client and installable PWA. It imports CEW v1/v2 or raw ChatGPT, Claude, and DeepSeek ZIP/JSON exports, normalizes them on-device, stores the archive inside the app sandbox, and searches locally. It includes an optional PIN app lock, system/light/dark themes, archive statistics, verified attachment Share / Save, and no hosted backend.
 
-It is an implementation foundation rather than a published store release. See [mobile/README.md](mobile/README.md) for build instructions and remaining native packaging work.
+Android release signing and iOS IPA/TestFlight publication are wired through repository secrets without storing credentials in source. See [mobile/README.md](mobile/README.md).
 
 ## Provider detection and extension
 
@@ -212,6 +214,7 @@ conversation-export-workbench/
 ├── bundle_conversations.py      # build/inspect portable .cew archives
 ├── workbench_bundle.py          # .cew bundle implementation
 ├── canonical.py                 # provider-neutral cew.conversation/v1 model
+├── canonical_render.py          # shared canonical HTML/Markdown renderer
 ├── cli_main.py                  # packaged binary entry point
 ├── formatters/                  # ChatGPT, Claude, DeepSeek + shared rendering
 ├── provider_templates/          # structural provider detection signatures
@@ -234,7 +237,7 @@ python -m pytest -q tests
 ./scripts/smoke_test.sh
 ```
 
-GitHub Actions runs regression/security tests on Python 3.11–3.14 and builds the mobile web client. Tagged releases build Linux, macOS, and Windows executables with pinned build tooling, SHA-256 checksums, and GitHub artifact provenance attestations.
+GitHub Actions runs regression/security tests on Python 3.11–3.14 plus mobile provider-adapter tests and locked `npm ci` builds. Release candidates build Windows, macOS, Linux, Android, and iOS Simulator artifacts; signed Android and iOS device channels activate only when private signing credentials are configured. Published assets receive SHA-256 checksums and GitHub provenance attestations.
 
 ## Privacy and security
 

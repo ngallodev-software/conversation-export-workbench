@@ -39,12 +39,22 @@ APPLESCRIPT
 LAUNCHER
 chmod 0755 "$APP/Contents/MacOS/ConversationExportWorkbench"
 
+if [[ "${MACOS_SIGNING_ENABLED:-0}" == "1" && -n "${MACOS_APPLICATION_IDENTITY:-}" ]]; then
+  codesign --force --timestamp --options runtime --sign "$MACOS_APPLICATION_IDENTITY" "$STAGE/usr/local/bin/conv-tool"
+  codesign --force --timestamp --options runtime --sign "$MACOS_APPLICATION_IDENTITY" "$APP"
+  codesign --verify --deep --strict --verbose=2 "$APP"
+fi
+
 mkdir -p "$OUT_DIR"
-pkgbuild \
-  --root "$STAGE" \
-  --identifier "software.ngallodev.conversationexportworkbench" \
-  --version "$VERSION" \
-  --install-location "/" \
-  "$OUT_DIR/$PKG_NAME"
+PKG_ARGS=(
+  --root "$STAGE"
+  --identifier "software.ngallodev.conversationexportworkbench"
+  --version "$VERSION"
+  --install-location "/"
+)
+if [[ "${MACOS_SIGNING_ENABLED:-0}" == "1" && -n "${MACOS_INSTALLER_IDENTITY:-}" ]]; then
+  PKG_ARGS+=(--sign "$MACOS_INSTALLER_IDENTITY")
+fi
+pkgbuild "${PKG_ARGS[@]}" "$OUT_DIR/$PKG_NAME"
 
 echo "$OUT_DIR/$PKG_NAME"

@@ -1,7 +1,7 @@
 {
   "name": "conversation-export-workbench-mobile",
   "private": true,
-  "version": "0.2.0",
+  "version": "0.3.0",
   "type": "module",
   "scripts": {
     "dev": "vite --host 127.0.0.1",
@@ -10,7 +10,9 @@
     "android:add": "cap add android",
     "android:open": "npm run cap:sync && cap open android",
     "ios:add": "cap add ios",
-    "ios:open": "npm run cap:sync && cap open ios"
+    "ios:open": "npm run cap:sync && cap open ios",
+    "test": "node --test test/*.test.js",
+    "profile": "node scripts/profile-large-archive.mjs"
   },
   "dependencies": {
     "@capacitor/core": "8.5.2",

@@ -4,39 +4,72 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="referrer" content="no-referrer">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <meta name="theme-color" content="#111318">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; connect-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
   <title>Conversation Export Workbench</title>
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="icon" href="/icon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/src/styles.css">
 </head>
 <body>
+  <a class="skip-link" href="#conversation">Skip to conversation</a>
+
+  <section id="lock-screen" class="lock-screen" role="dialog" aria-modal="true" aria-labelledby="lock-title" hidden>
+    <form id="unlock-form" class="lock-card">
+      <img src="/icon.svg" alt="" width="56" height="56">
+      <h1 id="lock-title">Conversation Export Workbench</h1>
+      <p>This archive is protected by the local app lock.</p>
+      <label for="unlock-pin">PIN</label>
+      <input id="unlock-pin" type="password" inputmode="numeric" autocomplete="current-password" minlength="4" required>
+      <button type="submit" class="import-button">Unlock</button>
+      <div id="unlock-error" class="lock-error" role="alert" aria-live="assertive"></div>
+    </form>
+  </section>
+
   <header class="app-header">
     <div>
       <h1>Conversation Export Workbench</h1>
       <p>Offline ChatGPT, Claude, and DeepSeek archive viewer</p>
     </div>
-    <label class="import-button">
-      Import .cew
-      <input id="bundle-input" type="file" accept=".cew,application/zip">
-    </label>
+    <div class="header-actions">
+      <button id="theme-toggle" type="button" class="subtle-button" aria-label="Change color theme">Theme</button>
+      <button id="lock-now" type="button" class="subtle-button" aria-label="Configure or activate app lock">App lock</button>
+      <button id="remove-lock" type="button" class="subtle-button" hidden>Remove lock</button>
+      <label class="import-button">
+        Import archive
+        <input id="bundle-input" type="file" accept=".cew,.zip,.json,application/zip,application/json">
+      </label>
+    </div>
   </header>
 
   <main class="layout">
-    <aside class="sidebar">
+    <aside class="sidebar" aria-label="Conversation library">
       <div class="search-row">
+        <label class="sr-only" for="search">Search imported chats</label>
         <input id="search" type="search" placeholder="Search imported chats" autocomplete="off">
         <button id="clear-archive" type="button" class="subtle-button">Clear</button>
       </div>
       <div id="archive-meta" class="archive-meta">No archive imported.</div>
+      <button id="attachments-button" type="button" class="attachments-button" hidden>Attachments</button>
       <ul id="conversation-list" class="conversation-list"></ul>
     </aside>
 
     <section class="content">
       <div id="empty-state" class="empty-state">
-        Import a <code>.cew</code> archive created by Conversation Export Workbench.
+        Import a <code>.cew</code> archive or a ChatGPT, Claude, or DeepSeek export ZIP/JSON.
       </div>
-      <article id="conversation" class="conversation" hidden></article>
+      <article id="conversation" class="conversation" tabindex="-1" hidden></article>
     </section>
   </main>
+
+  <dialog id="attachments-dialog" class="attachments-dialog">
+    <div class="dialog-header">
+      <h2>Attachments</h2>
+      <button id="attachments-close" type="button" class="subtle-button">Close</button>
+    </div>
+    <p>Attachments are never rendered as active HTML. Use Share / Save to hand them to the operating system.</p>
+    <ul id="attachments-list" class="attachments-list"></ul>
+  </dialog>
 
   <div id="status" class="status" role="status" aria-live="polite"></div>
   <script type="module" src="/src/main.js"></script>
