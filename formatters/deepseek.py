@@ -3,6 +3,7 @@
 import html
 import json
 
+from canonical import canonical_conversation, canonical_message
 from .shared import (
     fmt_date, iso_to_epoch_ms, markdown_to_html, render_template, sanitize_href
 )
@@ -275,19 +276,22 @@ def conv_to_json_clean(conv: dict) -> dict:
                 parts.append({"type": "search", "results": f.get("results", [])})
             elif ftype == "READ_LINK":
                 parts.append({"type": "read_link", "url": f.get("url", "")})
-        clean_messages.append({
-            "role": role,
-            "timestamp": msg.get("inserted_at", ""),
-            "model": msg.get("model", ""),
-            "parts": parts,
-        })
-    return {
-        "id": conv["id"],
-        "title": conv.get("title", ""),
-        "started_at": conv.get("inserted_at", ""),
-        "updated_at": conv.get("updated_at", ""),
-        "messages": clean_messages,
-    }
+        clean_messages.append(
+            canonical_message(
+                role,
+                msg.get("inserted_at", ""),
+                parts,
+                model=str(msg.get("model", "") or ""),
+            )
+        )
+    return canonical_conversation(
+        PROVIDER,
+        conv["id"],
+        conv.get("title", ""),
+        conv.get("inserted_at", ""),
+        conv.get("updated_at", ""),
+        clean_messages,
+    )
 
 
 def build_json_single(conv: dict) -> str:
