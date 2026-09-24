@@ -11,7 +11,8 @@
     "android:open": "npm run cap:sync && cap open android",
     "ios:add": "cap add ios",
     "ios:open": "npm run cap:sync && cap open ios",
-    "test": "node --test test/*.test.js"
+    "test": "node --test test/*.test.js",
+    "profile": "node scripts/profile-large-archive.mjs"
   },
   "dependencies": {
     "@capacitor/core": "8.5.2",
