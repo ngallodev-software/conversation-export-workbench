@@ -16,7 +16,7 @@ Assets are versioned by tag:
 | macOS | `conv-tool-vX.Y.Z-macos` |
 | Windows | `conv-tool-vX.Y.Z-windows.exe` |
 
-Each release also includes per-file SHA-256 checksum files, a combined `SHA256SUMS`, and GitHub build-provenance attestations for tagged release assets.
+Each release includes a combined `SHA256SUMS` manifest and GitHub build-provenance attestations for published release assets.
 
 ## Make it executable
 
