@@ -47,6 +47,9 @@ python3 format_conversations.py --input export.zip --format html --combined --ye
 
 # Override provider detection when necessary
 python3 format_conversations.py --input conversations.json --provider deepseek --format md
+
+# Build a portable offline bundle
+python3 bundle_conversations.py --input export.zip --output my-chats.cew
 ```
 
 ## Build the local viewer
@@ -58,7 +61,7 @@ python3 serve_spa.py --output output
 
 Open the URL printed by `serve_spa.py`.
 
-The viewer supports provider filters, full-text search, sorting, jump navigation, timestamp controls, conversation visibility, scroll memory, lazy loading, and collapsible reasoning blocks.
+The viewer supports provider filters, corpus-wide full-text search, sorting, jump navigation, timestamp controls, conversation visibility, scroll memory, lazy loading, and collapsible reasoning blocks. It has no runtime CDN dependency.
 
 ![Conversation Export Workbench multi-provider view](readme_assets/sample-all.png)
 
@@ -76,6 +79,7 @@ The packaged executable uses subcommands:
 conv-tool format
 conv-tool generate-spa
 conv-tool serve
+conv-tool bundle
 ```
 
 See [BINARY_USAGE.md](BINARY_USAGE.md) for complete examples.
@@ -83,8 +87,8 @@ See [BINARY_USAGE.md](BINARY_USAGE.md) for complete examples.
 ## Verify the repository
 
 ```bash
-python -m pip install pytest
-python -m pytest -q tests/test_regressions.py
+python -m pip install pytest==9.1.1
+python -m pytest -q tests
 ./scripts/smoke_test.sh
 ```
 
