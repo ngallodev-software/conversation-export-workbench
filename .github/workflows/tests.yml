@@ -47,6 +47,13 @@ jobs:
       - name: Install pinned mobile dependencies
         run: npm install --ignore-scripts --no-audit --no-fund
 
+      - name: Upload generated mobile lockfile
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: mobile-package-lock
+          path: mobile/package-lock.json
+          if-no-files-found: error
+
       - name: Test on-device provider adapters
         run: npm test
 
