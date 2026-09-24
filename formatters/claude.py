@@ -111,7 +111,7 @@ def conv_to_json_clean(conv: dict) -> dict:
         )
     return canonical_conversation(
         PROVIDER,
-        conv["uuid"],
+        conv.get("uuid", ""),
         conv.get("name", ""),
         conv.get("created_at", ""),
         conv.get("updated_at", ""),
