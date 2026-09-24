@@ -124,6 +124,9 @@ jobs:
       - name: Package macOS installer
         if: runner.os == 'macOS'
         shell: bash
+        env:
+          MACOS_APPLICATION_IDENTITY: ${{ vars.MACOS_APPLICATION_IDENTITY }}
+          MACOS_INSTALLER_IDENTITY: ${{ vars.MACOS_INSTALLER_IDENTITY }}
         run: |
           chmod +x installer/macos/build-pkg.sh
           version="$(tr -d '[:space:]' < VERSION)"
@@ -169,6 +172,8 @@ jobs:
       - name: Sign Windows installer
         if: runner.os == 'Windows' && env.WINDOWS_SIGNING_ENABLED == '1'
         shell: powershell
+        env:
+          WINDOWS_SIGNING_PFX_PASSWORD: ${{ secrets.WINDOWS_SIGNING_PFX_PASSWORD }}
         run: |
           $version = (Get-Content VERSION).Trim()
           $setup = "dist\ConversationExportWorkbench-$version-Setup.exe"
