@@ -4,7 +4,7 @@
 
 [![Regression tests](https://github.com/ngallodev-software/conversation-export-workbench/actions/workflows/tests.yml/badge.svg)](https://github.com/ngallodev-software/conversation-export-workbench/actions/workflows/tests.yml)
 [![Latest release](https://img.shields.io/github/v/release/ngallodev-software/conversation-export-workbench)](https://github.com/ngallodev-software/conversation-export-workbench/releases/latest)
-[![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](#source-install)
+[![Python 3.11+](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](#source-install)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 Conversation Export Workbench turns exported AI chat histories from **OpenAI ChatGPT**, **Anthropic Claude**, and **DeepSeek** into readable HTML, Markdown, or normalized JSON. It can also build a searchable local single-page workbench for browsing conversations across providers.
@@ -38,7 +38,7 @@ Provider detection is structural and template-based. If an export does not match
 - **Searchable conversation viewer** — generate a single-page browser with provider filters, full-text search, sorting, jump navigation, and scroll memory.
 - **Reasoning-aware rendering** — preserve DeepSeek THINK fragments and Claude thinking blocks as collapsible sections.
 - **DeepSeek search rendering** — render SEARCH fragments with titles, URLs, and snippets.
-- **Zero runtime package dependencies** — source mode uses Python 3.10+ standard library only.
+- **Zero runtime package dependencies** — source mode uses Python 3.11+ standard library only.
 - **Pre-built executables** — release binaries are published for Linux, macOS, and Windows with SHA-256 checksums.
 - **Extensible provider model** — detection templates and provider-specific formatter modules are separated cleanly.
 
@@ -74,7 +74,7 @@ python3 generate_spa.py --output output --yes
 python3 serve_spa.py
 ```
 
-**Requirements:** Python 3.10 or newer. No `pip install` is required for runtime use.
+**Requirements:** Python 3.11 or newer. No `pip install` is required for runtime use.
 
 ## Common source examples
 
