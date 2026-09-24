@@ -4,6 +4,7 @@ import html
 import json
 
 from canonical import canonical_conversation, canonical_message
+from canonical_render import render_canonical_html_body, render_canonical_markdown
 from .shared import (
     fmt_date, iso_to_epoch_ms, markdown_to_html, render_template, sanitize_href
 )
@@ -110,64 +111,8 @@ def _render_fragment_html(frag: dict) -> str:
 
 
 def conv_to_html_body(conv: dict) -> str:
-    """Return the inner HTML body for a single conversation (no full-page wrapper)."""
-    title = str(conv.get("title", "Untitled"))
-    title_html = html.escape(title, quote=False)
-    inserted_iso = str(conv.get("inserted_at", ""))
-    updated_iso  = str(conv.get("updated_at", ""))
-    inserted_iso_attr = html.escape(inserted_iso, quote=True)
-    updated_iso_attr = html.escape(updated_iso, quote=True)
-    inserted_epoch = iso_to_epoch_ms(inserted_iso)
-    updated_epoch  = iso_to_epoch_ms(updated_iso)
-    messages = walk_tree(conv["mapping"])
-
-    parts = [
-        f'<h1>{title_html}</h1>',
-        f'<div class="meta"'
-        f' data-started-ts="{inserted_epoch}"'
-        f' data-updated-ts="{updated_epoch}"'
-        f' data-started-iso="{inserted_iso_attr}"'
-        f' data-updated-iso="{updated_iso_attr}">'
-        f'Started <span class="ts-display">{html.escape(fmt_date(inserted_iso), quote=False)}</span>'
-        f' &nbsp;·&nbsp; '
-        f'Last updated <span class="ts-display">{html.escape(fmt_date(updated_iso), quote=False)}</span>'
-        f'</div>',
-    ]
-
-    for msg in messages:
-        frags = msg.get("fragments", [])
-        if not frags:
-            continue
-        role = frags[0]["type"]
-        msg_iso   = str(msg.get("inserted_at", ""))
-        msg_iso_attr = html.escape(msg_iso, quote=True)
-        msg_epoch = iso_to_epoch_ms(msg_iso)
-        timestamp = fmt_date(msg_iso)
-
-        if role == "REQUEST":
-            content = frags[0].get("content", "")
-            html_content = markdown_to_html(content)
-            parts.append(
-                f'<div class="message user" data-ts="{msg_epoch}" data-ts-iso="{msg_iso_attr}">'
-                f'<div class="role-label">You'
-                f' <span class="msg-time ts-display" data-ts="{msg_epoch}" data-ts-iso="{msg_iso_attr}">{html.escape(timestamp, quote=False)}</span>'
-                f'</div>'
-                f'<div class="content">{html_content}</div>'
-                f"</div>"
-            )
-        else:
-            inner = "".join(_render_fragment_html(f) for f in frags)
-            parts.append(
-                f'<div class="message assistant" data-ts="{msg_epoch}" data-ts-iso="{msg_iso_attr}">'
-                f'<div class="role-label">DeepSeek'
-                f' <span class="msg-time ts-display" data-ts="{msg_epoch}" data-ts-iso="{msg_iso_attr}">{html.escape(timestamp, quote=False)}</span>'
-                f'</div>'
-                f"{inner}"
-                f"</div>"
-            )
-
-    return "\n".join(parts)
-
+    """Normalize provider input, then render the canonical model."""
+    return render_canonical_html_body(conv_to_json_clean(conv))
 
 def build_html_single(conv: dict) -> str:
     body = conv_to_html_body(conv)
@@ -227,28 +172,8 @@ def _fragment_to_md(frag: dict) -> str:
 
 
 def conv_to_md(conv: dict) -> str:
-    title = conv.get("title", "Untitled")
-    inserted = fmt_date(conv.get("inserted_at", ""))
-    updated  = fmt_date(conv.get("updated_at", ""))
-    messages = walk_tree(conv["mapping"])
-
-    lines = [f"# {title}", "", f"*Started: {inserted} | Last updated: {updated}*", "", "---", ""]
-    for msg in messages:
-        frags = msg.get("fragments", [])
-        if not frags:
-            continue
-        role = frags[0]["type"]
-        timestamp = fmt_date(msg.get("inserted_at", ""))
-        if role == "REQUEST":
-            content = frags[0].get("content", "")
-            lines += [f"## You  _{timestamp}_", "", content, "", "---", ""]
-        else:
-            lines.append(f"## DeepSeek  _{timestamp}_")
-            lines.append("")
-            for f in frags:
-                lines.append(_fragment_to_md(f))
-            lines += ["---", ""]
-    return "\n".join(lines)
+    """Normalize provider input, then render the canonical model."""
+    return render_canonical_markdown(conv_to_json_clean(conv))
 
 
 # ---------------------------------------------------------------------------
