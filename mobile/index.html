@@ -50,6 +50,7 @@
         <button id="clear-archive" type="button" class="subtle-button">Clear</button>
       </div>
       <div id="archive-meta" class="archive-meta">No archive imported.</div>
+      <button id="attachments-button" type="button" class="attachments-button" hidden>Attachments</button>
       <ul id="conversation-list" class="conversation-list"></ul>
     </aside>
 
@@ -60,6 +61,15 @@
       <article id="conversation" class="conversation" tabindex="-1" hidden></article>
     </section>
   </main>
+
+  <dialog id="attachments-dialog" class="attachments-dialog">
+    <div class="dialog-header">
+      <h2>Attachments</h2>
+      <button id="attachments-close" type="button" class="subtle-button">Close</button>
+    </div>
+    <p>Attachments are never rendered as active HTML. Use Share / Save to hand them to the operating system.</p>
+    <ul id="attachments-list" class="attachments-list"></ul>
+  </dialog>
 
   <div id="status" class="status" role="status" aria-live="polite"></div>
   <script type="module" src="/src/main.js"></script>
