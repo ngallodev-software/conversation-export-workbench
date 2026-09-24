@@ -10,7 +10,8 @@
     "android:add": "cap add android",
     "android:open": "npm run cap:sync && cap open android",
     "ios:add": "cap add ios",
-    "ios:open": "npm run cap:sync && cap open ios"
+    "ios:open": "npm run cap:sync && cap open ios",
+    "test": "node --test test/*.test.js"
   },
   "dependencies": {
     "@capacitor/core": "8.5.2",
