@@ -4,7 +4,7 @@ Convert **ChatGPT**, **Claude**, or **DeepSeek** conversation exports into HTML,
 
 ## Source mode
 
-Requirements: Python 3.10+; no runtime packages are required.
+Requirements: Python 3.11+; no runtime packages are required.
 
 ```bash
 git clone https://github.com/ngallodev-software/conversation-export-workbench.git
