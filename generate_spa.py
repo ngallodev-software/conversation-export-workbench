@@ -18,11 +18,12 @@ Options:
 """
 
 import argparse
+import json
 import sys
 from pathlib import Path
 
 from formatters.shared import safe_write
-from formatters.spa import PROVIDERS, _data_dir, build_spa
+from formatters.spa import PROVIDERS, _data_dir, build_search_index, build_spa
 
 
 def main():
@@ -56,6 +57,13 @@ def main():
 
     index_path = out_dir / "index.html"
     safe_write(index_path, html, args.yes)
+
+    search_index = build_search_index(out_dir, providers=providers)
+    safe_write(
+        out_dir / "search-index.json",
+        json.dumps(search_index, ensure_ascii=False, sort_keys=True),
+        args.yes,
+    )
 
 
 if __name__ == "__main__":
