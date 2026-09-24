@@ -12,12 +12,15 @@ Subcommands:
 import sys
 import argparse
 
+from version import __version__
+
 
 def main():
     parser = argparse.ArgumentParser(
         prog="conv-tool",
         description="Conversation export workbench.",
     )
+    parser.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
     subs = parser.add_subparsers(dest="cmd", required=True)
     subs.add_parser("format",       help="Convert conversation exports")
     subs.add_parser("generate-spa", help="Generate SPA viewer (output/index.html)")
