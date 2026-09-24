@@ -26,7 +26,7 @@ Preserve these product constraints unless an explicit later decision changes the
 9. Keep local serving loopback-only unless the user explicitly opts into LAN exposure.
 10. Add regression tests for hostile markup, unsafe URLs, malformed archives, and cyclic trees.
 
-**Exit condition:** a malicious or corrupted export cannot execute script through normal rendering, force unbounded tree traversal, or trigger obvious ZIP decompression abuse.
+**Status:** complete.
 
 ## Phase 2 — CI and release supply-chain hardening
 
@@ -34,15 +34,16 @@ Preserve these product constraints unless an explicit later decision changes the
 2. Pin GitHub Actions to immutable commit SHAs.
 3. Pin build/test tooling versions.
 4. Give workflows minimum required permissions.
-5. Add artifact provenance/attestations where GitHub release permissions allow it.
+5. Add artifact provenance/attestations.
 6. Keep SHA-256 release checksums.
 7. Mark generated sample HTML as generated for GitHub language statistics.
+8. Lock mobile dependencies and use `npm ci`.
 
-**Exit condition:** CI accurately represents the supported runtime range and release provenance is reproducible/auditable.
+**Status:** complete.
 
 ## Phase 3 — Canonical conversation model
 
-Define one versioned provider-neutral representation for:
+The versioned `cew.conversation/v1` representation now covers:
 
 - conversation metadata;
 - user/assistant/tool/system roles;
@@ -50,65 +51,82 @@ Define one versioned provider-neutral representation for:
 - reasoning/thinking;
 - tool use and tool results;
 - search results/read links;
-- attachments/media references;
-- timestamps and source-provider IDs.
+- attachment metadata;
+- timestamps, model names, and source-provider IDs.
 
-Provider adapters should parse exports into this model. HTML, Markdown, JSON, search, bundle, and mobile consumers should read the canonical model rather than re-parsing provider structures.
+Provider adapters normalize exports into the canonical model. HTML, Markdown, normalized JSON, search, bundles, and the mobile client now consume that model instead of maintaining separate provider-specific rendering logic.
 
-**Exit condition:** rendering/export code no longer needs provider-specific source schemas.
+**Status:** complete.
 
 ## Phase 4 — Portable offline workbench bundle and search
 
-Create a versioned `.cew` bundle containing:
+`cew.bundle/v2` adds:
 
-- manifest/schema version;
 - canonical conversations;
-- attachment payloads/metadata when supported;
-- deterministic search data/index metadata;
-- import provenance.
+- deterministic bundle IDs;
+- source SHA-256 provenance;
+- deterministic search payload;
+- duplicate-aware merge/update behavior;
+- merge history;
+- optional attachment payloads under a constrained `attachments/` namespace;
+- attachment size/hash verification and safe extraction.
 
-Add idempotent import/update behavior and duplicate detection. Full-text search must cover unopened conversations, not only content already loaded in the browser.
+Readers retain compatibility with `cew.bundle/v1`.
 
-**Exit condition:** a single portable file can move an archive between desktop and mobile without provider credentials or network access.
+**Status:** core implementation complete. Provider exports do not always expose enough stable attachment metadata to automatically associate every provider attachment with a specific canonical message; manually supplied attachment directories are therefore packaged as verified bundle payloads without inventing unsupported provider links.
 
 ## Phase 5 — Android/iOS offline viewer
 
-Use the existing web UI through Capacitor only after Phases 1–4 are stable.
+Implemented:
 
-1. Package all JS/CSS/fonts locally.
-2. Import `.cew` via Android Storage Access Framework and iOS document picker.
-3. Copy imported archives into app-private storage.
-4. Keep network access unnecessary for normal use.
-5. Require deliberate user interaction before opening external links.
-6. Add biometric/app-lock support as an optional privacy feature.
-7. Add Android/iOS automated smoke tests for import, search, reopen, and offline operation.
+1. all application JS/CSS/icons packaged locally;
+2. platform file chooser import;
+3. app-private IndexedDB persistence;
+4. network-independent import/search/viewing;
+5. explicit confirmation before external links;
+6. optional PBKDF2-backed local app-lock PIN;
+7. light/dark/system themes and accessibility controls;
+8. safe verified attachment Share / Save handoff;
+9. Android APK build plus optional stable release signing/AAB path;
+10. iOS Simulator build plus optional signed IPA/TestFlight path;
+11. installable PWA shell and service worker.
 
-**Exit condition:** airplane-mode import/view/search works using only user-selected local files.
+Native Android/iOS projects are generated reproducibly from the pinned Capacitor sources during CI rather than committed as generated platform trees.
+
+**Remaining device-dependent work:** automated physical/emulator UI smoke tests and an optional native biometric unlock layer. Apple device/TestFlight output additionally requires Apple Developer/App Store Connect credentials. Stable Android release output requires a private release keystore.
 
 ## Phase 6 — Direct raw-export import on mobile
 
-After the bundle/viewer path is stable, allow Android/iOS to import ChatGPT, Claude, and DeepSeek export ZIPs directly.
+The mobile client now detects and normalizes ChatGPT, Claude, and DeepSeek `.json` exports and ZIP archives containing `conversations.json` directly on-device. Provider adapters have cycle/resource guards and share the same canonical schema/search model used by the desktop tool.
 
-Prefer sharing parser logic rather than maintaining three independent mobile implementations. Evaluate extracting the canonical parser into a small Rust core with generated Python/Kotlin/Swift bindings only if duplicated TypeScript/native parsing becomes a maintenance problem.
+**Status:** complete.
 
 ## Phase 7 — Product polish
 
-- attachment rendering;
-- export merge/history;
-- archive encryption option;
-- accessibility and large-text support;
-- theme improvements;
-- archive statistics;
+Implemented:
+
+- verified attachment payload storage and Share / Save;
+- export merge/history and duplicate resolution;
+- accessibility controls and reduced-motion support;
+- light/dark/system themes;
+- archive/provider/message/attachment statistics;
 - optional PWA distribution;
-- performance profiling for very large histories.
+- large-archive search-index profiling harness;
+- local app-lock access gate.
+
+Deliberately deferred:
+
+- **archive encryption at rest:** Python's standard library does not provide a suitable authenticated-encryption primitive. Adding home-grown cryptography would weaken the security posture. If encrypted `.cew` archives are added, they should use a well-maintained audited dependency and a separately versioned encrypted-envelope format.
+- **native biometric unlock:** optional convenience layer; OS sandbox protection plus the local PIN gate remain the current behavior.
+- **device UI automation:** requires simulator/emulator/device orchestration beyond the current deterministic build and adapter tests.
 
 ## Current implementation status
 
-- [x] Phase 0 constraints documented.
-- [x] Phase 1 security/offline hardening implemented with hostile-input tests.
-- [x] Phase 2 Python CI/release supply-chain hardening implemented; mobile lockfile generation remains a follow-up reproducibility improvement.
-- [~] Phase 3 canonical `cew.conversation/v1` model is implemented and used by normalized JSON/bundles/mobile; HTML/Markdown renderers still consume provider source structures.
-- [~] Phase 4 `.cew` v1 bundle and corpus-wide search index are implemented; attachment payloads, duplicate-aware merge/update, and import provenance remain.
-- [~] Phase 5 Capacitor mobile source is implemented for `.cew` import/search/offline viewing; native Android/iOS projects, signing, biometrics, and device smoke tests remain.
-- [ ] Phase 6.
-- [ ] Phase 7.
+- [x] Phase 0 — invariants documented.
+- [x] Phase 1 — security and true-offline hardening.
+- [x] Phase 2 — CI/release/supply-chain hardening and mobile lockfile.
+- [x] Phase 3 — canonical model and canonical HTML/Markdown rendering.
+- [x] Phase 4 — CEW v2 provenance, merge/history, search, and attachment payloads.
+- [~] Phase 5 — offline mobile client, packaging, app lock, signing hooks; device UI automation/biometrics remain optional follow-up.
+- [x] Phase 6 — direct raw provider ZIP/JSON import on mobile.
+- [~] Phase 7 — major polish complete; authenticated archive encryption intentionally deferred pending an audited crypto dependency decision.
