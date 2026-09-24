@@ -47,5 +47,8 @@ jobs:
       - name: Install pinned mobile dependencies
         run: npm install --ignore-scripts --no-audit --no-fund
 
+      - name: Test on-device provider adapters
+        run: npm test
+
       - name: Build offline mobile web assets
         run: npm run build
