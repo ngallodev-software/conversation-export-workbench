@@ -15,6 +15,7 @@ def main() -> int:
     parser.add_argument("--input", help="Source provider JSON/ZIP, or .cew when using --inspect")
     parser.add_argument("--output", default="conversation-workbench.cew", help="Output .cew path")
     parser.add_argument("--provider", choices=["chatgpt", "claude", "deepseek"], help="Force provider")
+    parser.add_argument("--attachments-dir", help="Optional directory of local attachment payloads to include in a new bundle")
     parser.add_argument("--inspect", action="store_true", help="Inspect an existing .cew bundle")
     parser.add_argument("--merge", nargs="+", metavar="CEW", help="Merge two or more .cew bundles deterministically")
     args = parser.parse_args()
@@ -43,7 +44,7 @@ def main() -> int:
             ))
             return 0
 
-        manifest = build_bundle(args.input, args.output, provider=args.provider)
+        manifest = build_bundle(args.input, args.output, provider=args.provider, attachments_dir=args.attachments_dir)
         print(json.dumps(manifest, indent=2, ensure_ascii=False))
         return 0
     except (OSError, ValueError, json.JSONDecodeError) as exc:
