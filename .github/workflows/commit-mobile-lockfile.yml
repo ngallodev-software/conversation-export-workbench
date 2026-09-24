@@ -1,0 +1,39 @@
+name: Commit mobile lockfile
+
+on:
+  push:
+    branches:
+      - "upgrade/complete-canonical-mobile-bundle"
+
+permissions:
+  contents: write
+
+jobs:
+  lockfile:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: upgrade/complete-canonical-mobile-bundle
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: "22.16.0"
+          package-manager-cache: false
+
+      - name: Generate exact npm lockfile
+        working-directory: mobile
+        run: npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+
+      - name: Commit lockfile if changed
+        shell: bash
+        run: |
+          if git diff --quiet -- mobile/package-lock.json && git ls-files --error-unmatch mobile/package-lock.json >/dev/null 2>&1; then
+            exit 0
+          fi
+          git add mobile/package-lock.json
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Lock mobile dependencies"
+          git push origin HEAD:upgrade/complete-canonical-mobile-bundle
