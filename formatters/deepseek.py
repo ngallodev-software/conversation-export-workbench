@@ -4,7 +4,7 @@ import html
 import json
 
 from .shared import (
-    fmt_date, iso_to_epoch_ms, markdown_to_html, render_template
+    fmt_date, iso_to_epoch_ms, markdown_to_html, render_template, sanitize_href
 )
 
 
@@ -26,7 +26,12 @@ def walk_tree(mapping: dict) -> list:
     """Walk the conversation tree from root, returning messages in order."""
     messages = []
     node_id = "root"
+    visited: set[str] = set()
+    max_nodes = max(len(mapping) + 1, 1)
     while node_id:
+        if node_id in visited or len(visited) >= max_nodes:
+            break
+        visited.add(node_id)
         node = mapping.get(node_id)
         if not node:
             break
@@ -66,12 +71,16 @@ def _render_fragment_html(frag: dict) -> str:
             url = str(r.get("url", ""))
             title = str(r.get("title", url))
             snippet = str(r.get("snippet", ""))
-            url_attr = html.escape(url, quote=True)
+            safe_url = sanitize_href(url)
             title_html = html.escape(title, quote=False)
             snippet_html = html.escape(snippet[:160], quote=False)
+            link_html = title_html
+            if safe_url:
+                url_attr = html.escape(safe_url, quote=True)
+                link_html = f'<a href="{url_attr}" target="_blank" rel="noopener noreferrer">{title_html}</a>'
             items += (
                 f'<div class="search-result">'
-                f'<a href="{url_attr}" target="_blank">{title_html}</a>'
+                f'{link_html}'
                 + (f'<div class="snippet">{snippet_html}</div>' if snippet else "")
                 + "</div>"
             )
@@ -84,9 +93,12 @@ def _render_fragment_html(frag: dict) -> str:
 
     if ftype == "READ_LINK":
         url = str(frag.get("url", ""))
-        url_attr = html.escape(url, quote=True)
+        safe_url = sanitize_href(url)
         url_html = html.escape(url, quote=False)
-        return f'<div class="read-link-block">Read page: <a href="{url_attr}" target="_blank">{url_html}</a></div>'
+        if not safe_url:
+            return f'<div class="read-link-block">Read page: {url_html}</div>'
+        url_attr = html.escape(safe_url, quote=True)
+        return f'<div class="read-link-block">Read page: <a href="{url_attr}" target="_blank" rel="noopener noreferrer">{url_html}</a></div>'
 
     if ftype == "RESPONSE":
         content = frag.get("content", "")
@@ -115,9 +127,9 @@ def conv_to_html_body(conv: dict) -> str:
         f' data-updated-ts="{updated_epoch}"'
         f' data-started-iso="{inserted_iso_attr}"'
         f' data-updated-iso="{updated_iso_attr}">'
-        f'Started <span class="ts-display">{fmt_date(inserted_iso)}</span>'
+        f'Started <span class="ts-display">{html.escape(fmt_date(inserted_iso), quote=False)}</span>'
         f' &nbsp;·&nbsp; '
-        f'Last updated <span class="ts-display">{fmt_date(updated_iso)}</span>'
+        f'Last updated <span class="ts-display">{html.escape(fmt_date(updated_iso), quote=False)}</span>'
         f'</div>',
     ]
 
@@ -137,7 +149,7 @@ def conv_to_html_body(conv: dict) -> str:
             parts.append(
                 f'<div class="message user" data-ts="{msg_epoch}" data-ts-iso="{msg_iso_attr}">'
                 f'<div class="role-label">You'
-                f' <span class="msg-time ts-display" data-ts="{msg_epoch}" data-ts-iso="{msg_iso_attr}">{timestamp}</span>'
+                f' <span class="msg-time ts-display" data-ts="{msg_epoch}" data-ts-iso="{msg_iso_attr}">{html.escape(timestamp, quote=False)}</span>'
                 f'</div>'
                 f'<div class="content">{html_content}</div>'
                 f"</div>"
@@ -147,7 +159,7 @@ def conv_to_html_body(conv: dict) -> str:
             parts.append(
                 f'<div class="message assistant" data-ts="{msg_epoch}" data-ts-iso="{msg_iso_attr}">'
                 f'<div class="role-label">DeepSeek'
-                f' <span class="msg-time ts-display" data-ts="{msg_epoch}" data-ts-iso="{msg_iso_attr}">{timestamp}</span>'
+                f' <span class="msg-time ts-display" data-ts="{msg_epoch}" data-ts-iso="{msg_iso_attr}">{html.escape(timestamp, quote=False)}</span>'
                 f'</div>'
                 f"{inner}"
                 f"</div>"
