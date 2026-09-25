@@ -17,7 +17,7 @@ The mobile client is a Capacitor 8 application and installable PWA that consumes
 - requires explicit user interaction before opening HTTP(S) links;
 - supports system/dark/light themes, reduced-motion preferences, skip navigation, and accessible labels;
 - shows conversation/message/provider/attachment archive statistics;
-- provides an optional local app-lock PIN;
+- provides an optional local app-lock PIN plus native Face ID/Touch ID/fingerprint unlock when enrolled;
 - installs as a standalone PWA with offline application-shell caching;
 - works without provider credentials or a backend.
 
@@ -56,6 +56,7 @@ npm ci
 npm run build
 npx cap add android
 npx cap sync android
+npm run native:configure
 npx cap open android
 ```
 
@@ -70,6 +71,12 @@ Repository secrets used for stable Android signing:
 
 No keystore bytes or passwords are stored in the repository.
 
+Google Play publication additionally uses:
+
+- secret `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON`;
+- repository variable `ENABLE_GOOGLE_PLAY_UPLOAD=true`;
+- optional repository variable `GOOGLE_PLAY_TRACK` (defaults to `internal`).
+
 ## iOS / TestFlight
 
 Local native project generation requires macOS/Xcode:
@@ -79,6 +86,7 @@ npm ci
 npm run build
 npx cap add ios
 npx cap sync ios
+npm run native:configure
 npx cap open ios
 ```
 
@@ -95,6 +103,14 @@ And this repository variable is configured:
 
 Set repository variable `ENABLE_TESTFLIGHT_UPLOAD=true` to upload the signed IPA to TestFlight automatically after export.
 
+## Native biometric unlock
+
+The repository-local `@ngallodev/cew-native-biometrics` Capacitor plugin uses Android `BiometricPrompt` and iOS `LocalAuthentication`. It is not a third-party hosted or paid plugin. Biometrics never replace the PIN configuration: a cancelled or failed biometric prompt falls back to the existing PIN verifier.
+
+## Native UI smoke testing
+
+Release branches boot an Android emulator and an iOS Simulator, install and launch the generated applications, and retain screenshot/UI evidence as workflow artifacts. These tests validate native generation, plugin compilation, installation, WebView launch, and the application shell.
+
 ## Native project policy
 
 The `android/` and `ios/` platform trees are generated from the pinned Capacitor version in CI and development commands rather than committed. This keeps generated IDE/platform files out of the source of truth while still exercising native generation and builds on every release candidate.
@@ -107,7 +123,6 @@ Encrypted CEW archives are intentionally not implemented with home-grown cryptog
 
 ## Remaining optional work
 
-- automated emulator/device UI smoke tests;
-- native biometric unlock layered on top of the existing local app lock;
+- physical-device-farm UI automation beyond emulator/simulator coverage;
 - streaming import for archives larger than the current mobile memory limits;
-- App Store / Play Store publication once account/signing credentials are configured.
+- actual App Store / Play Store publication once account/signing credentials are configured.
