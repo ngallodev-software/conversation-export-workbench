@@ -1,4 +1,5 @@
 import { strFromU8, unzipSync } from 'fflate';
+import { NativeBiometrics } from '@ngallodev/cew-native-biometrics';
 import { clearAppLock, hasAppLock, setAppLock, verifyAppLock } from './app-lock.js';
 import {
   CONVERSATION_SCHEMA,
@@ -31,6 +32,7 @@ const lockScreen = document.getElementById('lock-screen');
 const unlockForm = document.getElementById('unlock-form');
 const unlockPin = document.getElementById('unlock-pin');
 const unlockError = document.getElementById('unlock-error');
+const biometricUnlock = document.getElementById('biometric-unlock');
 const attachmentsButton = document.getElementById('attachments-button');
 const attachmentsDialog = document.getElementById('attachments-dialog');
 const attachmentsClose = document.getElementById('attachments-close');
@@ -491,12 +493,41 @@ function updateLockButtons() {
   removeLock.hidden = !configured;
 }
 
+async function refreshBiometricAvailability() {
+  biometricUnlock.hidden = true;
+  if (!hasAppLock()) return false;
+  try {
+    const result = await NativeBiometrics.isAvailable();
+    biometricUnlock.hidden = !result?.available;
+    return Boolean(result?.available);
+  } catch {
+    return false;
+  }
+}
+
+async function tryBiometricUnlock() {
+  unlockError.textContent = '';
+  biometricUnlock.disabled = true;
+  try {
+    const result = await NativeBiometrics.authenticate();
+    if (!result?.authenticated) throw new Error('Biometric authentication was not accepted.');
+    hideLockScreen();
+    await initializeUnlockedApp();
+    setStatus('Unlocked with device biometrics.');
+  } catch (error) {
+    unlockError.textContent = 'Biometric unlock was not completed. Use your PIN to continue.';
+  } finally {
+    biometricUnlock.disabled = false;
+  }
+}
+
 function showLockScreen() {
   lockScreen.hidden = false;
   document.body.classList.add('locked');
   unlockError.textContent = '';
   unlockPin.value = '';
   window.setTimeout(() => unlockPin.focus(), 0);
+  refreshBiometricAvailability();
 }
 
 function hideLockScreen() {
@@ -581,6 +612,8 @@ removeLock.addEventListener('click', async () => {
   updateLockButtons();
   setStatus('App lock removed.');
 });
+
+biometricUnlock.addEventListener('click', tryBiometricUnlock);
 
 unlockForm.addEventListener('submit', async event => {
   event.preventDefault();
