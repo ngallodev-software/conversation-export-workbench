@@ -130,4 +130,4 @@ Deliberately deferred:
 - [x] Phase 4 — CEW v2 provenance, merge/history, search, and attachment payloads.
 - [x] Phase 5 — offline mobile client, packaging, PIN + native biometric unlock, signing hooks, emulator/simulator UI smoke coverage.
 - [x] Phase 6 — direct raw provider ZIP/JSON import on mobile.
-- [~] Phase 7 — major polish complete; authenticated archive encryption intentionally deferred pending an audited crypto dependency decision.
+- [x] Phase 7 — major polish complete, including streamed mobile ZIP import; authenticated archive encryption remains intentionally deferred pending an audited crypto dependency decision.
