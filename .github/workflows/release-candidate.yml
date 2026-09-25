@@ -220,6 +220,7 @@ jobs:
           npm run build
           npx cap add android
           npx cap sync android
+          npm run native:configure
 
       - name: Set Android version
         shell: bash
@@ -302,6 +303,7 @@ jobs:
           npm run build
           npx cap add ios
           npx cap sync ios
+          npm run native:configure
 
       - name: Build unsigned iOS simulator app
         shell: bash
@@ -368,6 +370,7 @@ jobs:
           npm run build
           npx cap add ios
           npx cap sync ios
+          npm run native:configure
 
       - name: Configure App Store Connect API key
         if: steps.signing.outputs.enabled == 'true'
