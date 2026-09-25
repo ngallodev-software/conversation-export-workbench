@@ -80,6 +80,16 @@ jobs:
         with:
           subject-path: "release-assets/*"
 
+      - name: Upload Android App Bundle to Google Play
+        if: vars.ENABLE_GOOGLE_PLAY_UPLOAD == 'true'
+        uses: r0adkll/upload-google-play@e738b9dd8f2476ea806d921b64aacd24f34515a5 # v1.1.5
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
+          packageName: software.ngallodev.conversationexportworkbench
+          releaseFiles: release-assets/*.aab
+          track: ${{ vars.GOOGLE_PLAY_TRACK || 'internal' }}
+          status: completed
+
       - name: Create version tag
         shell: bash
         env:
