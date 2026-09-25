@@ -117,12 +117,11 @@ The `android/` and `ios/` platform trees are generated from the pinned Capacitor
 
 ## Security limits
 
-Current mobile imports cap the compressed source at 128 MiB, individual required members at 256 MiB, total accepted attachment payloads at 128 MiB, and suspicious compression ratios at 200:1.
+ZIP/CEW imports stream from the selected file instead of buffering the entire compressed archive. Compressed ZIP sources are capped at 2 GiB, individual expanded members at 256 MiB, total accepted attachment payloads at 128 MiB, and suspicious compression ratios at 200:1. Plain JSON imports retain the 256 MiB member limit.
 
 Encrypted CEW archives are intentionally not implemented with home-grown cryptography. Any future encrypted bundle envelope should use a maintained authenticated-encryption library and a separately versioned format.
 
 ## Remaining optional work
 
 - physical-device-farm UI automation beyond emulator/simulator coverage;
-- streaming import for archives larger than the current mobile memory limits;
 - actual App Store / Play Store publication once account/signing credentials are configured.
