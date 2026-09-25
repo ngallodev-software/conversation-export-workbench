@@ -88,11 +88,20 @@ jobs:
             ./gradlew assembleDebug --no-daemon
             adb install -r app/build/outputs/apk/debug/app-debug.apk
             adb shell am force-stop software.ngallodev.conversationexportworkbench
-            adb shell monkey -p software.ngallodev.conversationexportworkbench -c android.intent.category.LAUNCHER 1
-            sleep 6
-            adb shell uiautomator dump /sdcard/cew-window.xml
-            adb shell cat /sdcard/cew-window.xml > ../cew-window.xml
-            grep -q "Conversation Export Workbench" ../cew-window.xml
+            adb shell am start -W -n software.ngallodev.conversationexportworkbench/.MainActivity
+
+            running=0
+            for attempt in $(seq 1 30); do
+              if adb shell pidof software.ngallodev.conversationexportworkbench >/dev/null 2>&1; then
+                running=1
+                break
+              fi
+              sleep 2
+            done
+            test "$running" = "1"
+
+            adb shell dumpsys activity activities > ../cew-activity.txt
+            grep -q "software.ngallodev.conversationexportworkbench" ../cew-activity.txt
             adb exec-out screencap -p > ../cew-android-smoke.png
             test -s ../cew-android-smoke.png
 
@@ -102,7 +111,7 @@ jobs:
         with:
           name: android-smoke-evidence
           path: |
-            mobile/cew-window.xml
+            mobile/cew-activity.txt
             mobile/cew-android-smoke.png
           if-no-files-found: ignore
 
