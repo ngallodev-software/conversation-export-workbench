@@ -101,7 +101,7 @@ And this repository variable is configured:
 
 - `IOS_BUNDLE_ID`
 
-Set repository variable `ENABLE_TESTFLIGHT_UPLOAD=true` to upload the signed IPA to TestFlight automatically after export.
+Set repository variable `ENABLE_TESTFLIGHT_UPLOAD=true` to upload the signed IPA to TestFlight after the GitHub release has been created successfully.
 
 ## Native biometric unlock
 
@@ -109,7 +109,7 @@ The repository-local `@ngallodev/cew-native-biometrics` Capacitor plugin uses An
 
 ## Native UI smoke testing
 
-Release branches boot an Android emulator and an iOS Simulator, install and launch the generated applications, and retain screenshot/UI evidence as workflow artifacts. These tests validate native generation, plugin compilation, installation, WebView launch, and the application shell.
+Release branches compile both native apps. Pull-request/manual smoke runs boot an Android emulator when hardware acceleration is available and an iOS Simulator, install and launch the generated applications, and retain screenshot/launch evidence as workflow artifacts. Android emulator smoke is explicitly skipped rather than falling back to slow TCG software emulation when KVM is unavailable. These tests validate native generation, plugin compilation, installation, WebView launch, and the application shell.
 
 ## Native project policy
 
