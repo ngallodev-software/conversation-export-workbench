@@ -1,5 +1,6 @@
 ext {
     androidxBiometricVersion = project.hasProperty('androidxBiometricVersion') ? rootProject.ext.androidxBiometricVersion : '1.1.0'
+    androidxAppCompatVersion = project.hasProperty('androidxAppCompatVersion') ? rootProject.ext.androidxAppCompatVersion : '1.7.1'
 }
 
 apply plugin: 'com.android.library'
@@ -24,5 +25,6 @@ repositories {
 
 dependencies {
     implementation project(':capacitor-android')
+    implementation "androidx.appcompat:appcompat:$androidxAppCompatVersion"
     implementation "androidx.biometric:biometric:$androidxBiometricVersion"
 }
