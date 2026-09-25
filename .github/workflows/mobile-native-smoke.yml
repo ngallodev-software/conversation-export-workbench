@@ -79,11 +79,12 @@ jobs:
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
           sudo chmod 666 /dev/kvm
-          if [ -r /dev/kvm ] && [ -w /dev/kvm ]; then
+          emulator="${ANDROID_HOME:-/usr/local/lib/android/sdk}/emulator/emulator"
+          if [ -r /dev/kvm ] && [ -w /dev/kvm ] && "$emulator" -accel-check; then
             echo "available=true" >> "$GITHUB_OUTPUT"
           else
             echo "available=false" >> "$GITHUB_OUTPUT"
-            echo "::warning::KVM exists but is not usable; emulator UI smoke will be skipped."
+            echo "::warning::Hardware acceleration check failed; emulator UI smoke will be skipped instead of falling back to TCG."
           fi
 
       - name: Generate Android project
@@ -105,7 +106,7 @@ jobs:
           arch: x86_64
           profile: pixel_2
           emulator-boot-timeout: 180
-          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -camera-back none -camera-front none
+          emulator-options: -no-window -accel on -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -camera-back none -camera-front none
           disable-animations: true
           working-directory: mobile/android
           script: |
