@@ -91,9 +91,10 @@ jobs:
             adb shell monkey -p software.ngallodev.conversationexportworkbench -c android.intent.category.LAUNCHER 1
             sleep 6
             adb shell uiautomator dump /sdcard/cew-window.xml
-            adb pull /sdcard/cew-window.xml ../cew-window.xml
+            adb shell cat /sdcard/cew-window.xml > ../cew-window.xml
             grep -q "Conversation Export Workbench" ../cew-window.xml
             adb exec-out screencap -p > ../cew-android-smoke.png
+            test -s ../cew-android-smoke.png
 
       - name: Upload Android smoke evidence
         if: always()
