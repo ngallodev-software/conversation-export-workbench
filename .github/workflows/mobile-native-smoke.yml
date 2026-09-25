@@ -1,0 +1,126 @@
+name: Native mobile smoke tests
+
+on:
+  push:
+    branches:
+      - "release/**"
+  pull_request:
+    paths:
+      - "mobile/**"
+      - ".github/workflows/mobile-native-smoke.yml"
+      - ".github/workflows/release-candidate.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  android-emulator:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: "22.16.0"
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+
+      - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Generate Android project
+        working-directory: mobile
+        run: |
+          npm ci --ignore-scripts --no-audit --no-fund
+          npm run test
+          npm run build
+          npx cap add android
+          npx cap sync android
+          npm run native:configure
+
+      - name: Launch app in Android emulator
+        uses: ReactiveCircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
+        with:
+          api-level: 35
+          arch: x86_64
+          profile: pixel_6
+          disable-animations: true
+          working-directory: mobile/android
+          script: |
+            ./gradlew assembleDebug --no-daemon
+            adb install -r app/build/outputs/apk/debug/app-debug.apk
+            adb shell am force-stop software.ngallodev.conversationexportworkbench
+            adb shell monkey -p software.ngallodev.conversationexportworkbench -c android.intent.category.LAUNCHER 1
+            sleep 6
+            adb shell uiautomator dump /sdcard/cew-window.xml
+            adb pull /sdcard/cew-window.xml ../cew-window.xml
+            grep -q "Conversation Export Workbench" ../cew-window.xml
+            adb exec-out screencap -p > ../cew-android-smoke.png
+
+      - name: Upload Android smoke evidence
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: android-smoke-evidence
+          path: |
+            mobile/cew-window.xml
+            mobile/cew-android-smoke.png
+          if-no-files-found: ignore
+
+  ios-simulator:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: "22.16.0"
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+
+      - name: Generate iOS project
+        working-directory: mobile
+        run: |
+          npm ci --ignore-scripts --no-audit --no-fund
+          npm run test
+          npm run build
+          npx cap add ios
+          npx cap sync ios
+          npm run native:configure
+
+      - name: Build iOS Simulator app
+        working-directory: mobile
+        run: |
+          xcodebuild \
+            -project ios/App/App.xcodeproj \
+            -scheme App \
+            -configuration Debug \
+            -sdk iphonesimulator \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            build
+
+      - name: Launch app in iOS Simulator
+        working-directory: mobile
+        shell: bash
+        run: |
+          udid="$(xcrun simctl list devices available -j | python3 -c 'import json,sys; d=json.load(sys.stdin)["devices"]; print(next(x["udid"] for runtime in d.values() for x in runtime if x.get("isAvailable") and "iPhone" in x.get("name","")))')"
+          xcrun simctl boot "$udid" || true
+          xcrun simctl bootstatus "$udid" -b
+          app="build/Build/Products/Debug-iphonesimulator/App.app"
+          xcrun simctl install "$udid" "$app"
+          xcrun simctl launch "$udid" software.ngallodev.conversationexportworkbench
+          sleep 5
+          xcrun simctl io "$udid" screenshot cew-ios-smoke.png
+          test -s cew-ios-smoke.png
+
+      - name: Upload iOS smoke evidence
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: ios-smoke-evidence
+          path: mobile/cew-ios-smoke.png
+          if-no-files-found: ignore
