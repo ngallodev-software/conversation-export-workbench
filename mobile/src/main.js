@@ -1,5 +1,6 @@
-import { strFromU8, unzipSync } from 'fflate';
+import { strFromU8 } from 'fflate';
 import { NativeBiometrics } from '@ngallodev/cew-native-biometrics';
+import { readSelectedZip } from './zip-stream.js';
 import { clearAppLock, hasAppLock, setAppLock, verifyAppLock } from './app-lock.js';
 import {
   CONVERSATION_SCHEMA,
@@ -10,7 +11,7 @@ import {
 
 const BUNDLE_SCHEMAS = new Set(['cew.bundle/v1', 'cew.bundle/v2']);
 const REQUIRED_FILES = new Set(['manifest.json', 'conversations.json', 'search.json']);
-const MAX_COMPRESSED_BYTES = 128 * 1024 * 1024;
+const MAX_COMPRESSED_BYTES = 2 * 1024 * 1024 * 1024;
 const MAX_MEMBER_BYTES = 256 * 1024 * 1024;
 const MAX_ATTACHMENT_TOTAL_BYTES = 128 * 1024 * 1024;
 const MAX_RATIO = 200;
@@ -78,32 +79,14 @@ async function sha256Hex(bytes) {
   return Array.from(new Uint8Array(digest), value => value.toString(16).padStart(2, '0')).join('');
 }
 
-async function parseBundle(fileBytes) {
-  const rejected = [];
-  let attachmentTotal = 0;
-  const files = unzipSync(fileBytes, {
-    filter(info) {
-      const isAttachment = String(info.name || '').startsWith('attachments/');
-      if (!REQUIRED_FILES.has(info.name) && !isAttachment) return false;
-      if (isAttachment) {
-        attachmentTotal += Number(info.originalSize || 0);
-        if (attachmentTotal > MAX_ATTACHMENT_TOTAL_BYTES) {
-          rejected.push('attachment payloads exceed mobile import limit');
-          return false;
-        }
-      }
-      if (info.originalSize > MAX_MEMBER_BYTES) {
-        rejected.push(info.name + ': member too large');
-        return false;
-      }
-      if (info.size > 0 && info.originalSize / info.size > MAX_RATIO) {
-        rejected.push(info.name + ': suspicious compression ratio');
-        return false;
-      }
-      return true;
-    },
+async function parseBundleFile(file) {
+  const files = await readSelectedZip(file, {
+    accept: name => REQUIRED_FILES.has(name) || String(name || '').startsWith('attachments/'),
+    maxEntries: 10000,
+    maxMemberBytes: MAX_MEMBER_BYTES,
+    maxTotalBytes: MAX_MEMBER_BYTES + MAX_ATTACHMENT_TOTAL_BYTES,
+    maxCompressionRatio: MAX_RATIO,
   });
-  if (rejected.length) throw new Error(rejected[0]);
   for (const name of REQUIRED_FILES) {
     if (!files[name]) throw new Error('Bundle missing ' + name);
   }
@@ -120,12 +103,17 @@ async function parseBundle(fileBytes) {
 
   const attachmentEntries = Array.isArray(manifest.attachments) ? manifest.attachments : [];
   const attachments = {};
+  let attachmentTotal = 0;
   for (const entry of attachmentEntries) {
     if (!entry || typeof entry !== 'object') throw new Error('Invalid attachment metadata');
     const path = String(entry.path || '');
     if (!path.startsWith('attachments/')) throw new Error('Unsafe attachment path');
     const payload = files[path];
     if (!payload) throw new Error('Bundle attachment missing: ' + path);
+    attachmentTotal += payload.byteLength;
+    if (attachmentTotal > MAX_ATTACHMENT_TOTAL_BYTES) {
+      throw new Error('attachment payloads exceed mobile import limit');
+    }
     if (Number(entry.size) !== payload.byteLength) throw new Error('Attachment size mismatch: ' + path);
     const digest = await sha256Hex(payload);
     if (digest !== String(entry.sha256 || '')) throw new Error('Attachment hash mismatch: ' + path);
@@ -162,37 +150,31 @@ function parseProviderData(data, filename) {
   };
 }
 
-function parseRawZip(fileBytes, filename) {
-  const rejected = [];
-  const files = unzipSync(fileBytes, {
-    filter(info) {
-      const basename = String(info.name || '').split('/').pop();
-      if (basename !== 'conversations.json') return false;
-      if (info.originalSize > MAX_MEMBER_BYTES) {
-        rejected.push(info.name + ': member too large');
-        return false;
-      }
-      if (info.size > 0 && info.originalSize / info.size > MAX_RATIO) {
-        rejected.push(info.name + ': suspicious compression ratio');
-        return false;
-      }
-      return true;
-    },
+async function parseRawZipFile(file) {
+  const files = await readSelectedZip(file, {
+    accept: name => String(name || '').split('/').pop() === 'conversations.json',
+    maxEntries: 64,
+    maxMemberBytes: MAX_MEMBER_BYTES,
+    maxTotalBytes: MAX_MEMBER_BYTES,
+    maxCompressionRatio: MAX_RATIO,
   });
-  if (rejected.length) throw new Error(rejected[0]);
-  const names = Object.keys(files).filter(name => name.split('/').pop() === 'conversations.json').sort();
+  const names = Object.keys(files)
+    .filter(name => name.split('/').pop() === 'conversations.json')
+    .sort();
   if (!names.length) throw new Error('ZIP does not contain conversations.json');
-  if (names.length > 64) throw new Error('ZIP contains too many conversations.json files');
-  return parseProviderData(decodeJson(files[names[0]], names[0]), filename);
+  return parseProviderData(decodeJson(files[names[0]], names[0]), file.name);
 }
 
 async function parseImportedFile(file) {
   if (file.size > MAX_COMPRESSED_BYTES) throw new Error('Import file is too large');
-  const bytes = new Uint8Array(await file.arrayBuffer());
   const lower = file.name.toLowerCase();
-  if (lower.endsWith('.cew')) return await parseBundle(bytes);
-  if (lower.endsWith('.zip')) return parseRawZip(bytes, file.name);
-  if (lower.endsWith('.json')) return parseProviderData(decodeJson(bytes, file.name), file.name);
+  if (lower.endsWith('.cew')) return await parseBundleFile(file);
+  if (lower.endsWith('.zip')) return await parseRawZipFile(file);
+  if (lower.endsWith('.json')) {
+    if (file.size > MAX_MEMBER_BYTES) throw new Error('JSON import is too large');
+    const bytes = new Uint8Array(await file.arrayBuffer());
+    return parseProviderData(decodeJson(bytes, file.name), file.name);
+  }
   throw new Error('Choose a .cew, provider export .zip, or conversations .json file');
 }
 
