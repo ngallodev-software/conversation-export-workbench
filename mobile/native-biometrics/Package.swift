@@ -2,9 +2,14 @@
 import PackageDescription
 
 let package = Package(
-    name: "CEWNativeBiometrics",
+    name: "NgallodevCewNativeBiometrics",
     platforms: [.iOS(.v15)],
-    products: [.library(name: "CEWNativeBiometrics", targets: ["NativeBiometricsPlugin"])],
+    products: [
+        .library(
+            name: "NgallodevCewNativeBiometrics",
+            targets: ["NativeBiometricsPlugin"]
+        )
+    ],
     dependencies: [
         .package(url: "https://github.com/ionic-team/capacitor-swift-pm.git", from: "8.0.0")
     ],
