@@ -401,14 +401,6 @@ jobs:
           /usr/libexec/PlistBuddy -c "Add :teamID string $APPLE_TEAM_ID" build/ExportOptions.plist
           xcodebuild -exportArchive -archivePath build/App.xcarchive -exportOptionsPlist build/ExportOptions.plist -exportPath release -allowProvisioningUpdates -authenticationKeyPath "$APPLE_API_KEY_PATH" -authenticationKeyID "$APPLE_API_KEY_ID" -authenticationKeyIssuerID "$APPLE_API_ISSUER_ID"
 
-      - name: Upload IPA to TestFlight
-        if: steps.signing.outputs.enabled == 'true' && vars.ENABLE_TESTFLIGHT_UPLOAD == 'true'
-        shell: bash
-        run: |
-          ipa="$(find release -maxdepth 1 -name '*.ipa' -print -quit)"
-          test -n "$ipa"
-          xcrun altool --upload-app -f "$ipa" -t ios --apiKey "$APPLE_API_KEY_ID" --apiIssuer "$APPLE_API_ISSUER_ID"
-
       - name: Upload signed iOS artifact
         if: steps.signing.outputs.enabled == 'true'
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
