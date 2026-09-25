@@ -1,0 +1,213 @@
+name: Native mobile smoke tests
+
+on:
+  push:
+    branches:
+      - "release/**"
+  pull_request:
+    paths:
+      - "mobile/**"
+      - ".github/workflows/mobile-native-smoke.yml"
+      - ".github/workflows/release-candidate.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  android-native-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: "22.16.0"
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+
+      - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Compile generated Android app
+        working-directory: mobile
+        run: |
+          npm ci --ignore-scripts --no-audit --no-fund
+          npm run test
+          npm run build
+          npx cap add android
+          npx cap sync android
+          npm run native:configure
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon
+
+  android-emulator:
+    if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch'
+    timeout-minutes: 12
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: "22.16.0"
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+
+      - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Enable KVM hardware acceleration
+        id: kvm
+        shell: bash
+        run: |
+          if [ ! -e /dev/kvm ]; then
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::/dev/kvm is unavailable on this runner; emulator UI smoke will be skipped."
+            exit 0
+          fi
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+          sudo chmod 666 /dev/kvm
+          emulator="${ANDROID_HOME:-/usr/local/lib/android/sdk}/emulator/emulator"
+          if [ -r /dev/kvm ] && [ -w /dev/kvm ] && "$emulator" -accel-check; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::Hardware acceleration check failed; emulator UI smoke will be skipped instead of falling back to TCG."
+          fi
+
+      - name: Generate Android project
+        working-directory: mobile
+        run: |
+          npm ci --ignore-scripts --no-audit --no-fund
+          npm run test
+          npm run build
+          npx cap add android
+          npx cap sync android
+          npm run native:configure
+
+      - name: Launch app in Android emulator
+        if: steps.kvm.outputs.available == 'true'
+        uses: ReactiveCircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
+        with:
+          api-level: 35
+          target: aosp_atd
+          arch: x86_64
+          profile: pixel_2
+          emulator-boot-timeout: 180
+          emulator-options: -no-window -accel on -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -camera-back none -camera-front none
+          disable-animations: true
+          working-directory: mobile/android
+          script: |
+            ./gradlew assembleDebug --no-daemon
+            adb install -r app/build/outputs/apk/debug/app-debug.apk
+            adb shell am force-stop software.ngallodev.conversationexportworkbench
+            adb shell am start -W -n software.ngallodev.conversationexportworkbench/.MainActivity
+
+            running=0
+            for attempt in $(seq 1 30); do
+              if adb shell pidof software.ngallodev.conversationexportworkbench >/dev/null 2>&1; then
+                running=1
+                break
+              fi
+              sleep 2
+            done
+            test "$running" = "1"
+
+            adb shell dumpsys activity activities > ../cew-activity.txt
+            grep -q "software.ngallodev.conversationexportworkbench" ../cew-activity.txt
+            adb exec-out screencap -p > ../cew-android-smoke.png
+            test -s ../cew-android-smoke.png
+
+      - name: Record skipped Android emulator reason
+        if: steps.kvm.outputs.available != 'true'
+        shell: bash
+        run: |
+          echo "Android emulator UI smoke skipped because KVM hardware acceleration was unavailable on the hosted runner." > mobile/cew-android-smoke-skipped.txt
+
+      - name: Upload Android smoke evidence
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: android-smoke-evidence
+          path: |
+            mobile/cew-activity.txt
+            mobile/cew-android-smoke.png
+            mobile/cew-android-smoke-skipped.txt
+          if-no-files-found: ignore
+
+  ios-simulator:
+    timeout-minutes: 20
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: "22.16.0"
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+
+      - name: Generate iOS project
+        working-directory: mobile
+        run: |
+          npm ci --ignore-scripts --no-audit --no-fund
+          npm run test
+          npm run build
+          npx cap add ios
+          npx cap sync ios
+          npm run native:configure
+
+      - name: Build iOS Simulator app
+        working-directory: mobile
+        run: |
+          xcodebuild \
+            -project ios/App/App.xcodeproj \
+            -scheme App \
+            -configuration Debug \
+            -sdk iphonesimulator \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            build
+
+      - name: Launch app in iOS Simulator
+        working-directory: mobile
+        shell: bash
+        run: |
+          udid="$(xcrun simctl list devices available -j | python3 -c 'import json,sys; d=json.load(sys.stdin)["devices"]; print(next(x["udid"] for runtime in d.values() for x in runtime if x.get("isAvailable") and "iPhone" in x.get("name","")))')"
+          xcrun simctl boot "$udid" || true
+          booted=0
+          for attempt in $(seq 1 60); do
+            state="$(xcrun simctl list devices -j | UDID="$udid" python3 -c 'import json,sys,os; d=json.load(sys.stdin)["devices"]; target=os.environ["UDID"]; print(next((x.get("state","") for runtime in d.values() for x in runtime if x.get("udid")==target), ""))' 2>/dev/null || true)"
+            if [ "$state" = "Booted" ]; then
+              booted=1
+              break
+            fi
+            sleep 2
+          done
+          test "$booted" = "1"
+          app="build/Build/Products/Debug-iphonesimulator/App.app"
+          xcrun simctl install "$udid" "$app"
+          xcrun simctl launch "$udid" software.ngallodev.conversationexportworkbench
+          sleep 5
+          xcrun simctl io "$udid" screenshot cew-ios-smoke.png
+          test -s cew-ios-smoke.png
+
+      - name: Upload iOS smoke evidence
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: ios-smoke-evidence
+          path: mobile/cew-ios-smoke.png
+          if-no-files-found: ignore

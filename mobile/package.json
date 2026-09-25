@@ -1,22 +1,24 @@
 {
   "name": "conversation-export-workbench-mobile",
   "private": true,
-  "version": "0.3.0",
+  "version": "0.4.0",
   "type": "module",
   "scripts": {
     "dev": "vite --host 127.0.0.1",
     "build": "vite build",
-    "cap:sync": "npm run build && cap sync",
+    "cap:sync": "npm run build && cap sync && npm run native:configure",
     "android:add": "cap add android",
     "android:open": "npm run cap:sync && cap open android",
     "ios:add": "cap add ios",
     "ios:open": "npm run cap:sync && cap open ios",
     "test": "node --test test/*.test.js",
-    "profile": "node scripts/profile-large-archive.mjs"
+    "profile": "node scripts/profile-large-archive.mjs",
+    "native:configure": "node scripts/configure-native.mjs"
   },
   "dependencies": {
     "@capacitor/core": "8.5.2",
-    "fflate": "0.8.3"
+    "fflate": "0.8.3",
+    "@ngallodev/cew-native-biometrics": "file:./native-biometrics"
   },
   "devDependencies": {
     "@capacitor/android": "8.5.2",

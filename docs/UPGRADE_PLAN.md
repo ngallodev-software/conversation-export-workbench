@@ -93,7 +93,9 @@ Implemented:
 
 Native Android/iOS projects are generated reproducibly from the pinned Capacitor sources during CI rather than committed as generated platform trees.
 
-**Remaining device-dependent work:** automated physical/emulator UI smoke tests and an optional native biometric unlock layer. Apple device/TestFlight output additionally requires Apple Developer/App Store Connect credentials. Stable Android release output requires a private release keystore.
+Native biometric unlock is implemented as a first-party Capacitor plugin over Android BiometricPrompt and iOS LocalAuthentication, with the existing PIN verifier retained as recovery. Android emulator and iOS Simulator launch/UI smoke tests now exercise generated native projects and capture evidence artifacts.
+
+**Remaining account-dependent work:** actual App Store/TestFlight and Google Play publication requires the corresponding store accounts, signing keys, and service credentials. The workflows are credential-gated and ready for those values.
 
 ## Phase 6 — Direct raw-export import on mobile
 
@@ -117,8 +119,7 @@ Implemented:
 Deliberately deferred:
 
 - **archive encryption at rest:** Python's standard library does not provide a suitable authenticated-encryption primitive. Adding home-grown cryptography would weaken the security posture. If encrypted `.cew` archives are added, they should use a well-maintained audited dependency and a separately versioned encrypted-envelope format.
-- **native biometric unlock:** optional convenience layer; OS sandbox protection plus the local PIN gate remain the current behavior.
-- **device UI automation:** requires simulator/emulator/device orchestration beyond the current deterministic build and adapter tests.
+- **physical-device UI automation:** emulator/simulator launch tests are implemented; real-device farms are optional future coverage.
 
 ## Current implementation status
 
@@ -127,6 +128,6 @@ Deliberately deferred:
 - [x] Phase 2 — CI/release/supply-chain hardening and mobile lockfile.
 - [x] Phase 3 — canonical model and canonical HTML/Markdown rendering.
 - [x] Phase 4 — CEW v2 provenance, merge/history, search, and attachment payloads.
-- [~] Phase 5 — offline mobile client, packaging, app lock, signing hooks; device UI automation/biometrics remain optional follow-up.
+- [x] Phase 5 — offline mobile client, packaging, PIN + native biometric unlock, signing hooks, emulator/simulator UI smoke coverage.
 - [x] Phase 6 — direct raw provider ZIP/JSON import on mobile.
-- [~] Phase 7 — major polish complete; authenticated archive encryption intentionally deferred pending an audited crypto dependency decision.
+- [x] Phase 7 — major polish complete, including streamed mobile ZIP import; authenticated archive encryption remains intentionally deferred pending an audited crypto dependency decision.

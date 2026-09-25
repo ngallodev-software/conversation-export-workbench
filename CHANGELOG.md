@@ -1,5 +1,26 @@
 # Changelog
 
+## 0.4.0 — 2026-09-24
+
+### Added
+
+- first-party Capacitor native biometric bridge using Android BiometricPrompt and iOS LocalAuthentication;
+- biometric unlock action layered over the existing PBKDF2 PIN app lock, with PIN recovery preserved;
+- Android emulator launch/UI smoke tests with screenshot and accessibility-tree evidence;
+- iOS Simulator install/launch smoke tests with screenshot evidence;
+- credential-gated Google Play internal-track publication hook for signed AAB releases.
+
+### Changed
+
+- generated iOS projects receive the Face ID privacy description automatically during native configuration;
+- release-candidate builds compile the native biometric plugin on both mobile platforms;
+- native UI smoke tests are now part of release-branch qualification.
+
+### Distribution
+
+- Google Play upload remains disabled unless the repository is configured with a stable Android keystore, Google Play service-account JSON, and `ENABLE_GOOGLE_PLAY_UPLOAD=true`;
+- App Store/TestFlight upload continues to use the existing Apple credential-gated path.
+
 ## 0.3.0 — 2026-09-24
 
 ### Added

@@ -118,3 +118,75 @@ jobs:
             --title "$TAG" \
             --notes-file release-notes.md \
             --verify-tag
+
+  google-play:
+    needs: [gate, build, release]
+    if: vars.ENABLE_GOOGLE_PLAY_UPLOAD == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Download signed Android release artifact
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
+        with:
+          name: release-candidate-android
+          path: android-release
+
+      - name: Require signed AAB
+        shell: bash
+        run: |
+          shopt -s nullglob
+          bundles=(android-release/*.aab)
+          if [ "${#bundles[@]}" -ne 1 ]; then
+            echo "Google Play upload is enabled but exactly one signed AAB was not produced. Configure the stable Android signing secrets." >&2
+            exit 1
+          fi
+
+      - name: Upload Android App Bundle to Google Play
+        uses: r0adkll/upload-google-play@e738b9dd8f2476ea806d921b64aacd24f34515a5 # v1.1.5
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
+          packageName: software.ngallodev.conversationexportworkbench
+          releaseFiles: android-release/*.aab
+          track: ${{ vars.GOOGLE_PLAY_TRACK || 'internal' }}
+          status: completed
+
+  testflight:
+    needs: [gate, build, release]
+    if: vars.ENABLE_TESTFLIGHT_UPLOAD == 'true'
+    runs-on: macos-latest
+    permissions:
+      contents: read
+    env:
+      APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+      APPLE_API_ISSUER_ID: ${{ secrets.APPLE_API_ISSUER_ID }}
+      APPLE_API_PRIVATE_KEY_BASE64: ${{ secrets.APPLE_API_PRIVATE_KEY_BASE64 }}
+    steps:
+      - name: Download signed iOS release artifact
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
+        with:
+          name: release-candidate-ios-device
+          path: ios-release
+
+      - name: Configure App Store Connect API key
+        shell: bash
+        run: |
+          test -n "$APPLE_API_KEY_ID"
+          test -n "$APPLE_API_ISSUER_ID"
+          test -n "$APPLE_API_PRIVATE_KEY_BASE64"
+          mkdir -p "$HOME/.appstoreconnect/private_keys"
+          key="$HOME/.appstoreconnect/private_keys/AuthKey_${APPLE_API_KEY_ID}.p8"
+          printf '%s' "$APPLE_API_PRIVATE_KEY_BASE64" | base64 --decode > "$key"
+          chmod 600 "$key"
+
+      - name: Upload IPA to TestFlight
+        shell: bash
+        run: |
+          shopt -s nullglob
+          ipas=(ios-release/*.ipa)
+          if [ "${#ipas[@]}" -ne 1 ]; then
+            echo "TestFlight upload is enabled but exactly one signed IPA was not produced. Configure Apple signing/provisioning credentials." >&2
+            exit 1
+          fi
+          xcrun altool --upload-app -f "${ipas[0]}" -t ios --apiKey "$APPLE_API_KEY_ID" --apiIssuer "$APPLE_API_ISSUER_ID"
+

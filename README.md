@@ -49,7 +49,7 @@ Provider detection is structural and template-based. If an export does not match
 
 ### Option A: installer or mobile package
 
-The v0.3 release pipeline produces Windows Setup EXE, macOS PKG, Linux DEB, Android APK/AAB when release signing is configured (otherwise a sideload APK), portable desktop binaries, and an iOS Simulator artifact. A signed iOS IPA/TestFlight upload is produced when Apple signing credentials are configured.
+The release pipeline produces a Windows Setup EXE, macOS PKG, Linux DEB, Android APK/AAB when release signing is configured (otherwise a sideload APK), portable desktop binaries, and an iOS Simulator artifact. Signed Android/iOS store delivery is credential-gated and runs only after the GitHub release succeeds.
 
 See [INSTALL.md](INSTALL.md) for platform-specific installation instructions.
 
@@ -187,7 +187,7 @@ This is useful when ChatGPT, Claude, and DeepSeek history need to feed the same 
 
 ## Android and iOS offline viewer
 
-The `mobile/` directory contains a Capacitor 8 client and installable PWA. It imports CEW v1/v2 or raw ChatGPT, Claude, and DeepSeek ZIP/JSON exports, normalizes them on-device, stores the archive inside the app sandbox, and searches locally. It includes an optional PIN app lock, system/light/dark themes, archive statistics, verified attachment Share / Save, and no hosted backend.
+The `mobile/` directory contains a Capacitor 8 client and installable PWA. It imports CEW v1/v2 or raw ChatGPT, Claude, and DeepSeek ZIP/JSON exports, normalizes them on-device, stores the archive inside the app sandbox, and searches locally. It includes an optional PIN app lock with native biometric unlock, streaming ZIP import for large exports, system/light/dark themes, archive statistics, verified attachment Share / Save, and no hosted backend.
 
 Android release signing and iOS IPA/TestFlight publication are wired through repository secrets without storing credentials in source. See [mobile/README.md](mobile/README.md).
 

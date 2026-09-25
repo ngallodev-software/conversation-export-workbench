@@ -21,7 +21,8 @@
       <p>This archive is protected by the local app lock.</p>
       <label for="unlock-pin">PIN</label>
       <input id="unlock-pin" type="password" inputmode="numeric" autocomplete="current-password" minlength="4" required>
-      <button type="submit" class="import-button">Unlock</button>
+      <button id="biometric-unlock" type="button" class="subtle-button" hidden>Use biometrics</button>
+      <button type="submit" class="import-button">Use PIN</button>
       <div id="unlock-error" class="lock-error" role="alert" aria-live="assertive"></div>
     </form>
   </section>
