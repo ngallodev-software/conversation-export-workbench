@@ -106,6 +106,7 @@ jobs:
           if-no-files-found: ignore
 
   ios-simulator:
+    timeout-minutes: 20
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
@@ -144,7 +145,16 @@ jobs:
         run: |
           udid="$(xcrun simctl list devices available -j | python3 -c 'import json,sys; d=json.load(sys.stdin)["devices"]; print(next(x["udid"] for runtime in d.values() for x in runtime if x.get("isAvailable") and "iPhone" in x.get("name","")))')"
           xcrun simctl boot "$udid" || true
-          xcrun simctl bootstatus "$udid" -b
+          booted=0
+          for attempt in $(seq 1 60); do
+            state="$(xcrun simctl list devices -j | UDID="$udid" python3 -c 'import json,sys,os; d=json.load(sys.stdin)["devices"]; target=os.environ["UDID"]; print(next((x.get("state","") for runtime in d.values() for x in runtime if x.get("udid")==target), ""))' 2>/dev/null || true)"
+            if [ "$state" = "Booted" ]; then
+              booted=1
+              break
+            fi
+            sleep 2
+          done
+          test "$booted" = "1"
           app="build/Build/Products/Debug-iphonesimulator/App.app"
           xcrun simctl install "$udid" "$app"
           xcrun simctl launch "$udid" software.ngallodev.conversationexportworkbench
