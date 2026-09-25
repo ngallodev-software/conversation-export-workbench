@@ -50,7 +50,7 @@ jobs:
 
   android-emulator:
     if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch'
-    timeout-minutes: 20
+    timeout-minutes: 12
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
@@ -80,8 +80,11 @@ jobs:
         uses: ReactiveCircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
         with:
           api-level: 35
+          target: aosp_atd
           arch: x86_64
-          profile: pixel_6
+          profile: pixel_2
+          emulator-boot-timeout: 180
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -camera-back none -camera-front none
           disable-animations: true
           working-directory: mobile/android
           script: |
