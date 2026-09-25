@@ -1,0 +1,28 @@
+ext {
+    androidxBiometricVersion = project.hasProperty('androidxBiometricVersion') ? rootProject.ext.androidxBiometricVersion : '1.1.0'
+}
+
+apply plugin: 'com.android.library'
+
+android {
+    namespace = "software.ngallodev.cew.biometrics"
+    compileSdk = project.hasProperty('compileSdkVersion') ? rootProject.ext.compileSdkVersion : 36
+    defaultConfig {
+        minSdkVersion project.hasProperty('minSdkVersion') ? rootProject.ext.minSdkVersion : 24
+        targetSdkVersion project.hasProperty('targetSdkVersion') ? rootProject.ext.targetSdkVersion : 36
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_21
+        targetCompatibility JavaVersion.VERSION_21
+    }
+}
+
+repositories {
+    google()
+    mavenCentral()
+}
+
+dependencies {
+    implementation project(':capacitor-android')
+    implementation "androidx.biometric:biometric:$androidxBiometricVersion"
+}
