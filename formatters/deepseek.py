@@ -6,7 +6,7 @@ import json
 from canonical import canonical_conversation, canonical_message
 from canonical_render import render_canonical_html_body, render_canonical_markdown
 from .shared import (
-    fmt_date, iso_to_epoch_ms, markdown_to_html, render_template, sanitize_href
+    fmt_date, iso_to_epoch_ms, markdown_to_html, normalize_timestamp, render_template, sanitize_href
 )
 
 
@@ -204,7 +204,7 @@ def conv_to_json_clean(conv: dict) -> dict:
         clean_messages.append(
             canonical_message(
                 role,
-                msg.get("inserted_at", ""),
+                normalize_timestamp(msg.get("inserted_at", "")),
                 parts,
                 model=str(msg.get("model", "") or ""),
             )
@@ -213,8 +213,8 @@ def conv_to_json_clean(conv: dict) -> dict:
         PROVIDER,
         conv.get("id", ""),
         conv.get("title", ""),
-        conv.get("inserted_at", ""),
-        conv.get("updated_at", ""),
+        normalize_timestamp(conv.get("inserted_at", "")),
+        normalize_timestamp(conv.get("updated_at", "")),
         clean_messages,
     )
 

@@ -11,6 +11,7 @@ if str(ROOT) not in sys.path:
 
 import format_conversations
 from formatters import chatgpt, claude, deepseek
+from formatters.shared import normalize_timestamp
 
 
 def test_load_conversations_accepts_zip_input(tmp_path: Path):
@@ -104,3 +105,23 @@ def test_main_provider_prompt_skipped_non_interactive(monkeypatch: pytest.Monkey
         format_conversations.main()
 
     assert exc.value.code == 1
+
+
+def test_normalize_timestamp_uses_utc_second_precision():
+    assert normalize_timestamp("2026-08-05T07:59:21.548716Z") == "2026-08-05T07:59:21Z"
+    assert normalize_timestamp("2026-04-21T09:48:15.209000+08:00") == "2026-04-21T01:48:15Z"
+    assert normalize_timestamp("2026-03-01T00:00:00") == "2026-03-01T00:00:00Z"
+
+
+def test_provider_canonical_timestamps_are_second_precision():
+    cases = [
+        (Path("sample_data/chatgpt-convo.json"), chatgpt),
+        (Path("sample_data/claude-convo.json"), claude),
+        (Path("sample_data/deepseek-convo.json"), deepseek),
+    ]
+    for path, formatter in cases:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        record = formatter.conv_to_json_clean(payload[0])
+        timestamps = [record["started_at"], record["updated_at"]]
+        timestamps.extend(message["timestamp"] for message in record["messages"])
+        assert all(value.endswith("Z") and "." not in value for value in timestamps if value)

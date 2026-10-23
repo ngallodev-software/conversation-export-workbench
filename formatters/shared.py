@@ -2,7 +2,8 @@
 
 import html
 import re
-from datetime import datetime
+import sys
+from datetime import datetime, timezone
 from pathlib import Path
 from urllib.parse import urlsplit
 
@@ -10,6 +11,26 @@ from urllib.parse import urlsplit
 # ---------------------------------------------------------------------------
 # Date / time helpers
 # ---------------------------------------------------------------------------
+
+def normalize_timestamp(value: str) -> str:
+    """Normalize an ISO-8601 timestamp to UTC with second precision.
+
+    Naive timestamps are treated as UTC for compatibility with existing
+    provider exports. Invalid or empty values are returned unchanged so a
+    malformed source value is not silently discarded.
+    """
+    if not value:
+        return ""
+    text = str(value).strip()
+    try:
+        parsed = datetime.fromisoformat(text.replace("Z", "+00:00"))
+        if parsed.tzinfo is None:
+            parsed = parsed.replace(tzinfo=timezone.utc)
+        parsed = parsed.astimezone(timezone.utc).replace(microsecond=0)
+        return parsed.strftime("%Y-%m-%dT%H:%M:%SZ")
+    except (TypeError, ValueError):
+        return value
+
 
 def fmt_date(iso: str) -> str:
     try:
@@ -54,7 +75,12 @@ def safe_write(path: Path, content: str, yes: bool) -> bool:
             print(f"Skipped: {path}")
             return False
     path.write_text(content, encoding="utf-8")
-    print(f"Written: {path}")
+    # Windows console code pages may not represent Chinese or other Unicode
+    # filenames. Keep status output best-effort so a successful write returns
+    # a successful process exit code.
+    encoding = getattr(sys.stdout, "encoding", None) or "utf-8"
+    display_path = str(path).encode(encoding, errors="backslashreplace").decode(encoding)
+    print(f"Written: {display_path}")
     return True
 
 

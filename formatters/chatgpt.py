@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 from canonical import canonical_conversation, canonical_message
 from canonical_render import render_canonical_html_body, render_canonical_markdown
 from .shared import (
-    fmt_date, markdown_to_html, render_template
+    fmt_date, markdown_to_html, normalize_timestamp, render_template
 )
 
 
@@ -35,7 +35,7 @@ def _epoch_to_iso(t: float | None) -> str:
     if not t:
         return ""
     try:
-        return datetime.fromtimestamp(t, tz=timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+        return normalize_timestamp(datetime.fromtimestamp(t, tz=timezone.utc).isoformat())
     except Exception:
         return ""
 
